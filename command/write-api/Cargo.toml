@@ -1,0 +1,13 @@
+[package]
+name = "palupunte-write-api"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+axum = "0.6.18"
+anyhow = "1.0.71"
+chrono = "0.4.26"
+downcast-rs = "1.2.0"
+palupunte-domain = { version =  "0.0.1", path = "../domain" }
+palupunte-command-processor = { version =  "0.0.1", path = "../processor" }
+palupunte-command-interface-adaptor = { version =  "0.0.1", path = "../interface-adaptor" }

@@ -1,0 +1,11 @@
+[package]
+name = "palupunte-read-api"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.71"
+chrono = "0.4.26"
+downcast-rs = "1.2.0"
+palupunte-query-processor = { version =  "0.0.1", path = "../processor" }
+palupunte-query-interface-adaptor = { version =  "0.0.1", path = "../interface-adaptor" }

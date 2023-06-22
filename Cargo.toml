@@ -1,0 +1,13 @@
+[workspace]
+
+members = [
+    "infrastructure",
+    "command/domain",
+    "command/processor",
+    "command/interface-adaptor",
+    "command/write-api",
+    "rmu",
+    "query/processor",
+    "query/interface-adaptor",
+    "query/read-api"
+]
