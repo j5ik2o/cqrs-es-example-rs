@@ -1,0 +1,16 @@
+[api]
+host = "0.0.0.0"
+port = 8080
+
+[persistence]
+journal_table_name = "journal"
+journal_aid_index_name = "journal-aid-index"
+snapshot_table_name = "snapshot"
+snapshot_aid_index_name = "snapshot-aid-index"
+journal_shard_count = 64
+
+[aws]
+region_name = "ap-northeast-1"
+endpoint_url = "http://localhost:4566"
+access_key_id = "x"
+secret_access_key = "x"

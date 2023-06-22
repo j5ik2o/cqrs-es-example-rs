@@ -1,5 +1,5 @@
 [package]
-name = "palupunte-query-processor"
+name = "cqrs-es-example-query-processor"
 version = "0.0.1"
 edition = "2021"
 

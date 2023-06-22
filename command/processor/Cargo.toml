@@ -1,9 +1,13 @@
 [package]
-name = "palupunte-command-processor"
+name = "cqrs-es-example-command-processor"
 version = "0.0.1"
 edition = "2021"
 
 [dependencies]
+log = "0.4.19"
 anyhow = "1.0.71"
 chrono = "0.4.26"
 downcast-rs = "1.2.0"
+async-trait = "0.1.36"
+tokio = { version = "1", features = ["full"] }
+cqrs-es-example-domain = { version = "0.0.1", path = "../domain" }

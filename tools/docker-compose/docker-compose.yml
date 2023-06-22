@@ -1,0 +1,76 @@
+version: '3.6'
+services:
+  mysql:
+    image: mysql:8.0
+    hostname: mysql-local
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --ngram_token_size=2
+    healthcheck:
+      test: MYSQL_PWD=passwd mysql -h127.0.0.1 -P3306 -uroot -e "quit"
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: passwd
+      MYSQL_USER: cqrs-es-example-rs
+      MYSQL_PASSWORD: cqrs-es-example-rs
+      MYSQL_DATABASE: cqrs-es-example-rs
+  flyway:
+    image: flyway/flyway:9.2.1
+    command: -url=jdbc:mysql://mysql-local/adceet -user=root -password=passwd migrate -X
+    volumes:
+      - ../flyway/sql:/flyway/sql
+      - ../flyway/drivers:/flyway/drivers
+    depends_on:
+      mysql:
+        condition: service_healthy
+  localstack:
+    image: localstack/localstack:latest
+    hostname: localstack-local
+    ports:
+      - "4566:4566"
+    environment:
+      DEBUG: 1
+      LOCALSTACK_API_KEY: ${LOCALSTACK_API_KEY- }
+      PARITY_AWS_ACCESS_KEY_ID: 1
+      EAGER_SERVICE_LOADING: 1
+      SERVICES: cloudwatch,dynamodb,dynamodbstreams,lambda
+      HOSTNAME_EXTERNAL: localstack-local
+      DEFAULT_REGION: ap-northeast-1
+      DYNAMODB_SHARE_DB: 1
+      #  LAMBDA_PREBUILD_IMAGES: 1
+      # LAMBDA_EXECUTOR: docker
+      LAMBDA_RUNTIME_EXECUTOR: docker
+      LAMBDA_REMOTE_DOCKER: true
+      LAMBDA_REMOVE_CONTAINERS: true
+      DATA_DIR: /tmp/localstack/data
+      DOCKER_HOST: unix:///var/run/docker.sock
+    #      LAMBDA_DOCKER_FLAGS: --platform linux/amd64
+    privileged: true
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  dynamodb-setup:
+    image: mesosphere/aws-cli
+    environment:
+      AWS_ACCESS_KEY_ID: x
+      AWS_SECRET_ACCESS_KEY: x
+      AWS_DEFAULT_REGION: ap-northeast-1
+      DYNAMODB_ENDPOINT: localstack:4566
+      JOURNAL_TABLE_NAME: journal
+      JOURNAL_GSI_NAME: journal-aid-index
+      SNAPSHOT_TABLE_NAME: snapshot
+      SNAPSHOT_GSI_NAME: snapshot-aid-index
+    volumes:
+      - ../dynamodb-setup:/setup
+    entrypoint: [ "" ]
+    command: [ "/setup/create-tables.sh", "-e", "dev" ]
+    depends_on:
+      - localstack
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    ports:
+      - "8003:8001"
+    environment:
+      DYNAMO_ENDPOINT: http://localstack:4566
+      AWS_DEFAULT_REGION: ap-northeast-1
+    depends_on:
+      - dynamodb-setup

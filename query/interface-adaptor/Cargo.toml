@@ -1,5 +1,5 @@
 [package]
-name = "palupunte-query-interface-adaptor"
+name = "cqrs-es-example-query-interface-adaptor"
 version = "0.0.1"
 edition = "2021"
 

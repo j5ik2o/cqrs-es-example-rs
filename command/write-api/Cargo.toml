@@ -1,13 +1,27 @@
 [package]
-name = "palupunte-write-api"
+name = "cqrs-es-example-write-api"
 version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-axum = "0.6.18"
+envy = "0.4"
 anyhow = "1.0.71"
 chrono = "0.4.26"
 downcast-rs = "1.2.0"
-palupunte-domain = { version =  "0.0.1", path = "../domain" }
-palupunte-command-processor = { version =  "0.0.1", path = "../processor" }
-palupunte-command-interface-adaptor = { version =  "0.0.1", path = "../interface-adaptor" }
+config = "0.13.1"
+serde = { version = "1.0", features = ["derive"] }
+aws-config = "0.55.1"
+aws-sdk-dynamodb = { version = "0.28.0" }
+
+axum = "0.6.18"
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+tokio = { version = "1", features = ["full"] }
+hyper = { version = "0.14.26", features = ["full"] }
+tower = "0.4.12"
+
+cqrs-es-example-domain = { version = "0.0.1", path = "../domain" }
+cqrs-es-example-command-processor = { version = "0.0.1", path = "../processor" }
+cqrs-es-example-command-interface-adaptor = { version = "0.0.1", path = "../interface-adaptor" }
+
+openssl = { version = "0.10.55", features = ["vendored"] }

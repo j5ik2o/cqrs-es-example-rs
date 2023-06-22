@@ -1,5 +1,5 @@
 [package]
-name = "palupunte-read-api"
+name = "cqrs-es-example-read-api"
 version = "0.0.1"
 edition = "2021"
 
@@ -7,5 +7,13 @@ edition = "2021"
 anyhow = "1.0.71"
 chrono = "0.4.26"
 downcast-rs = "1.2.0"
-palupunte-query-processor = { version =  "0.0.1", path = "../processor" }
-palupunte-query-interface-adaptor = { version =  "0.0.1", path = "../interface-adaptor" }
+cqrs-es-example-query-processor = { version = "0.0.1", path = "../processor" }
+cqrs-es-example-query-interface-adaptor = { version = "0.0.1", path = "../interface-adaptor" }
+axum = "0.6.18"
+tokio = { version = "1", features = ["full"] }
+hyper = { version = "0.14.26", features = ["full"] }
+tower = "0.4.12"
+async-graphql = "5.0.10"
+async-graphql-axum = "5.0.10"
+
+openssl = { version = "0.10.55", features = ["vendored"] }

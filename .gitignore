@@ -3,8 +3,6 @@
 debug/
 target/
 
-Cargo.lock
-
 .idea/
 *.iml
 
@@ -16,3 +14,15 @@ Thumbs.db
 Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
+
+/Cargo.lock
+
+/infrastructure/Cargo.lock
+/command/domain/Cargo.lock
+/command/interface-adaptor/Cargo.lock
+/command/processor/Cargo.lock
+/query/interface-adaptor/Cargo.lock
+/query/processor/Cargo.lock
+
+.env
+env.sh
