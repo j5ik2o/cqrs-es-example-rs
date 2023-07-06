@@ -1,0 +1,17 @@
+environments:
+  '{{ .Environment.Name }}':
+    values:
+      - '../../config/environments/{{ .Environment.Name }}.yaml'
+
+---
+releases:
+  - name: flyway
+    namespace: '{{ .Namespace | default "ceer" }}'
+    labels:
+      group: flyway
+    chart: ../../charts/flyway
+    version: 1.0.0
+    wait: true
+    installedTemplate: '{{ .Values.flyway.enabled }}'
+    values:
+      - values/settings.yaml.gotmpl

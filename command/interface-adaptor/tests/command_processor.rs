@@ -12,7 +12,7 @@ async fn test_thread_create() {
     // Given
     let name = ThreadName::new("ABC".to_string());
     let admin_id = UserAccountId::new();
-    let members = Members::new(admin_id.clone());
+    let _members = Members::new(admin_id.clone());
     let mut command_processor = ThreadCommandProcessor::new(&mut repository);
 
     // When
@@ -30,7 +30,7 @@ async fn test_thread_rename() {
     // Given
     let name = ThreadName::new("ABC".to_string());
     let admin_id = UserAccountId::new();
-    let members = Members::new(admin_id.clone());
+    let _members = Members::new(admin_id.clone());
     let mut command_processor = ThreadCommandProcessor::new(&mut repository);
     let id = command_processor
       .create_thread(name.clone(), admin_id.clone())
@@ -57,7 +57,7 @@ async fn test_thread_add_member() {
     // Given
     let name = ThreadName::new("ABC".to_string());
     let admin_id = UserAccountId::new();
-    let members = Members::new(admin_id.clone());
+    let _members = Members::new(admin_id.clone());
     let mut command_processor = ThreadCommandProcessor::new(&mut repository);
     let id = command_processor
       .create_thread(name.clone(), admin_id.clone())
@@ -88,7 +88,7 @@ async fn test_thread_remove_member() {
 
     // Given
     let name = ThreadName::new("ABC".to_string());
-    let members = Members::new(admin_id.clone());
+    let _members = Members::new(admin_id.clone());
     let mut command_processor = ThreadCommandProcessor::new(&mut repository);
     let id = command_processor
       .create_thread(name.clone(), admin_id.clone())
@@ -124,7 +124,7 @@ async fn test_thread_post_message() {
     // Given
     let name = ThreadName::new("ABC".to_string());
     let admin_id = UserAccountId::new();
-    let members = Members::new(admin_id.clone());
+    let _members = Members::new(admin_id.clone());
     let mut command_processor = ThreadCommandProcessor::new(&mut repository);
     let id = command_processor
       .create_thread(name.clone(), admin_id.clone())
@@ -159,7 +159,7 @@ async fn test_thread_delete_message() {
     // Given
     let name = ThreadName::new("ABC".to_string());
     let admin_id = UserAccountId::new();
-    let members = Members::new(admin_id.clone());
+    let _members = Members::new(admin_id.clone());
     let mut command_processor = ThreadCommandProcessor::new(&mut repository);
     let id = command_processor
       .create_thread(name.clone(), admin_id.clone())
@@ -197,7 +197,7 @@ async fn test_thread_destroy() {
     // Given
     let name = ThreadName::new("ABC".to_string());
     let admin_id = UserAccountId::new();
-    let members = Members::new(admin_id.clone());
+    let _members = Members::new(admin_id.clone());
     let mut command_processor = ThreadCommandProcessor::new(&mut repository);
     let id = command_processor.create_thread(name, admin_id.clone()).await.unwrap();
 

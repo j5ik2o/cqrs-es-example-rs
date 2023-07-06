@@ -1,0 +1,33 @@
+repositories:
+  - name: chatwork
+    url: https://chatwork.github.io/charts
+environments:
+  '{{ .Environment.Name }}':
+    values:
+      - '../../config/environments/{{ .Environment.Name }}.yaml'
+
+---
+releases:
+  - name: regcred
+    namespace: '{{ .Namespace | default "ceer" }}'
+    labels:
+      group: regcred
+    chart: chatwork/regcred
+    version: 0.1.2
+    installedTemplate: '{{`{{ .Values.regcred.enabled | default false }}`}}'
+    values:
+      - server: '{{ env "DOCKER_SERVER" | default .Values.regcred.server | default "https://index.docker.io/v1/" }}'
+        username: '{{ env "DOCKER_USERNAME" | default .Values.regcred.username }}'
+        password: '{{ env "DOCKER_PASSWORD" | default .Values.regcred.password }}'
+
+  - name: ecr-cred
+    namespace: '{{ .Namespace | default "ceer" }}'
+    labels:
+      group: regcred
+    chart: chatwork/regcred
+    version: 0.1.2
+    installedTemplate: '{{`{{ .Values.ecrCred.enabled | default false }}`}}'
+    values:
+      - server: '{{ env "ECR_DOCKER_SERVER" | default .Values.ecrCred.server }}'
+        username: AWS
+        password: '{{ env "ECR_DOCKER_PASSWORD" | default .Values.ecrCred.password }}'

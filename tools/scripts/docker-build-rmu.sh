@@ -12,6 +12,7 @@ cd $(dirname "$0") || exit
 pushd ../../
 
 docker build \
+  --platform=linux/amd64 \
   -t j5ik2o/cqrs-es-example-rs-rmu:latest \
   -f rmu/Dockerfile .
 

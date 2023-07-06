@@ -11,7 +11,6 @@ AWS='aws --endpoint-url=http://localhost:4566 --region ap-northeast-1'
 pushd ../../
 
 $AWS lambda create-function \
-  --architectures arm64 \
   --function-name rmu \
   --handler bootstrap \
   --zip-file fileb://./target/lambda/cqrs-es-example-rmu/bootstrap.zip \

@@ -1,0 +1,17 @@
+environments:
+  '{{ .Environment.Name }}':
+    values:
+      - '../../config/environments/{{ .Environment.Name }}.yaml'
+
+---
+releases:
+  - name: dynamodb
+    namespace: '{{ .Namespace | default "ceer" }}'
+    labels:
+      group: dynamodb
+    chart: ../../charts/dynamodb
+    version: 0.1.27
+    wait: true
+    installedTemplate: '{{ .Values.dynamodb.enabled }}'
+    values:
+      - values/settings.yaml.gotmpl

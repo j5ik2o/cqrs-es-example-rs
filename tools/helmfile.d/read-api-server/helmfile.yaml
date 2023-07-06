@@ -1,0 +1,16 @@
+environments:
+  '{{ .Environment.Name }}':
+    values:
+      - '../../config/environments/{{ .Environment.Name }}.yaml'
+---
+releases:
+  - name: read-api-server
+    namespace: '{{ .Namespace | default "ceer" }}'
+    labels:
+      subsystem: read-api-server
+      group: read-api-server
+    chart: ../../charts/read-api-server
+    version: '{{ .Values.readApiServer.version }}'
+    installedTemplate: '{{ .Values.readApiServer.enabled }}'
+    values:
+      - values/settings.yaml.gotmpl

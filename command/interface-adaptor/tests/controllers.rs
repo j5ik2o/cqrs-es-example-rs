@@ -7,7 +7,6 @@ use cqrs_es_example_command_interface_adaptor::controllers::{
   create_router, AddMemberRequestBody, CreateThreadRequestBody, DeleteMessageRequestBody, DeleteThreadRequestBody,
   EndpointPaths, PostMessageRequestBody, RemoveMemberRequestBody, RenameThreadRequestBody, ThreadCommandResponseBody,
 };
-use cqrs_es_example_domain::thread::member::Members;
 use cqrs_es_example_domain::thread::{MemberRole, Message, MessageId, ThreadId, ThreadName, ThreadRepository};
 use cqrs_es_example_domain::user_account::UserAccountId;
 

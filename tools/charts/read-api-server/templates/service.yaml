@@ -1,0 +1,19 @@
+{{- $svcType := .Values.service.type }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "read-api-server.fullname" . }}
+  labels:
+    {{- include "read-api-server.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      {{- if and (eq $svcType "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "read-api-server.selectorLabels" . | nindent 4 }}

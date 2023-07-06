@@ -1,0 +1,100 @@
+image:
+repository: '{{ .Values.readModelUpdater.image.repository }}'
+tag: '{{ env "READ_MODEL_UPDATER_IMAGE_TAG" | default .Values.readModelUpdater.image.tag }}'
+pullPolicy: '{{ .Values.readModelUpdater.image.pullPolicy }}'
+
+{{- if .Values.ecrCred.enabled }}
+    imagePullSecrets:
+    - name: ecr-cred-regcred
+{{- end }}
+
+nameOverride: ""
+fullnameOverride: ""
+
+affinity: {}
+
+command: {}
+
+env:
+{{- with .Values.readModelUpdater.env }}
+    {{- toYaml . | nindent 2 }}
+{{- end }}
+- name: "AWS_REGION"
+value: {{ requiredEnv "AWS_REGION" }}
+
+startupProbe:
+enabled: false
+
+livenessProbe:
+enabled: true
+initialDelaySeconds: 30
+periodSeconds: 5
+timeoutSeconds: 3
+successThreshold: 1
+failureThreshold: 3
+
+nodeSelector: {}
+
+podAnnotations: {}
+
+podLabels: {}
+
+podSecurityContext:
+fsGroup: 0
+
+readinessProbe:
+enabled: true
+initialDelaySeconds: 30
+periodSeconds: 5
+timeoutSeconds: 3
+successThreshold: 1
+failureThreshold: 3
+
+replicaCount: {{ .Values.readModelUpdater.replicaCount }}
+
+resources:
+{{- toYaml .Values.readModelUpdater.resources | nindent 2 }}
+
+securityContext: {}
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+strategy:
+type: RollingUpdate
+rollingUpdate:
+maxSurge: 10%
+maxUnavailable: 0%
+
+terminationGracePeriodSeconds: {{ add .Values.readModelUpdater.processTimeoutInSec 5 }}
+
+rbac:
+create: true
+
+serviceAccount:
+create: {{ .Values.readModelUpdater.serviceAccount.create }}
+{{- if .Values.readModelUpdater.serviceAccount.name }}
+    name: {{ .Values.readModelUpdater.serviceAccount.name }}
+{{- end }}
+
+podDisruptionBudget:
+enabled: true
+maxUnavailable: 1
+
+autoscaling:
+{{- toYaml .Values.readModelUpdater.autoscaling | nindent 2 }}
+
+metrics:
+enabled: false
+port: 9095
+path: "/"
+
+configmaps:
+chart.conf: ""
+akka.conf: ""
+kamon.conf: ""
+
+useResourceApplicationConf: false

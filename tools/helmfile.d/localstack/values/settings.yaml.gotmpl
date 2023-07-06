@@ -1,0 +1,4 @@
+startServices: "cloudwatch"
+replicaCount: 1
+resources:
+  {{- toYaml .Values.localstack.resources | nindent 2 }}

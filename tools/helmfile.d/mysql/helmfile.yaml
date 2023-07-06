@@ -1,0 +1,20 @@
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+environments:
+  '{{ .Environment.Name }}':
+    values:
+      - '../../config/environments/{{ .Environment.Name }}.yaml'
+
+---
+releases:
+  - name: mysql
+    namespace: '{{ .Namespace | default "ceer" }}'
+    labels:
+      group: mysql
+    chart: bitnami/mysql
+    version: 9.4.1
+    wait: true
+    installedTemplate: '{{ .Values.mysql.enabled }}'
+    values:
+      - values/settings.yaml.gotmpl

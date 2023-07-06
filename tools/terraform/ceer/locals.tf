@@ -1,0 +1,6 @@
+locals {
+  k8s_service_namespace    = var.k8s_service_namespace
+  k8s_service_account_name = var.k8s_service_account_name
+  iam_policy_name_prefix   = "${var.prefix}-ceer"
+  iam_role_name            = "${var.prefix}-ceer"
+}

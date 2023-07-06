@@ -1,0 +1,16 @@
+environments:
+  '{{ .Environment.Name }}':
+    values:
+      - '../../config/environments/{{ .Environment.Name }}.yaml'
+---
+releases:
+  - name: read-model-updater
+    namespace: '{{ .Namespace | default "ceer" }}'
+    labels:
+      subsystem: read-model-updater
+      group: read-model-updater
+    chart: ../../charts/read-model-updater
+    version: '{{ .Values.readModelUpdater.version }}'
+    installedTemplate: '{{ .Values.readModelUpdater.enabled }}'
+    values:
+      - values/settings.yaml.gotmpl

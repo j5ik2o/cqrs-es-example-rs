@@ -236,10 +236,20 @@ async fn hello_write_api() -> &'static str {
   "Hello, Write API!"
 }
 
+async fn alive<TR: ThreadRepository>(State(_state): State<AppDate<TR>>) -> impl IntoResponse {
+  (StatusCode::OK, "OK")
+}
+
+async fn ready<TR: ThreadRepository>(State(_state): State<AppDate<TR>>) -> impl IntoResponse {
+  (StatusCode::OK, "OK")
+}
+
 pub fn create_router<TR: ThreadRepository>(repository: TR) -> Router {
   let state = Arc::new(RwLock::new(AppState::new(repository)));
   let router = Router::new()
     .route("/", get(hello_write_api))
+    .route("/health/alive", get(alive))
+    .route("/health/ready", get(ready))
     .route(EndpointPaths::CreateThread.as_str(), post(create_thread))
     .route(EndpointPaths::DeleteThread.as_str(), post(delete_thread))
     .route(EndpointPaths::RenameThread.as_str(), post(rename_thread))

@@ -1,21 +1,15 @@
 #[macro_use]
 extern crate log;
 
-use std::io::Write;
-use std::process::exit;
-use std::sync::Once;
-
 use anyhow::Result;
+use aws_config::meta::region::RegionProviderChain;
 use aws_lambda_events::event::dynamodb;
-use backtrace::Backtrace;
-use config::{Config, Environment};
-use env_logger::{Builder, Env, Target};
+use aws_sdk_dynamodbstreams::operation::describe_stream::builders::DescribeStreamFluentBuilder;
+use aws_sdk_dynamodbstreams::types::ShardIteratorType;
+use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde::Deserialize;
-use serde_dynamo::AttributeValue;
-use serde_json::Value;
-
-use cqrs_es_example_domain::thread::events::ThreadEvent;
+use tracing::instrument::WithSubscriber;
 
 //
 // static INIT: Once = Once::new();
@@ -92,33 +86,3 @@ async fn main() -> Result<(), Error> {
     tracing::info!("main: finished");
     Ok(())
 }
-
-// async fn main_impl() -> Result<(), Error> {
-//     // tracing_subscriber::fmt()
-//     //     .with_max_level(tracing::Level::TRACE)
-//     //     .with_target(false)
-//     //     .without_time()
-//     //     .init();
-//     info!("start: main");
-//     lambda_runtime::run(lambda_runtime::service_fn(|event| async move {
-//         update_read_model(event).await
-//     }))
-//     .await
-// }
-
-// #[derive(Deserialize, Debug)]
-// struct AwsSettings {
-//     region_name: String,
-//     endpoint_url: Option<String>,
-//     access_key_id: Option<String>,
-//     secret_access_key: Option<String>,
-// }
-//
-// fn load_app_config() -> Result<AwsSettings> {
-//     let config = Config::builder()
-//         .add_source(config::File::with_name("config/rmu"))
-//         .add_source(Environment::with_prefix("RMU"))
-//         .build()?;
-//     let app_config = config.try_deserialize()?;
-//     Ok(app_config)
-// }

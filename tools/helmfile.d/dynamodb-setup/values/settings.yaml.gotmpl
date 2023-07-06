@@ -1,0 +1,9 @@
+resources:
+{{- toYaml .Values.dynamodbSetup.resources | nindent 2 }}
+
+env:
+{{- with .Values.dynamodbSetup.env }}
+    {{- toYaml . | nindent 2 }}
+{{- end }}
+- name: "AWS_DEFAULT_REGION"
+value: {{ requiredEnv "AWS_REGION" }}

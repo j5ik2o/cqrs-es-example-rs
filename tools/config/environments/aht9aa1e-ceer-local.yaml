@@ -1,0 +1,320 @@
+dynamodb:
+  enabled: true
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1000Mi"
+    requests:
+      cpu: "0.5"
+      memory: "500Mi"
+dynamodbSetup:
+  enabled: true
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1000Mi"
+    requests:
+      cpu: "0.5"
+      memory: "500Mi"
+  env:
+    - name: "AWS_ACCESS_KEY_ID"
+      value: "x"
+    - name: "AWS_SECRET_ACCESS_KEY"
+      value: "x"
+    - name: "DYNAMODB_ENDPOINT"
+      value: "dynamodb:8000"
+    - name: "JOURNAL_TABLE_NAME"
+      value: "aje8iz5k-Journal"
+    - name: "JOURNAL_GSI_NAME"
+      value: "aje8iz5k-GetJournalRowsIndex"
+    - name: "SNAPSHOT_TABLE_NAME"
+      value: "aje8iz5k-Snapshot"
+    - name: "SNAPSHOT_GSI_NAME"
+      value: "aje8iz5k-GetSnapshotRowsIndex"
+localstack:
+  enabled: true
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1000Mi"
+    requests:
+      cpu: "0.5"
+      memory: "500Mi"
+mysql:
+  enabled: true
+  auth:
+    rootPassword: passwd
+    database: adceet
+    username: adceet
+    password: adceet
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1000Mi"
+    requests:
+      cpu: "0.5"
+      memory: "500Mi"
+flyway:
+  enabled: true
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1000Mi"
+    requests:
+      cpu: "0.5"
+      memory: "500Mi"
+regcred:
+  enabled: false
+  server:
+  username:
+  password:
+ecrCred:
+  enabled: false
+  server:
+  password:
+writeApi:
+  akkaClusterName: write-api
+  env:
+    - name: "ROOT_LOG_LEVEL"
+      value: "INFO"
+    - name: "CONFIG_FORCE_akka_discovery_kubernetes__api_pod__namespace"
+      value: "adceet"
+    - name: "CONFIG_FORCE_akka_discovery_kubernetes__api_pod__label__selector"
+      value: "adceet/akka-cluster-name=write-api"
+    - name: "CONFIG_FORCE_akka_discovery_kubernetes__api_pod__port__name"
+      value: "management"
+    - name: "CONFIG_FORCE_akka_remote_artery_canonical_port"
+      value: "25520"
+    - name: "CONFIG_FORCE_kamon_environment_tags_env"
+      value: "aje8iz5k-addceet"
+    - name: "CONFIG_FORCE_kamon_datadog_agent_hostname"
+      value: "datadog-agent.kube-system"
+  # Write API Server
+  writeApiServer:
+    datadog:
+      logs:
+        enabled: false
+    frontend:
+      enabled: true
+      version: 0.0.1
+      image:
+        repository: adceet-write-api-server-scala
+        tag: a67d1dd43130c22f3a52328007fed3e9f8170fec
+        pullPolicy: IfNotPresent
+      resources:
+        limits:
+          cpu: "1"
+          memory: "2Gi"
+        requests:
+          cpu: "0.5"
+          memory: "1Gi"
+      service:
+        type: NodePort
+        port: 8081
+        nodePort: 30031
+      replicaCount: 2
+      autoscaling:
+        enabled: false
+      processTimeoutInSec: 10
+      hostname: xxxx
+      externalDNS:
+        awsWeight: 100
+      serviceAccount:
+        create: true
+        name: adceet-frontend
+      env:
+        - name: "CONFIG_FORCE_akka_log__config__on__start"
+          value: "off"
+
+        - name: "CONFIG_FORCE_akka_cluster_sharding_number__of__shards"
+          value: "30"
+
+        - name: "CONFIG_FORCE_akka_management_http_bind__hostname"
+          value: "0.0.0.0"
+        - name: "CONFIG_FORCE_akka_management_http_bind__port"
+          value: "8558"
+        - name: "CONFIG_FORCE_akka_management_contract__point_fallback__ports"
+          value: "8558"
+      ingress:
+        enabled: false
+        alb:
+          scheme: internet-facing
+    backend:
+      enabled: true
+      version: 0.0.1
+      withFrontend:
+        enabled: false
+      image:
+        repository: adceet-write-api-server-scala
+        tag: a67d1dd43130c22f3a52328007fed3e9f8170fec
+        pullPolicy: IfNotPresent
+      resources:
+        limits:
+          cpu: "1"
+          memory: "2Gi"
+        requests:
+          cpu: "0.5"
+          memory: "1Gi"
+      replicaCount: 3
+      autoscaling:
+        enabled: false
+      processTimeoutInSec: 10
+      serviceAccount:
+        create: true
+        name: adceet-backend
+      env:
+        - name: "CONFIG_FORCE_kamon_environment_tags_version"
+          value: "adceet-write-api-server"
+
+        - name: "CONFIG_FORCE_akka_log__config__on__start"
+          value: "off"
+
+
+        - name: "CONFIG_FORCE_akka_cluster_sharding_number__of__shards"
+          value: "30"
+
+        - name: "CONFIG_FORCE_akka_management_http_bind__hostname"
+          value: "0.0.0.0"
+        - name: "CONFIG_FORCE_akka_management_http_bind__port"
+          value: "8558"
+        - name: "CONFIG_FORCE_akka_management_contract__point_fallback__ports"
+          value: "8558"
+
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_table__name"
+          value: "aje8iz5k-Journal"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_get__journal__rows__index__name"
+          value: "aje8iz5k-GetJournalRowsIndex"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_shard__count"
+          value: "64"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_queue__enable"
+          value: "true"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_queue__buffer__size"
+          value: "64"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_queue__overflow__strategy"
+          value: "Fail"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_queue__parallelism"
+          value: "1024"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_write__parallelism"
+          value: "1024"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_query__batch__size"
+          value: "32"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_scan__batch__size"
+          value: "512"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_replay__batch__size"
+          value: "512"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_consistent__read"
+          value: "false"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_dynamo__db__client_access__key__id"
+          value: "x"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_dynamo__db__client_secret__access__key"
+          value: "x"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__journal_dynamo__db__client_endpoint"
+          value: "http://dynamodb:8000"
+
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__snapshot_table__name"
+          value: "aje8iz5k-Snapshot"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__snapshot_get__snapshot__rows__index__name"
+          value: "aje8iz5k-GetSnapshotRowsIndex"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__snapshot_shard__count"
+          value: "64"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__snapshot_dynamo__db__client_access__key__id"
+          value: "x"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__snapshot_dynamo__db__client_secret__access__key"
+          value: "x"
+        - name: "CONFIG_FORCE_j5ik2o_dynamo__db__snapshot_dynamo__db__client_endpoint"
+          value: "http://dynamodb:8000"
+        - name: "CONFIG_FORCE_cluster__dispatcher_fork__join__executor_parallelism__min"
+          value: "4"
+        - name: "CONFIG_FORCE_cluster__dispatcher_fork__join__executor_parallelism__max"
+          value: "16"
+        - name: "CONFIG_FORCE_cluster__dispatcher_fork__join__executor_parallelism__factor"
+          value: "2.0"
+readModelUpdater:
+  enabled: true
+  version: 0.0.1
+  image:
+    repository: adceet-read-model-updater-scala
+    tag: a67d1dd43130c22f3a52328007fed3e9f8170fec
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: "2"
+      memory: "1Gi"
+    requests:
+      cpu: "0.5"
+      memory: "1Gi"
+  processTimeoutInSec: 10
+  autoscaling:
+    enabled: false
+  service:
+    type: NodePort
+    port: 8086
+    nodePort: 30032
+  replicaCount: 1
+  serviceAccount:
+    create: true
+    name: adceet-read-model-updater
+  env:
+    - name: "CONFIG_FORCE_kamon_environment_tags_version"
+      value: "adceet-read-model-updater"
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_journal__table__name"
+      value: "aje8iz5k-Journal"
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_access__key__id"
+      value: "x"
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_secret__access__key"
+      value: "x"
+
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_dynamodb__client_access__key__id"
+      value: "x"
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_dynamodb__client_secret__access__key"
+      value: "x"
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_dynamodb__client_endpoint"
+      value: "http://dynamodb:8000"
+
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_dynamodb__stream__client_access__key__id"
+      value: "x"
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_dynamodb__stream__client_secret__access__key"
+      value: "x"
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_dynamodb__stream__client_endpoint"
+      value: "http://dynamodb:8000"
+
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_cloudwatch__client_access__key__id"
+      value: "x"
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_cloudwatch__client_secret__access__key"
+      value: "x"
+    - name: "CONFIG_FORCE_adceet_read__model__updater_threads_cloudwatch__client_endpoint"
+      value: "http://localstack:4566"
+
+    - name: "CONFIG_FORCE_slick_db_url"
+      value: "jdbc:mysql://mysql:3306/adceet?allowPublicKeyRetrieval=true&useSSL=false"
+readApiServer:
+  enabled: true
+  version: 0.0.1
+  image:
+    repository: adceet-read-api-server-scala
+    tag: a67d1dd43130c22f3a52328007fed3e9f8170fec
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+    requests:
+      cpu: "0.5"
+      memory: "1Gi"
+  processTimeoutInSec: 10
+  autoscaling:
+    enabled: false
+  service:
+    type: NodePort
+    port: 8081
+    nodePort: 30033
+  replicaCount: 1
+  serviceAccount:
+    create: true
+    name: adceet-read-api-server
+  env:
+    - name: "CONFIG_FORCE_kamon_environment_tags_version"
+      value: "adceet-read-model-updater"
+
+    - name: "CONFIG_FORCE_slick_db_url"
+      value: "jdbc:mysql://mysql:3306/adceet?allowPublicKeyRetrieval=true&useSSL=false"

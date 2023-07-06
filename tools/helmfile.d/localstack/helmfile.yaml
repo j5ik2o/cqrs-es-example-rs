@@ -1,0 +1,20 @@
+repositories:
+  - name: localstack
+    url: https://localstack.github.io/helm-charts
+environments:
+  '{{ .Environment.Name }}':
+    values:
+      - '../../config/environments/{{ .Environment.Name }}.yaml'
+
+---
+releases:
+  - name: localstack
+    namespace: '{{ .Namespace | default "ceer" }}'
+    labels:
+      group: localstack
+    chart: localstack/localstack
+    version: 0.4.3
+    wait: true
+    installedTemplate: '{{ .Values.localstack.enabled }}'
+    values:
+      - values/settings.yaml.gotmpl

@@ -3,6 +3,10 @@ name = "cqrs-es-example-rmu"
 version = "0.0.1"
 edition = "2021"
 
+[[bin]]
+name = "local-rmu"
+path = "bin/local-rmu.rs"
+
 [dependencies]
 backtrace = "0.3.67"
 simple_logger = "4.1.0"
@@ -12,6 +16,8 @@ anyhow = "1.0.71"
 chrono = "0.4.26"
 downcast-rs = "1.2.0"
 once_cell = "1.18.0"
+aws-config = "0.55.1"
+aws-sdk-dynamodbstreams = "0.28.0"
 
 aws_lambda_events = { version = "0.10.0", default-features = false, features = ["dynamodb"] }
 lambda_runtime = "0.8.1"
@@ -26,3 +32,5 @@ serde_dynamo = "4.2.3"
 config = "0.13.1"
 cqrs-es-example-domain = { version = "0.0.1", path = "../command/domain" }
 # sqlx = { version = "0.6.3", default-features = false, features = ["mysql", "runtime-tokio-native-tls"] }
+
+# openssl = { version = "0.10.55", features = ["vendored"] }

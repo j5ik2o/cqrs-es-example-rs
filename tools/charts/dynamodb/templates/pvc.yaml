@@ -1,0 +1,33 @@
+{{- if eq .Values.storageType "pvc" }}
+# Copyright 2020 Keyporttech Inc.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Default values for dynamodb-helm-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dynamodb
+  labels:
+    version: "{{ .Chart.AppVersion }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.storage }}
+    {{- if .Values.storageClass }}
+    storageClassName: {{ .Values.storageClass | quote }}
+    {{- end }}
+{{- end }}

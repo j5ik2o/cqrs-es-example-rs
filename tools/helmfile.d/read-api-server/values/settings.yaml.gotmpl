@@ -1,0 +1,105 @@
+image:
+repository: '{{ .Values.readApiServer.image.repository }}'
+tag: '{{ env "READ_API_SERVER_IMAGE_TAG" | default .Values.readApiServer.image.tag }}'
+pullPolicy: '{{ .Values.readApiServer.image.pullPolicy }}'
+
+{{- if .Values.ecrCred.enabled }}
+    imagePullSecrets:
+    - name: ecr-cred-regcred
+{{- end }}
+
+nameOverride: ""
+fullnameOverride: ""
+
+affinity: {}
+
+command: {}
+
+env:
+{{- with .Values.readApiServer.env }}
+    {{- toYaml . | nindent 2 }}
+{{- end }}
+- name: "AWS_REGION"
+value: {{ requiredEnv "AWS_REGION" }}
+
+startupProbe:
+enabled: false
+
+livenessProbe:
+enabled: true
+initialDelaySeconds: 30
+periodSeconds: 5
+timeoutSeconds: 3
+successThreshold: 1
+failureThreshold: 3
+
+nodeSelector: {}
+
+podAnnotations: {}
+
+podLabels: {}
+
+podSecurityContext:
+fsGroup: 0
+
+readinessProbe:
+enabled: true
+initialDelaySeconds: 30
+periodSeconds: 5
+timeoutSeconds: 3
+successThreshold: 1
+failureThreshold: 3
+
+replicaCount: {{ .Values.readApiServer.replicaCount }}
+
+resources:
+{{- toYaml .Values.readApiServer.resources | nindent 2 }}
+
+securityContext: {}
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+strategy:
+type: RollingUpdate
+rollingUpdate:
+maxSurge: 10%
+maxUnavailable: 0%
+
+terminationGracePeriodSeconds: {{ add .Values.readApiServer.processTimeoutInSec 5 }}
+
+rbac:
+create: true
+
+serviceAccount:
+create: {{ .Values.readApiServer.serviceAccount.create }}
+{{- if .Values.readApiServer.serviceAccount.name }}
+    name: {{ .Values.readApiServer.serviceAccount.name }}
+{{- end }}
+
+service:
+type: {{ .Values.readApiServer.service.type }}
+port: {{ .Values.readApiServer.service.port }}
+nodePort: {{ .Values.readApiServer.service.nodePort }}
+
+podDisruptionBudget:
+enabled: true
+maxUnavailable: 1
+
+autoscaling:
+{{- toYaml .Values.readApiServer.autoscaling | nindent 2 }}
+
+metrics:
+enabled: false
+port: 9095
+path: "/"
+
+configmaps:
+chart.conf: ""
+akka.conf: ""
+kamon.conf: ""
+
+useResourceApplicationConf: false

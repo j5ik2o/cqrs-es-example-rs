@@ -1,0 +1,16 @@
+replicaCount: 1
+resources:
+{{- toYaml .Values.mysql.resources | nindent 2 }}
+primary:
+service:
+type: "NodePort"
+nodePorts:
+mysql: 30306
+persistence:
+enabled: false
+auth:
+rootPassword: {{ .Values.mysql.auth.rootPassword | quote }}
+createDatabase: true
+database: {{ .Values.mysql.auth.database | quote }}
+username: {{ .Values.mysql.auth.username | quote }}
+password: {{ .Values.mysql.auth.password | quote }}

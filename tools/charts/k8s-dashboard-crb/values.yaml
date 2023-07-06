@@ -1,0 +1,3 @@
+serviceAccount:
+  namespace: "kubernetes-dashboard"
+  name: "kubernetes-dashboard"

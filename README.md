@@ -1,5 +1,7 @@
 # cqrs-es-example-rs
 
+ステータス:実装中
+
 ## コンポーネント構成
 
 - Write API (WIP)
