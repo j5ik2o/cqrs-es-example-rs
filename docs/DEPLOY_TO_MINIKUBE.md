@@ -1,46 +1,46 @@
-# Deploy to Minikube
+# Minikubeへのデプロイ
 
-First, Give minikube driver(docker, virtualbox, ...) enough resources.
+まず、minikubeドライバ(docker, virtualbox, ...)に十分なリソースを与える。
 
-## Launch Minikube
+## Minikubeの起動
 
-Run the following script to start minikube.
+以下のスクリプトを実行してminikubeを起動する。
 
 ```shell
 ceer-root $ ./tools/scripts/minikube-start.sh
 ```
 
-The dirver, system resources, etc. are specified in `minikube-start.sh`, so modify them to suit your preferences (but be
-sure to reserve the resources required by Deployment).
+ディレクトリ、システムリソースなどは `minikube-start.sh` で指定されているので、好みに応じて変更してほしい（ただし、Deplisherで必要なリソースは必ず確保してほしい）。
+Deploymentで必要なリソースは確保しておくこと）。
 
-Change the Docker client connection to minikube.
+Dockerクライアントの接続先をminikubeに変更する。
 
 ```shell
 ceer-root $ eval $(minikube docker-env default)
 ```
 
-## Push the Docker Image
+## Docker イメージをプッシュする
 
-Please push the image to docker registry on minikube.
+minikubeのdockerレジストリにイメージをプッシュしてください。
 
 ```shell
 ceer-root $ ./tools/scripts/docker-build-all.sh
 ```
 
-## Edit the Configuration file of Helmfile
+## Helmfile の設定ファイルを編集する。
 
 ```shell
 ceer-root $ vi ./tools/config/environments/${PREFIX}-${APPLICATION_NAME}-local.yaml
 ceer-root # tools/config/environments/${PREFIX}-${APPLICATION_NAME}-local.yaml
 ```
 
-Notice the tag value displayed in the console; reflect it in xxx.image.tag.
-Please set the following items in the yaml file appropriately
+コンソールに表示されるタグの値に注目してください。
+yamlファイルの以下の項目を適切に設定してください。
 
 - writeApi.writeApiServer.image.repository
 - writeApi.writeApiServer.image.tag
 
-Set the following items in the yaml file appropriately(if you use Read API Server)
+yamlファイルに以下の項目を適切に設定してください（Read API Serverを使用する場合）。
 
 - readModelUpdater.image.repository
 - readModelUpdater.image.tag
@@ -51,8 +51,8 @@ Set the following items in the yaml file appropriately(if you use Read API Serve
 
 **NOTE**
 
-All components can be deployed with a single command below, but it is recommended that you run each step at least once
-to get a feel for the process.
+すべてのコンポーネントは以下のコマンド1つでデプロイできますが、各ステップを少なくとも1回は実行して、プロセスの感触をつかむことをお勧めします
+を実行することを推奨する。
 
 ```shell
 ceer-root $ ./tools/scripts/helmfile-apply-local-all.sh
@@ -60,102 +60,102 @@ ceer-root $ ./tools/scripts/helmfile-apply-local-all.sh
 
 ---
 
-## Prepare DynamoDB tabels
+## DynamoDBタブを準備する
 
-Next deploy dynamodb local.
+次にdynamodb localをデプロイします。
 
 ```shell
 ceer-root $ ./tools/scripts/helmfile-apply-local-dynamodb.sh
 ```
 
-Create the necessary tables.
+必要なテーブルを作成する。
 
 ```shell
 ceer-root $ ./tools/scripts/helmfile-apply-local-dynamodb-setup.sh
 ```
 
-Open `http://127.0.0.1:31567/` if you want to use DynamoDB Admin.
+DynamoDB Adminを使用する場合は `http://127.0.0.1:31567/` を開く。
 
-## Prepare MySQL tabels
+## MySQLタブを準備する。
 
-Next deploy mysql.
+次にmysqlをデプロイする。
 
 ```shell
 ceer-root $ ./tools/scripts/helmfile-apply-local-mysql.sh
 ```
 
-Create the necessary tables.
+必要なテーブルを作成する。
 
 ```shell
 ceer-root $ ./tools/scripts/helmfile-apply-local-flyway.sh
 ```
 
-## [About akka-cluster roles](DEBUG_ON_LOCAL_K8S.md#about-akka-cluster-roles)
+## [akka-clusterロールについて](DEBUG_ON_LOCAL_K8S.md#about-akka-cluster-roles)
 
-## Deploy the Backend role
+## バックエンドロールのデプロイ
 
-Next deploy the backend roles.
+次にバックエンドロールをデプロイします。
 
 ```shell
 ceer-root $ ./tools/scripts/helmfile-apply-local.sh
 ```
 
-Wait a few moments for the cluster to form. Make sure there are no errors in the log.
+クラスタが形成されるまでしばらく待ちます。ログにエラーがないことを確認する。
 
 ```shell
 $ stern 'write-api-server-*' -n adceet
 ```
 
-Make sure all pods are in Ready status.
+すべてのPodがReady状態になっていることを確認する。
 
-## Deploy Read Model Updater (if you need)
+## Read Model Updaterをデプロイする。
 
-Next deploy Read Model Updater.
+次に Read Model Updater をデプロイします。
 
 ```shell
 ceer-root $ ./tools/scripts/helmfile-apply-local-rmu.sh
 ```
 
-Wait a few moments. Make sure there are no errors in the log.
+しばらく待ちます。ログにエラーがないことを確認してください。
 
 ```shell
 $ stern 'read-model-updater-*' -n adceet
 ```
 
-## Deploy Read API Server (if you need)
+## 次にRead API Serverをデプロイする。
 
-Next deploy Read API Server
+次にRead API Serverをデプロイする。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-local-read-api.sh
+ceer-ルート $ ./tools/scripts/helmfile-apply-local-read-api.sh
 ```
 
-Wait a few moments. Make sure there are no errors in the log.
+しばらく待つ。ログにエラーがないことを確認する。
 
 ```shell
 $ stern 'read-api-server-*' -n adceet
 ```
 
-## Check the applications
+## アプリケーションのチェック
 
-After frontend is started, check the operation with the following commands.
+フロントエンドが起動したら、以下のコマンドで動作を確認する。
 
 ```shell
 $ curl -X GET http://127.0.0.1:30031/hello
-Hello, World!
+Hello, World！
 ```
 
-Call API to check operation.
+APIを呼び出して動作を確認する。
 
 ```shell
-$ curl -v -X POST -H "Content-Type: application/json" -d "{ \"accountId\": \"01G41J1A2GVT5HE45AH7GP711P\" }" http://127.0.0.1:30031/threads
+$ curl -v -X POST -H "Content-Type: application/json" -d "{ \"accountId： \"01G41J1A2GVT5HE45AH7GP711P\" }" http://127.0.0.1:30031/threads
 {"threadId":"01GBCN25M496HB4PK9EWQMH28J"}
 ```
 
-**NOTE: In a local environment, the first event may not consume well. If this is the case, try sending the command
-again.**
+**注：ローカル環境では、最初のイベントはうまく消費されないかもしれない。このような場合は、もう一度コマンドを送信してください。
+を再度送信してみてください。
 
-Execute the following command if you use RMU and Read API Server.
+RMUとRead API Serverを使用している場合は、以下のコマンドを実行する。
 
 ```shell
 $ curl -v -H "Content-Type: application/json" http://127.0.0.1:30033/threads?owner_id=01G41J1A2GVT5HE45AH7GP711P

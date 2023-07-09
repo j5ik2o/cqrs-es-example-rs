@@ -30,7 +30,7 @@ aws-cli/2.12.6 Python/3.11.4 Darwin/22.5.0 exe/x86_64 prompt/off
 
 https://github.com/hashicorp/terraform
 
-```sh
+```shell
 ceer-root $ asdf plugin-add terraform https://github.com/asdf-community/asdf-hashicorp.git
 ceer-root $ asdf install terraform 1.5.2
 ceer-root $ asdf local terraform 1.5.2
@@ -46,9 +46,9 @@ on darwin_arm64
 + provider registry.terraform.io/hashicorp/tls v4.0.4
 ```
 
-## terraformer(Optional)
+## terraformer(オプション)
 
-This tool is used to import settings into the datadog.
+datadogに設定をインポートするためのツール。
 
 https://github.com/GoogleCloudPlatform/terraformer
 
@@ -65,7 +65,7 @@ ceer-root/temp $ DATADOG_API_KEY="xxx" DATADOG_APP_KEY="xxx" terraformer import 
 
 ### kubectl
 
-Please install the same version of kubectl as the server side to avoid trouble.
+トラブルを避けるため、サーバ側と同じバージョンのkubectlをインストールしてください。
 
 ```shell
 ceer-root $ KUBECTL_VERSION=1.27.3
@@ -111,7 +111,7 @@ ceer-root $ helmfile --version
 helmfile version v0.155.0
 ```
 
-### minikube (optional)
+### minikube (オプション)
 
 ```shell
 ceer-root $ asdf plugin-add minikube https://github.com/alvarobp/asdf-minikube.git

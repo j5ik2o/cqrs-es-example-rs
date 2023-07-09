@@ -1,12 +1,8 @@
-# Setup for AWS
+# AWSのためのセットアップ
 
-## Add an aws profile
+## AWSプロファイルを追加する
 
-Edit `~/.aws/credentials` as follows.
-
-### If AWS IAM Identity Center(AWS SSO) is not used
-
-Define just one entry.
+以下のように `~/.aws/credentials` 編集する
 
 ```
 # ...
@@ -16,89 +12,27 @@ aws_secret_access_key=xxxxx
 aws_session_token=xxxxx
 ```
 
-### If AWS IAM Identity Center(AWS SSO) is used.
-
-Define one for terraform and one for SSO separately.
-
-`~/.aws/config`
-
-```
-[profile ceer-sso]
-sso_start_url = https://xxxxx.awsapps.com/start
-sso_region = us-east-1
-sso_account_id = 1234567890
-sso_role_name = XxxxOwnerAccess
-region = us-east-1
-```
-
-`~/.aws/credentials`
-
-```
-# ...
-[ceer]
-aws_access_key_id=xxxxx
-aws_secret_access_key=xxxxx
-aws_session_token=xxxxx
-# ...
-# ...
-# ...
-[ceer-sso]
-aws_access_key_id=xxxxx
-aws_secret_access_key=xxxxx
-aws_session_token=xxxxx
-```
-
-## copy env.sh.default as env.sh, and edit it
+## `env.sh.default`を`env.sh`としてコピーし編集する
 
 ```shell
 $ cp env.sh.default env.sh
 ```
 
-Modify PREFIX, APPLICATION_NAME as appropriate.
-If you want to create a personal environment, change PREFIX.
+環境変数のPREFIX、APPLICATION_NAMEを適宜変更する。
+個人的な環境を作りたい場合は、PREFIXを変更してください。
 
-### If AWS IAM Identity Center(AWS SSO) is not used
+# terraform による AWS 環境の構築
 
-Should specify a profile name to `AWS_PROFILE`.
-
-```shell
-export AWS_PROFILE=ceer
-export AWS_REGION=us-east-1
-export AWS_ACCOUNT_ID=1234567890
-
-export PREFIX=om2eep1k
-export APPLICATION_NAME=ceer
-
-if [[ "$OUTPUT_ENV" == 1 ]]; then
-echo "--- Using Environments -----------------"
-echo "AWS_PROFILE      = $AWS_PROFILE"
-echo "AWS_REGION       = $AWS_REGION"
-echo "PREFIX           = $PREFIX"
-echo "APPLICATION_NAME = $APPLICATION_NAME"
-echo "----------------------------------------"
-fi
-```
-
-### If AWS IAM Identity Center(AWS SSO) is used
-
-Should specify a profile name for AWS SSO to `AWS_PROFILE`.
-
-```shell
-export AWS_PROFILE=ceer
-```
-
-# Building an AWS environment with terraform
-
-Create a new file `tools/terraform/${PREFIX}-${APPLICATION_NAME}-terraform.tfvars` with the following.
-Changes defined in variables.tf can be overridden in this tfvars file.
-You can create only the resources you need. For example, just set `ecr_enabled = true` if you only need ecr.
+tools/terraform/${PREFIX}/${APPLICATION_NAME}-terraform.tfvars`を以下の内容で新規作成する。
+variables.tfで定義した変更は、このtfvarsファイルで上書きすることができる。
+必要なリソースだけを作成することができます。例えば、ecrだけが必要なら`ecr_enabled = true`と設定すればよい。
 
 ```
-akka_persistence_enabled = true
-akka_persistence_journal_name      = "journal"
-akka_persistence_journal_gsi_name  = "jounral-aid-index"
-akka_persistence_snapshot_name     = "snapshot"
-akka_persistence_snapshot_gsi_name = "snapshot-aid-index"
+event_sourcing_enabled = true
+event_sourcing_journal_name      = "journal"
+event_sourcing_journal_gsi_name  = "jounral-aid-index"
+event_sourcing_snapshot_name     = "snapshot"
+event_sourcing_snapshot_gsi_name = "snapshot-aid-index"
 
 eks_enabled = true
 eks_version = "1.71"
@@ -111,17 +45,17 @@ ecr_enabled = true
 datadog-api-key = "xxxx"
 ```
 
-## Create a lock table
+## ロックテーブルの作成
 
-At first time only, Create a lock table for terraform on DynamoDB.
+初回のみ、DynamoDBにterraform用のロックテーブルを作成する。
 
 ```shell
 tools/terraform $ ./create-lock-table.sh
 ```
 
-## Create a s3 bucket for tfstate
+## tfstate用のs3バケットを作る
 
-At first time only, Create an s3 bucket to store tfstate.
+初回のみ、tfstateを保存するs3バケットを作成する。
 
 ```shell
 tools/terraform $ ./create-tf-bucket.sh
@@ -147,7 +81,7 @@ tools/terraform $ ./terraform-apply.sh
 
 ## Update kubeconfig
 
-Execute the following command to generate kubeconfig(`~/.kube/config`).
+以下のコマンドを実行してkubeconfig(`~/.kube/config`)を生成する。
 
 ```shell
 tools/terraform $ ./update-kubeconfig.sh
@@ -155,7 +89,7 @@ tools/terraform $ ./update-kubeconfig.sh
 
 FYI: https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
 
-Verify that the context has switched.
+コンテキストが切り替わったことを確認する。
 
 ```shell
 tools/terraform $ kubectl config get-contexts
@@ -164,9 +98,9 @@ CURRENT   NAME                                                             CLUST
           docker-desktop                                                   docker-desktop                                                   docker-desktop
 ```
 
-# Confirm kubernetes-dashboard
+# kubernetes-dashboardの確認
 
-## Port forward to kubernetes-dashboard
+## kubernetes-dashboardへのポートフォワード
 
 ```shell
 $ DASHBOARD_NS=kubernetes-dashboard
@@ -174,14 +108,14 @@ $ export POD_NAME=$(kubectl get pods -n $DASHBOARD_NS -l "app.kubernetes.io/name
 $ kubectl -n $DASHBOARD_NS port-forward $POD_NAME 8443:8443
 ```
 
-## Configuring Chrome
+## Chromeの設定変更
 
-1. Open `chrome://flags/#allow-insecure-localhost`
-2. `Allow invalid certificates for resources loaded from localhost.` is `Enable`
-3. Relaunch
-4. Open `https://localhost:8443`
+1. `chrome://flags/#allow-insecure-localhost` を開く
+2. `Allow invalid certificates for resources loaded from localhost.` を `Enable` にする
+3. Chromeを再起動する
+4. `https://localhost:8443` を開く
 
-## Get token
+## トークンを作成する
 
 ```shell
 $ kubectl -n kubernetes-dashboard create token kubernetes-dashboard

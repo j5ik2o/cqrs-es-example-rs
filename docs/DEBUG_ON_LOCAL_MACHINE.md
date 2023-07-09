@@ -1,32 +1,32 @@
-# Debug on Local Machine
+# ローカルマシンでデバッグ
 
-## Run the Docker Compose for DynamoDB Local & DynamoDB Admin
+## DynamoDB LocalとDynamoDB AdminのDocker Composeを実行する。
 
-Launch dynamodb-local & dynamodb-admin as docker-compose.
+docker-composeとしてdynamodb-localとdynamodb-adminを起動します。
 
 ```shell
-$ ./tools/scripts/docker-compose-up.sh -d
+./tools/scripts/docker-compose-up.sh -d
 ```
 
-## Debug by using IntelliJ IDEA
+## IntelliJ IDEAを使ってデバッグする。
 
-Create a configuration for all three and run it in IntelliJ IDEA. If you want to debug, run any one of the projects in
-debug.
+この3つの設定を作成し、IntelliJ IDEAで実行する。デバッグしたい場合は、プロジェクトのどれかを
+を実行する。
 
-## Operation verification
+## 動作確認
 
-### Check the applications
+### アプリケーションの動作確認
 
-Check the operation with the following commands.
+以下のコマンドで動作確認を行う。
 
 ```shell
 $ curl -s -X GET http://localhost:18080/hello
-Hello World!
+Hello World！
 ```
 
-Call API to check operation.
+APIを呼び出して動作を確認する。
 
 ```shell
-$ curl -v -X POST -H "Content-Type: application/json" -d "{ \"accountId\": \"01G41J1A2GVT5HE45AH7GP711P\" }" http://127.0.0.1:18080/threads
+$ curl -v -X POST -H "Content-Type: application/json" -d "{ {"accountId"： \"01G41J1A2GVT5HE45AH7GP711P\" }" http://127.0.0.1:18080/threads
 {"threadId":"01GBCN25M496HB4PK9EWQMH28J"}
 ```
