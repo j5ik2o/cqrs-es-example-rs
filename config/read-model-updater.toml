@@ -10,4 +10,4 @@ secret_access_key = "x"
 
 [rmu]
 stream_arn = "arn:aws:iam::000000000000:role/lambda-r1"
-max_item_size = 100
+max_item_count = 100
