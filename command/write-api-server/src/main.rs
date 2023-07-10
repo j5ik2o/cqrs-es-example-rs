@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
+use aws_config::ConfigLoader;
 use aws_sdk_dynamodb::config::{Credentials, Region};
 use aws_sdk_dynamodb::Client;
 use config::{Config, Environment};
@@ -44,7 +45,12 @@ struct AwsSettings {
 
 #[tokio::main]
 async fn main() {
-  tracing_subscriber::fmt().with_target(false).compact().init();
+  tracing_subscriber::fmt()
+    .with_max_level(tracing::Level::DEBUG)
+    .with_target(false)
+    .with_ansi(false)
+    .without_time()
+    .init();
 
   let app_config = load_app_config().unwrap();
   let aws_client = create_aws_client(&app_config.aws).await;
@@ -67,9 +73,10 @@ async fn main() {
 
 fn load_app_config() -> Result<AppSettings> {
   let config = Config::builder()
-    .add_source(config::File::with_name("config/write-api"))
-    .add_source(Environment::with_prefix("WRITE_API"))
+    .add_source(config::File::with_name("config/write-api").required(false))
+    .add_source(Environment::with_prefix("APP").try_parsing(true).separator("__"))
     .build()?;
+  tracing::info!("config = {:#?}", config);
   let app_config = config.try_deserialize()?;
   Ok(app_config)
 }
@@ -78,15 +85,20 @@ async fn create_aws_client(aws_settings: &AwsSettings) -> Client {
   let region_name = aws_settings.region_name.clone();
   let region = Region::new(region_name);
   let region_provider_chain = RegionProviderChain::default_provider().or_else(region);
+
   let mut config_loader = aws_config::from_env().region(region_provider_chain);
   if let Some(endpoint_url) = aws_settings.endpoint_url.clone() {
+    tracing::info!("endpoint_url = {}", endpoint_url);
     config_loader = config_loader.endpoint_url(endpoint_url);
   }
+
   match (
     aws_settings.access_key_id.clone(),
     aws_settings.secret_access_key.clone(),
   ) {
     (Some(access_key_id), Some(secret_access_key)) => {
+      tracing::info!("access_key_id = {}", access_key_id);
+      tracing::info!("secret_access_key = {}", secret_access_key);
       config_loader = config_loader.credentials_provider(Credentials::new(
         access_key_id,
         secret_access_key,
@@ -97,6 +109,7 @@ async fn create_aws_client(aws_settings: &AwsSettings) -> Client {
     }
     _ => {}
   }
+
   let config = config_loader.load().await;
   let client = Client::new(&config);
   client

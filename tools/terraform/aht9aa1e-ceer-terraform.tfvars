@@ -10,7 +10,7 @@ eks_auth_roles    = []
 eks_auth_users    = []
 eks_auth_accounts = []
 
-ecr_enabled = false
+ecr_enabled = true
 
 datadog_enabled = false
 datadog-api-key = "xxxx"

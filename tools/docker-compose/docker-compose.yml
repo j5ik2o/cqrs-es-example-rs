@@ -13,29 +13,33 @@ services:
       MYSQL_USER: cqrs-es-example-rs
       MYSQL_PASSWORD: cqrs-es-example-rs
       MYSQL_DATABASE: cqrs-es-example-rs
-  flyway:
-    image: flyway/flyway:9.2.1
-    command: -url=jdbc:mysql://mysql-local/cqrs-es-example-rs -user=root -password=passwd migrate -X
-    volumes:
-      - ../flyway/sql:/flyway/sql
-      - ../flyway/drivers:/flyway/drivers
-    depends_on:
-      mysql:
-        condition: service_healthy
+  #  flyway:
+  #    image: flyway/flyway:9.2.1
+  #    command: -url=jdbc:mysql://mysql-local/cqrs-es-example-rs -user=root -password=passwd migrate -X
+  #    volumes:
+  #      - ../flyway/sql:/flyway/sql
+  #      - ../flyway/drivers:/flyway/drivers
+  #    depends_on:
+  #      mysql:
+  #        condition: service_healthy
   localstack:
     image: localstack/localstack:latest
     hostname: localstack-local
     ports:
       - "4566:4566"
+      - "4571:4571"
+      - "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
     environment:
       DEBUG: 1
       LOCALSTACK_API_KEY: ${LOCALSTACK_API_KEY- }
+      PORT_WEB_UI: ${PORT_WEB_UI- }
       PARITY_AWS_ACCESS_KEY_ID: 1
       EAGER_SERVICE_LOADING: 1
       SERVICES: cloudwatch,dynamodb,dynamodbstreams,lambda
       HOSTNAME_EXTERNAL: localstack-local
       DEFAULT_REGION: ap-northeast-1
       DYNAMODB_SHARE_DB: 1
+      DYNAMODB_IN_MEMORY: 1
       #  LAMBDA_PREBUILD_IMAGES: 1
       # LAMBDA_EXECUTOR: docker
       LAMBDA_RUNTIME_EXECUTOR: docker

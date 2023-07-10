@@ -24,5 +24,6 @@ RUN CARGO_BUILD_INCREMENTAL=true cargo build -p ${NAME} --release --target $(cat
 
 FROM --platform=$TARGETPLATFORM alpine
 RUN apk --no-cache add ca-certificates
+RUN mkdir -p /config
 COPY --from=builder /home/rust/src/target/release/app /app
 CMD [ "/app" ]

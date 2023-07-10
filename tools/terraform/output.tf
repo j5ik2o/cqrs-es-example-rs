@@ -71,3 +71,14 @@ output "event_sourcing_snapshot_gsi_name" {
   value = module.event_sourcing.aws_dynamodb_table_snapshot_gsi_name
 }
 
+output "ecr_write_api_server_repository_url" {
+  value = module.ceer-ecr-write-api-server.aws_ecr_repository_url
+}
+
+output "ecr_read_model_updater_repository_url" {
+  value = module.ceer-ecr-read-model-updater.aws_ecr_repository_url
+}
+
+output "ecr_read_api_server_repository_url" {
+  value = module.ceer-ecr-read-api-server.aws_ecr_repository_url
+}

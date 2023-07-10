@@ -1,17 +1,29 @@
+# WIP
 version: '3.6'
 services:
   write-api-server-1:
-    image: cqrs-es-example-rs-write-api-server
+    image: j5ik2o/cqrs-es-example-rs-write-api-server:latest-arm64
     container_name: write-api-server-1
-    build:
-      context: ../../
-      dockerfile: command/write-api/Dockerfile
     ports:
       - 18080:8080
     environment:
       AWS_REGION: ap-northeast-1
+      RUST_BACKTRACE: full
+      APP__API__HOST: "0.0.0.0"
+      APP__API__PORT: 8080
+      APP__PERSISTENCE__JOURNAL_TABLE_NAME: journal
+      APP__PERSISTENCE__JOURNAL_AID_INDEX_NAME: journal-aid-index
+      APP__PERSISTENCE__SNAPSHOT_TABLE_NAME: snapshot
+      APP__PERSISTENCE__SNAPSHOT_AID_INDEX_NAME: snapshot-aid-index
+      APP__PERSISTENCE__JOURNAL_SHARD_COUNT: 64
+      APP__AWS__REGION_NAME: ${AWS_REGION}
+      APP__AWS__ENDPOINT_URL: http://localstack:4566
+      APP__AWS__ACCESS_KEY_ID: x
+      APP__AWS__SECRET_ACCESS_KEY: x
+    #volumes:
+    #  - ../../config:/config
     depends_on:
-      - dynamodb-local
+      - localstack
       - dynamodb-admin
       - dynamodb-setup
 #  read-api-server-1:
