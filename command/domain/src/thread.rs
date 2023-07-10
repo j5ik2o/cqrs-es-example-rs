@@ -3,17 +3,17 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
+use ulid_generator_rs::{ULID, ULIDError};
 use ulid_generator_rs::serde::ulid_as_uuid;
-use ulid_generator_rs::{ULIDError, ULID};
 
 use crate::aggregate::{Aggregate, AggregateId};
+use crate::ID_GENERATOR;
 use crate::thread::events::{
-  ThreadCreated, ThreadDeleted, ThreadEvent, ThreadMemberAdd, ThreadMemberRemoved, ThreadMessageDeleted,
-  ThreadMessagePosted, ThreadRenamed,
+    ThreadCreated, ThreadDeleted, ThreadEvent, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted,
+    ThreadMessagePosted, ThreadRenamed,
 };
 use crate::thread::member::{Member, MemberId, Members};
 use crate::user_account::UserAccountId;
-use crate::ID_GENERATOR;
 
 pub mod events;
 pub mod member;
@@ -261,13 +261,13 @@ impl Thread {
     }
     let member = Member::new(member_id, user_account_id, role);
     self.members.add_member(member.clone());
-    self.seq_nr_counter += 1;
-    Ok(ThreadEvent::ThreadMemberAdd(ThreadMemberAdd::new(
-      self.id.clone(),
-      self.seq_nr_counter,
-      member,
-      executor_id,
-    )))
+      self.seq_nr_counter += 1;
+      Ok(ThreadEvent::ThreadMemberAdd(ThreadMemberAdded::new(
+          self.id.clone(),
+          self.seq_nr_counter,
+          member,
+          executor_id,
+      )))
   }
 
   pub fn remove_member(&mut self, user_account_id: UserAccountId, executor_id: UserAccountId) -> Result<ThreadEvent> {

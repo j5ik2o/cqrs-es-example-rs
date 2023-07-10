@@ -3,10 +3,94 @@ use aws_lambda_events::dynamodb;
 use lambda_runtime::LambdaEvent;
 use serde_dynamo::AttributeValue;
 use serde_json::Value;
+use sqlx::{MySql, MySqlPool, Pool};
 
-use cqrs_es_example_domain::thread::events::ThreadEvent;
+use cqrs_es_example_domain::thread::events::{ThreadCreated, ThreadDeleted, ThreadEvent, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted, ThreadRenamed};
 
-pub async fn update_read_model(event: LambdaEvent<dynamodb::Event>) -> Result<()> {
+pub trait ThreadReadModelDao {
+    fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()>;
+    fn delete_thread(&self, thread_deleted: &ThreadDeleted) -> Result<()>;
+    fn update_thread_name(&self, thread_renamed: &ThreadRenamed) -> Result<()>;
+    fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()>;
+    fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()>;
+    fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()>;
+    fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()>;
+}
+
+pub struct MockThreadReadModelDao {}
+
+impl ThreadReadModelDao for MockThreadReadModelDao {
+    fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()> {
+        Ok(())
+    }
+
+    fn delete_thread(&self, thread_deleted: &ThreadDeleted) -> Result<()> {
+        Ok(())
+    }
+
+    fn update_thread_name(&self, thread_renamed: &ThreadRenamed) -> Result<()> {
+        Ok(())
+    }
+
+    fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()> {
+        Ok(())
+    }
+
+    fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
+        Ok(())
+    }
+
+    fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()> {
+        Ok(())
+    }
+
+    fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
+        Ok(())
+    }
+}
+
+pub struct ThreadReadModelDaoImpl {
+    pool: MySqlPool,
+}
+
+impl ThreadReadModelDaoImpl {
+    pub fn new(pool: MySqlPool) -> Self {
+        Self { pool }
+    }
+}
+
+impl ThreadReadModelDao for ThreadReadModelDaoImpl {
+    fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()> {
+        Ok(())
+    }
+
+    fn delete_thread(&self, thread_deleted: &ThreadDeleted) -> Result<()> {
+        Ok(())
+    }
+
+    fn update_thread_name(&self, thread_renamed: &ThreadRenamed) -> Result<()> {
+        Ok(())
+    }
+
+    fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()> {
+        Ok(())
+    }
+
+    fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
+        Ok(())
+    }
+
+    fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()> {
+        Ok(())
+    }
+
+    fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
+        Ok(())
+    }
+}
+
+
+pub async fn update_read_model<D: ThreadReadModelDao>(thread_read_model_dao: &D, event: LambdaEvent<dynamodb::Event>) {
     event.payload.records.iter().for_each(|record| {
         let attribute_values = record.change.new_image.clone().into_inner();
         let payload_str = match attribute_values.get("payload").unwrap() {
@@ -17,12 +101,27 @@ pub async fn update_read_model(event: LambdaEvent<dynamodb::Event>) -> Result<()
         match type_value_str {
             s if s.starts_with("Thread") => {
                 let ev = serde_json::from_str::<ThreadEvent>(&payload_str).unwrap();
-                println!("ev: {:?}", ev);
+                match &ev {
+                    ThreadEvent::ThreadCreated(body) =>
+                        thread_read_model_dao.insert_thread(body).unwrap(),
+                    ThreadEvent::ThreadDeleted(body) =>
+                        thread_read_model_dao.delete_thread(body).unwrap(),
+                    ThreadEvent::ThreadRenamed(body) =>
+                        thread_read_model_dao.update_thread_name(body).unwrap(),
+                    ThreadEvent::ThreadMemberAdd(body) =>
+                        thread_read_model_dao.insert_member(body).unwrap(),
+                    ThreadEvent::ThreadMemberRemoved(body) =>
+                        thread_read_model_dao.delete_member(body).unwrap(),
+                    ThreadEvent::ThreadMessagePosted(body) =>
+                        thread_read_model_dao.post_message(body).unwrap(),
+                    ThreadEvent::ThreadMessageDeleted(body) =>
+                        thread_read_model_dao.delete_message(body).unwrap(),
+                    _ => {}
+                }
             }
             _ => {}
         }
     });
-    Ok(())
 }
 
 fn get_type_string(payload_str: &String) -> String {
@@ -68,6 +167,6 @@ mod test {
         let context = Context::try_from(headers).unwrap();
         let le = LambdaEvent::new(parsed, context);
 
-        update_read_model(le).await.unwrap();
+        update_read_model(MockThreadReadModelDao, le).await.unwrap();
     }
 }

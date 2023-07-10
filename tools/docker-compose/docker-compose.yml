@@ -10,9 +10,9 @@ services:
       - 3306:3306
     environment:
       MYSQL_ROOT_PASSWORD: passwd
-      MYSQL_USER: cqrs-es-example-rs
-      MYSQL_PASSWORD: cqrs-es-example-rs
-      MYSQL_DATABASE: cqrs-es-example-rs
+      MYSQL_USER: ceer
+      MYSQL_PASSWORD: ceer
+      MYSQL_DATABASE: ceer
   #  flyway:
   #    image: flyway/flyway:9.2.1
   #    command: -url=jdbc:mysql://mysql-local/cqrs-es-example-rs -user=root -password=passwd migrate -X

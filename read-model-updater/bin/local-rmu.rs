@@ -12,6 +12,9 @@ use config::Environment;
 use http::{HeaderMap, HeaderValue};
 use lambda_runtime::{Context, LambdaEvent};
 use serde::Deserialize;
+use sqlx::{MySql, MySqlPool, Pool};
+
+use cqrs_es_example_read_model_updater::ThreadReadModelDaoImpl;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -24,13 +27,16 @@ async fn main() -> Result<()> {
 
     let app_settings = load_app_config().unwrap();
 
+    let pool = MySqlPool::connect(&app_settings.database.url).await?;
     let dynamodb_streams_client = create_aws_dynamodb_streams_client(&app_settings.aws).await;
     let _ = stream_events_driver(
         &dynamodb_streams_client,
+        pool,
         &app_settings.rmu.stream_arn,
         app_settings.rmu.max_item_count,
     )
         .await?;
+
     Ok(())
 }
 
@@ -74,9 +80,11 @@ fn convert_to(src: aws_sdk_dynamodbstreams::types::AttributeValue) -> serde_dyna
 
 async fn stream_events_driver(
     dynamodb_streams_client: &DynamoDBStreamsClient,
+    pool: Pool<MySql>,
     stream_arn: &str,
     max_item_count: usize,
 ) -> Result<()> {
+    let dao = ThreadReadModelDaoImpl::new(pool);
     let mut last_evaluated_shard_id: Option<String> = None;
     loop {
         tracing::info!("stream_arn = {:?}", stream_arn);
@@ -135,40 +143,7 @@ async fn stream_events_driver(
                     let keys = stream_record.keys().cloned().unwrap();
                     let key_item: serde_dynamo::Item = keys
                         .iter()
-                        .map(|(k, v)| {
-                            (
-                                k.clone(),
-                                match v {
-                                    // aws_sdk_dynamodbstreams::types::AttributeValue::B(b) => serde_dynamo::AttributeValue::B(b.into_inner()),
-                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Bool(b) => serde_dynamo::AttributeValue::Bool(*b),
-                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Bs(bs) => {
-                                    //     serde_dynamo::AttributeValue::Bs(bs.iter().map(|e| e.into_inner()).collect())
-                                    // }
-                                    // aws_sdk_dynamodbstreams::types::AttributeValue::L(l) => {
-                                    //     serde_dynamo::AttributeValue::L(l.iter().map(|v| v.clone()).collect())
-                                    // }
-                                    // aws_sdk_dynamodbstreams::types::AttributeValue::M(m) => {
-                                    //     serde_dynamo::AttributeValue::M(m.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
-                                    // }
-                                    aws_sdk_dynamodbstreams::types::AttributeValue::N(n) => {
-                                        serde_dynamo::AttributeValue::N(n.clone())
-                                    }
-                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Ns(ns) => {
-                                    //     serde_dynamo::AttributeValue::NS(ns.clone())
-                                    // }
-                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Null(b) => {
-                                    //     serde_dynamo::AttributeValue::Null(*b)
-                                    // }
-                                    aws_sdk_dynamodbstreams::types::AttributeValue::S(s) => {
-                                        serde_dynamo::AttributeValue::S(s.clone())
-                                    }
-                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Ss(ss) => {
-                                    //     serde_dynamo::AttributeValue::Ss(ss.clone())
-                                    // }
-                                    _ => panic!("not supported"),
-                                },
-                            )
-                        })
+                        .map(|(k, v)| (k.clone(), convert_to(v.clone())))
                         .collect::<HashMap<String, serde_dynamo::AttributeValue>>()
                         .into();
 
@@ -209,7 +184,7 @@ async fn stream_events_driver(
                     let context = Context::try_from(headers).unwrap();
                     let lambda_event = LambdaEvent::new(event, context);
 
-                    cqrs_es_example_read_model_updater::update_read_model(lambda_event).await?
+                    cqrs_es_example_read_model_updater::update_read_model(&dao, lambda_event).await;
                 }
                 processed_record_count += records.len();
                 shard_iterator_opt = get_records_output
@@ -271,6 +246,11 @@ struct AwsSettings {
 }
 
 #[derive(Deserialize, Debug)]
+struct DatabaseSettings {
+    url: String,
+}
+
+#[derive(Deserialize, Debug)]
 struct RmuSettings {
     stream_arn: String,
     max_item_count: usize,
@@ -280,6 +260,7 @@ struct RmuSettings {
 struct AppSettings {
     aws: AwsSettings,
     rmu: RmuSettings,
+    database: DatabaseSettings,
 }
 
 fn load_app_config() -> Result<AppSettings> {

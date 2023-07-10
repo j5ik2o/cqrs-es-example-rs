@@ -1,24 +1,24 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use ulid_generator_rs::{ULIDGenerator, ULID};
+use ulid_generator_rs::{ULID, ULIDGenerator};
 
-use crate::thread::member::{Member, Members};
-use crate::thread::{Message, MessageId, ThreadId, ThreadName};
-use crate::user_account::UserAccountId;
 use crate::{Event, ID_GENERATOR};
+use crate::thread::{Message, MessageId, ThreadId, ThreadName};
+use crate::thread::member::{Member, Members};
+use crate::user_account::UserAccountId;
 
 pub type ThreadEventId = ULID;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ThreadEvent {
-  ThreadCreated(ThreadCreated),
-  ThreadDeleted(ThreadDeleted),
-  ThreadRenamed(ThreadRenamed),
-  ThreadMessagePosted(ThreadMessagePosted),
-  ThreadMessageDeleted(ThreadMessageDeleted),
-  ThreadMemberAdd(ThreadMemberAdd),
-  ThreadMemberRemoved(ThreadMemberRemoved),
+    ThreadCreated(ThreadCreated),
+    ThreadDeleted(ThreadDeleted),
+    ThreadRenamed(ThreadRenamed),
+    ThreadMessagePosted(ThreadMessagePosted),
+    ThreadMessageDeleted(ThreadMessageDeleted),
+    ThreadMemberAdd(ThreadMemberAdded),
+    ThreadMemberRemoved(ThreadMemberRemoved),
 }
 
 impl Event for ThreadEvent {
@@ -83,12 +83,12 @@ impl Event for ThreadEvent {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThreadCreated {
-  pub(crate) id: ThreadEventId,
-  pub(crate) aggregate_id: ThreadId,
-  pub(crate) seq_nr: usize,
-  pub(crate) name: ThreadName,
-  pub(crate) members: Members,
-  pub(crate) occurred_at: DateTime<Utc>,
+    pub id: ThreadEventId,
+    pub aggregate_id: ThreadId,
+    pub seq_nr: usize,
+    pub name: ThreadName,
+    pub members: Members,
+    pub occurred_at: DateTime<Utc>,
 }
 
 impl ThreadCreated {
@@ -206,26 +206,26 @@ impl ThreadMessageDeleted {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ThreadMemberAdd {
-  pub(crate) id: ThreadEventId,
-  pub(crate) aggregate_id: ThreadId,
-  pub(crate) seq_nr: usize,
-  pub(crate) member: Member,
-  pub(crate) executor_id: UserAccountId,
-  pub(crate) occurred_at: DateTime<Utc>,
+pub struct ThreadMemberAdded {
+    pub(crate) id: ThreadEventId,
+    pub(crate) aggregate_id: ThreadId,
+    pub(crate) seq_nr: usize,
+    pub(crate) member: Member,
+    pub(crate) executor_id: UserAccountId,
+    pub(crate) occurred_at: DateTime<Utc>,
 }
 
-impl ThreadMemberAdd {
-  pub fn new(aggregate_id: ThreadId, seq_nr: usize, member: Member, executor_id: UserAccountId) -> Self {
-    let id = ID_GENERATOR.lock().unwrap().generate().unwrap();
-    let occurred_at = Utc::now();
-    Self {
-      id,
-      aggregate_id,
-      seq_nr,
-      member,
-      executor_id,
-      occurred_at,
+impl ThreadMemberAdded {
+    pub fn new(aggregate_id: ThreadId, seq_nr: usize, member: Member, executor_id: UserAccountId) -> Self {
+        let id = ID_GENERATOR.lock().unwrap().generate().unwrap();
+        let occurred_at = Utc::now();
+        Self {
+            id,
+            aggregate_id,
+            seq_nr,
+            member,
+            executor_id,
+            occurred_at,
     }
   }
 }
@@ -262,13 +262,13 @@ impl ThreadMemberRemoved {
 
 #[cfg(test)]
 mod tests {
-  use crate::thread::events::{ThreadCreated, ThreadEvent};
-  use crate::thread::member::Members;
-  use crate::thread::{ThreadId, ThreadName};
-  use crate::user_account::UserAccountId;
-  use crate::Event;
+    use crate::Event;
+    use crate::thread::{ThreadId, ThreadName};
+    use crate::thread::events::{ThreadCreated, ThreadEvent};
+    use crate::thread::member::Members;
+    use crate::user_account::UserAccountId;
 
-  #[test]
+    #[test]
   fn test_to_json() {
     let thread_id = ThreadId::new();
     let thread_name = ThreadName::new("test".to_string());
