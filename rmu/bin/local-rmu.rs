@@ -2,10 +2,10 @@ use std::error::Error;
 
 use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
+use aws_sdk_dynamodbstreams::{Client as DynamoDBStreamsClient, Config};
 use aws_sdk_dynamodbstreams::config::{Credentials, Region};
 use aws_sdk_dynamodbstreams::operation::describe_stream::builders::DescribeStreamFluentBuilder;
 use aws_sdk_dynamodbstreams::types::ShardIteratorType;
-use aws_sdk_dynamodbstreams::{Client as DynamoDBStreamsClient, Config};
 use config::Environment;
 use serde::{Deserialize, Serialize};
 
@@ -68,10 +68,10 @@ async fn stream_events_driver(
                     .await?;
                 let records = get_records_output.records().unwrap();
                 for record in records {
-                    tracing::info!(
-                        "dynamodb stream event = {:?}",
-                        record.dynamodb.clone().unwrap()
-                    );
+                    let event = record.dynamodb.clone().unwrap();
+                    tracing::info!("dynamodb stream event = {:?}", event);
+                    cqrs_es_example_rmu::update_read_model()
+                    update_
                 }
                 processed_record_count += records.len();
                 shard_iterator_opt = get_records_output

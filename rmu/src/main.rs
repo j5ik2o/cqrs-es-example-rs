@@ -9,12 +9,15 @@ use aws_sdk_dynamodbstreams::types::ShardIteratorType;
 use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde::Deserialize;
+use serde_dynamo::AttributeValue;
 use tracing::instrument::WithSubscriber;
+
+use cqrs_es_example_domain::thread::events::ThreadEvent;
 
 //
 // static INIT: Once = Once::new();
 //
-// async fn update_read_model(event: LambdaEvent<dynamodb::Event>) -> Result<(), Error> {
+// pub async fn update_read_model(event: LambdaEvent<dynamodb::Event>) -> Result<(), Error> {
 //     info!("event: {:?}", event);
 //     event.payload.records.iter().for_each(|record| {
 //         record.change.new_image.iter().for_each(|(key, value)| {
@@ -22,7 +25,7 @@ use tracing::instrument::WithSubscriber;
 //                 AttributeValue::S(v) => v.clone(),
 //                 _ => panic!("unexpected type"),
 //             };
-//             let parsed: Value = serde_json::from_str(&str).unwrap();
+//             let parsed = serde_json::from_str(&str).unwrap();
 //             let type_value = &parsed["type"];
 //             let type_value_str = type_value.as_str().unwrap();
 //             match type_value_str {

@@ -34,3 +34,5 @@ cqrs-es-example-domain = { version = "0.0.1", path = "../command/domain" }
 # sqlx = { version = "0.6.3", default-features = false, features = ["mysql", "runtime-tokio-native-tls"] }
 
 # openssl = { version = "0.10.55", features = ["vendored"] }
+
+http = "*"
