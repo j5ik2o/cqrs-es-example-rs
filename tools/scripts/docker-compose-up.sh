@@ -5,7 +5,9 @@ set -eu
 # shellcheck disable=SC2046
 cd $(dirname "$0") || exit
 
-F_OPTION="-f ../docker-compose/docker-compose-api.yml"
+F_OPTION=""
+# apiのほうは未実装のなので実装後に、以下を後に有効化する。
+# F_OPTION="-f ../docker-compose/docker-compose-api.yml"
 
 while getopts d OPT; do
   # shellcheck disable=SC2220
