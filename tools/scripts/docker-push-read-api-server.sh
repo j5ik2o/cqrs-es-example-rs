@@ -15,7 +15,7 @@ OUTPUT_ENV=1
 
 source ../../env.sh
 
-LOCAL_REPO_NAME=j5ik2o/cqrs-es-example-rs-write-api-server
+LOCAL_REPO_NAME=j5ik2o/cqrs-es-example-rs-read-api-server
 TAG=latest
 LOCAL_URI=${LOCAL_REPO_NAME}:${TAG}
 LOCAL_AMD64_URI=${LOCAL_REPO_NAME}:${TAG}-amd64
@@ -23,7 +23,7 @@ LOCAL_ARM64_URI=${LOCAL_REPO_NAME}:${TAG}-arm64
 
 pushd ../../
 
-ECR_BASE_URL=$(./tools/terraform/terraform-output.sh -raw ecr_write_api_server_repository_url)
+ECR_BASE_URL=$(./tools/terraform/terraform-output.sh -raw ecr_read_api_server_repository_url)
 
 popd
 
