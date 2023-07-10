@@ -1,5 +1,5 @@
 [package]
-name = "cqrs-es-example-read-api"
+name = "cqrs-es-example-read-api-server"
 version = "0.0.1"
 edition = "2021"
 

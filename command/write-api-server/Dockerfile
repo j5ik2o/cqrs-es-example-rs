@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.5
 FROM --platform=$BUILDPLATFORM messense/rust-musl-cross:${TARGETARCH}-musl as builder
 
-ARG NAME=cqrs-es-example-write-api
+ARG NAME=cqrs-es-example-write-api-server
 ARG TARGETARCH
 
 RUN if [ $TARGETARCH = "amd64" ]; then \

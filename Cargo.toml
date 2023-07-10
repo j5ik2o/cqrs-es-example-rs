@@ -5,10 +5,10 @@ members = [
     "command/domain",
     "command/processor",
     "command/interface-adaptor",
-    "command/write-api",
+    "command/write-api-server",
     "rmu",
     "query/processor",
     "query/interface-adaptor",
-    "query/read-api",
+    "query/read-api-server",
     # "query/refinery"
 ]
