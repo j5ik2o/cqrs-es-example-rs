@@ -55,19 +55,19 @@ output "eks_aws_auth_config_map" {
   value = module.eks.aws_auth_configmap_yaml
 }
 
-output "akka_persistence_journal_table_name" {
+output "event_sourcing_journal_table_name" {
   value = module.event_sourcing.aws_dynamodb_table_journal_table_name
 }
 
-output "akka_persistence_journal_gsi_name" {
+output "event_sourcing_journal_gsi_name" {
   value = module.event_sourcing.aws_dynamodb_table_journal_gsi_name
 }
 
-output "akka_persistence_snapshot_table_name" {
+output "event_sourcing_snapshot_table_name" {
   value = module.event_sourcing.aws_dynamodb_table_snapshot_table_name
 }
 
-output "akka_persistence_snapshot_gsi_name" {
+output "event_sourcing_snapshot_gsi_name" {
   value = module.event_sourcing.aws_dynamodb_table_snapshot_gsi_name
 }
 
