@@ -1,21 +1,22 @@
 use std::collections::HashMap;
+
 use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
 use aws_lambda_events::dynamodb;
 use aws_lambda_events::dynamodb::{StreamRecord, StreamViewType};
+use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use aws_sdk_dynamodbstreams::config::{Credentials, Region};
-use aws_sdk_dynamodbstreams::types::{ShardIteratorType};
-use aws_sdk_dynamodbstreams::{Client as DynamoDBStreamsClient};
+use aws_sdk_dynamodbstreams::types::ShardIteratorType;
 use chrono::Utc;
 use config::Environment;
 use http::{HeaderMap, HeaderValue};
 use lambda_runtime::{Context, LambdaEvent};
-use serde::{Deserialize};
+use serde::Deserialize;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
+        .with_max_level(tracing::Level::INFO)
         .with_target(false)
         .with_ansi(false)
         .without_time()
@@ -29,8 +30,46 @@ async fn main() -> Result<()> {
         &app_settings.rmu.stream_arn,
         app_settings.rmu.max_item_count,
     )
-    .await?;
+        .await?;
     Ok(())
+}
+
+fn convert_to(src: aws_sdk_dynamodbstreams::types::AttributeValue) -> serde_dynamo::AttributeValue {
+    match src {
+        aws_sdk_dynamodbstreams::types::AttributeValue::B(b) => {
+            serde_dynamo::AttributeValue::B(b.into_inner())
+        }
+        aws_sdk_dynamodbstreams::types::AttributeValue::Bool(b) => {
+            serde_dynamo::AttributeValue::Bool(b)
+        }
+        aws_sdk_dynamodbstreams::types::AttributeValue::Bs(bs) => {
+            serde_dynamo::AttributeValue::Bs(bs.iter().map(|e| e.clone().into_inner()).collect())
+        }
+        aws_sdk_dynamodbstreams::types::AttributeValue::L(l) => {
+            serde_dynamo::AttributeValue::L(l.iter().map(|v| convert_to(v.clone())).collect())
+        }
+        aws_sdk_dynamodbstreams::types::AttributeValue::M(m) => serde_dynamo::AttributeValue::M(
+            m.iter()
+                .map(|(k, v)| (k.clone(), convert_to(v.clone())))
+                .collect(),
+        ),
+        aws_sdk_dynamodbstreams::types::AttributeValue::N(n) => {
+            serde_dynamo::AttributeValue::N(n.clone())
+        }
+        aws_sdk_dynamodbstreams::types::AttributeValue::Ns(ns) => {
+            serde_dynamo::AttributeValue::Ns(ns.clone())
+        }
+        aws_sdk_dynamodbstreams::types::AttributeValue::Null(b) => {
+            serde_dynamo::AttributeValue::Null(b)
+        }
+        aws_sdk_dynamodbstreams::types::AttributeValue::S(s) => {
+            serde_dynamo::AttributeValue::S(s.clone())
+        }
+        aws_sdk_dynamodbstreams::types::AttributeValue::Ss(ss) => {
+            serde_dynamo::AttributeValue::Ss(ss.clone())
+        }
+        _ => panic!("not supported"),
+    }
 }
 
 async fn stream_events_driver(
@@ -38,13 +77,12 @@ async fn stream_events_driver(
     stream_arn: &str,
     max_item_count: usize,
 ) -> Result<()> {
-    let last_evaluated_shard_id: Option<String> = None;
-
-    tracing::info!("stream_arn = {:?}", stream_arn);
-    tracing::info!("last_evaluated_shard_id = {:?}", last_evaluated_shard_id);
-    tracing::info!("max_item_count = {:?}", max_item_count);
-
+    let mut last_evaluated_shard_id: Option<String> = None;
     loop {
+        tracing::info!("stream_arn = {:?}", stream_arn);
+        tracing::info!("last_evaluated_shard_id = {:?}", last_evaluated_shard_id);
+        tracing::info!("max_item_count = {:?}", max_item_count);
+
         let mut builder = dynamodb_streams_client
             .describe_stream()
             .stream_arn(stream_arn);
@@ -75,7 +113,7 @@ async fn stream_events_driver(
                 .map(|s| s.to_owned());
             let mut processed_record_count = 0usize;
             while shard_iterator_opt.is_some() && processed_record_count < max_item_count {
-                tracing::info!("shard_iterator = {:?}", shard_iterator_opt.clone().unwrap());
+                // tracing::info!("shard_iterator = {:?}", shard_iterator_opt.clone().unwrap());
                 let get_records_output = dynamodb_streams_client
                     .get_records()
                     .shard_iterator(shard_iterator_opt.unwrap())
@@ -84,74 +122,55 @@ async fn stream_events_driver(
                 let records = get_records_output.records().unwrap();
                 for record in records {
                     let stream_record = record.dynamodb.clone().unwrap();
-                    tracing::info!("dynamodb stream event = {:?}", stream_record);
+                    // tracing::info!("dynamodb stream event = {:?}", stream_record);
 
-                    let new_image = stream_record.new_image()
-                        .unwrap().iter().map(|(k, v)| {
-                            (k.clone(), match v {
-                                // aws_sdk_dynamodbstreams::types::AttributeValue::B(b) => serde_dynamo::AttributeValue::B(b.into_inner()),
-                                // aws_sdk_dynamodbstreams::types::AttributeValue::Bool(b) => serde_dynamo::AttributeValue::Bool(*b),
-                                // aws_sdk_dynamodbstreams::types::AttributeValue::Bs(bs) => {
-                                //     serde_dynamo::AttributeValue::Bs(bs.iter().map(|e| e.into_inner()).collect())
-                                // }
-                                // aws_sdk_dynamodbstreams::types::AttributeValue::L(l) => {
-                                //     serde_dynamo::AttributeValue::L(l.iter().map(|v| v.clone()).collect())
-                                // }
-                                // aws_sdk_dynamodbstreams::types::AttributeValue::M(m) => {
-                                //     serde_dynamo::AttributeValue::M(m.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
-                                // }
-                                aws_sdk_dynamodbstreams::types::AttributeValue::N(n) => {
-                                    serde_dynamo::AttributeValue::N(n.clone())
-                                }
-                                // aws_sdk_dynamodbstreams::types::AttributeValue::Ns(ns) => {
-                                //     serde_dynamo::AttributeValue::NS(ns.clone())
-                                // }
-                                // aws_sdk_dynamodbstreams::types::AttributeValue::Null(b) => {
-                                //     serde_dynamo::AttributeValue::Null(*b)
-                                // }
-                                aws_sdk_dynamodbstreams::types::AttributeValue::S(s) => {
-                                    serde_dynamo::AttributeValue::S(s.clone())
-                                }
-                                // aws_sdk_dynamodbstreams::types::AttributeValue::Ss(ss) => {
-                                //     serde_dynamo::AttributeValue::Ss(ss.clone())
-                                // }
-                                _ => panic!("not supported"),
-                            })
-                    }).collect::<HashMap<String,serde_dynamo::AttributeValue>>();
+                    let new_image = stream_record
+                        .new_image()
+                        .unwrap()
+                        .iter()
+                        .map(|(k, v)| (k.clone(), convert_to(v.clone())))
+                        .collect::<HashMap<String, serde_dynamo::AttributeValue>>();
 
                     let item: serde_dynamo::Item = new_image.clone().into();
                     let keys = stream_record.keys().cloned().unwrap();
-                    let key_item: serde_dynamo::Item = keys.iter().map(|(k, v)| {
-                        (k.clone(), match v {
-                            // aws_sdk_dynamodbstreams::types::AttributeValue::B(b) => serde_dynamo::AttributeValue::B(b.into_inner()),
-                            // aws_sdk_dynamodbstreams::types::AttributeValue::Bool(b) => serde_dynamo::AttributeValue::Bool(*b),
-                            // aws_sdk_dynamodbstreams::types::AttributeValue::Bs(bs) => {
-                            //     serde_dynamo::AttributeValue::Bs(bs.iter().map(|e| e.into_inner()).collect())
-                            // }
-                            // aws_sdk_dynamodbstreams::types::AttributeValue::L(l) => {
-                            //     serde_dynamo::AttributeValue::L(l.iter().map(|v| v.clone()).collect())
-                            // }
-                            // aws_sdk_dynamodbstreams::types::AttributeValue::M(m) => {
-                            //     serde_dynamo::AttributeValue::M(m.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
-                            // }
-                            aws_sdk_dynamodbstreams::types::AttributeValue::N(n) => {
-                                serde_dynamo::AttributeValue::N(n.clone())
-                            }
-                            // aws_sdk_dynamodbstreams::types::AttributeValue::Ns(ns) => {
-                            //     serde_dynamo::AttributeValue::NS(ns.clone())
-                            // }
-                            // aws_sdk_dynamodbstreams::types::AttributeValue::Null(b) => {
-                            //     serde_dynamo::AttributeValue::Null(*b)
-                            // }
-                            aws_sdk_dynamodbstreams::types::AttributeValue::S(s) => {
-                                serde_dynamo::AttributeValue::S(s.clone())
-                            }
-                            // aws_sdk_dynamodbstreams::types::AttributeValue::Ss(ss) => {
-                            //     serde_dynamo::AttributeValue::Ss(ss.clone())
-                            // }
-                            _ => panic!("not supported"),
+                    let key_item: serde_dynamo::Item = keys
+                        .iter()
+                        .map(|(k, v)| {
+                            (
+                                k.clone(),
+                                match v {
+                                    // aws_sdk_dynamodbstreams::types::AttributeValue::B(b) => serde_dynamo::AttributeValue::B(b.into_inner()),
+                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Bool(b) => serde_dynamo::AttributeValue::Bool(*b),
+                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Bs(bs) => {
+                                    //     serde_dynamo::AttributeValue::Bs(bs.iter().map(|e| e.into_inner()).collect())
+                                    // }
+                                    // aws_sdk_dynamodbstreams::types::AttributeValue::L(l) => {
+                                    //     serde_dynamo::AttributeValue::L(l.iter().map(|v| v.clone()).collect())
+                                    // }
+                                    // aws_sdk_dynamodbstreams::types::AttributeValue::M(m) => {
+                                    //     serde_dynamo::AttributeValue::M(m.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+                                    // }
+                                    aws_sdk_dynamodbstreams::types::AttributeValue::N(n) => {
+                                        serde_dynamo::AttributeValue::N(n.clone())
+                                    }
+                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Ns(ns) => {
+                                    //     serde_dynamo::AttributeValue::NS(ns.clone())
+                                    // }
+                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Null(b) => {
+                                    //     serde_dynamo::AttributeValue::Null(*b)
+                                    // }
+                                    aws_sdk_dynamodbstreams::types::AttributeValue::S(s) => {
+                                        serde_dynamo::AttributeValue::S(s.clone())
+                                    }
+                                    // aws_sdk_dynamodbstreams::types::AttributeValue::Ss(ss) => {
+                                    //     serde_dynamo::AttributeValue::Ss(ss.clone())
+                                    // }
+                                    _ => panic!("not supported"),
+                                },
+                            )
                         })
-                    }).collect::<HashMap<String,serde_dynamo::AttributeValue>>().into();
+                        .collect::<HashMap<String, serde_dynamo::AttributeValue>>()
+                        .into();
 
                     let event = dynamodb::Event {
                         records: vec![
@@ -208,6 +227,8 @@ async fn stream_events_driver(
         if next_last_evaluated_shard_id.is_none() {
             break;
         }
+
+        last_evaluated_shard_id = next_last_evaluated_shard_id;
     }
 
     Ok(())
