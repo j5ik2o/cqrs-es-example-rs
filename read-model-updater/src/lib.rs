@@ -1,11 +1,8 @@
-use std::collections::HashMap;
-
 use anyhow::Result;
 use aws_lambda_events::dynamodb;
 use lambda_runtime::LambdaEvent;
 use serde_dynamo::AttributeValue;
 use serde_json::Value;
-use tracing::info;
 
 use cqrs_es_example_domain::thread::events::ThreadEvent;
 
@@ -49,7 +46,7 @@ mod test {
     #[tokio::test]
     async fn example_dynamodb_event() {
         let data = include_bytes!("../fixtures/example-dynamodb-event.json");
-        let mut parsed: Event = serde_json::from_slice(data).unwrap();
+        let parsed: Event = serde_json::from_slice(data).unwrap();
         let output: String = serde_json::to_string(&parsed).unwrap();
         // println!("output: {}", output);
         let reparsed: Event = serde_json::from_slice(output.as_bytes()).unwrap();

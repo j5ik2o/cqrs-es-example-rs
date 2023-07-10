@@ -266,6 +266,7 @@ mod tests {
   use crate::thread::member::Members;
   use crate::thread::{ThreadId, ThreadName};
   use crate::user_account::UserAccountId;
+  use crate::Event;
 
   #[test]
   fn test_to_json() {
@@ -279,6 +280,7 @@ mod tests {
       Members::new(admin_user_account_id),
     ));
     let json = serde_json::to_string(&event);
+    let occurred_at = event.occurred_at().timestamp_millis();
     println!("{}", json.unwrap());
   }
 }

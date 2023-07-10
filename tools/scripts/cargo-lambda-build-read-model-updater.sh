@@ -6,6 +6,6 @@ cd $(dirname "$0") || exit
 
 pushd ../../
 
-cargo lambda build -p cqrs-es-example-rmu --release --output-format zip
+cargo lambda build -p cqrs-es-example-read-model-updater --release --output-format zip
 
 popd

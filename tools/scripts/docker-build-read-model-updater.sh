@@ -13,7 +13,7 @@ pushd ../../
 
 docker build \
   --platform=linux/amd64 \
-  -t j5ik2o/cqrs-es-example-rs-rmu:latest \
-  -f rmu/Dockerfile .
+  -t j5ik2o/cqrs-es-example-rs-read-model-updater:latest \
+  -f read-model-updater/Dockerfile .
 
 popd

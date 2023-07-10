@@ -13,7 +13,7 @@ ARN=$(sh ./get-journal-stream-arn.sh)
 pushd ../../
 
 $AWS lambda create-event-source-mapping \
-  --function-name rmu \
+  --function-name read-model-updater \
   --batch-size 100 \
   --maximum-batching-window-in-seconds 30 \
   --starting-position LATEST \

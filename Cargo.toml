@@ -6,7 +6,7 @@ members = [
     "command/processor",
     "command/interface-adaptor",
     "command/write-api-server",
-    "rmu",
+    "read-model-updater",
     "query/processor",
     "query/interface-adaptor",
     "query/read-api-server",

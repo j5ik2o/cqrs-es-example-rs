@@ -6,7 +6,7 @@
 #  handler       = "bootstrap"
 #  runtime       = "provided.al2"
 #
-#  source_path = "${path.module}/../../target/lambda/cqrs-es-example-rmu/bootstrap.zip"
+#  source_path = "${path.module}/../../target/lambda/cqrs-es-example-read-model-updater/bootstrap.zip"
 #
 #  event_source_mapping = {
 #    dynamodb = {

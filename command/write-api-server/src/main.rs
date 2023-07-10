@@ -3,7 +3,6 @@ use std::str::FromStr;
 
 use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
-use aws_config::ConfigLoader;
 use aws_sdk_dynamodb::config::{Credentials, Region};
 use aws_sdk_dynamodb::Client;
 use config::{Config, Environment};
@@ -73,7 +72,7 @@ async fn main() {
 
 fn load_app_config() -> Result<AppSettings> {
   let config = Config::builder()
-    .add_source(config::File::with_name("config/write-api").required(false))
+    .add_source(config::File::with_name("config/write-api-server").required(false))
     .add_source(Environment::with_prefix("APP").try_parsing(true).separator("__"))
     .build()?;
   tracing::info!("config = {:#?}", config);
@@ -114,22 +113,3 @@ async fn create_aws_client(aws_settings: &AwsSettings) -> Client {
   let client = Client::new(&config);
   client
 }
-
-// use axum::routing::get;
-// use axum::Router;
-// use std::net::SocketAddr;
-//
-// async fn hello_write_api() -> &'static str {
-//   "Hello, Write API!"
-// }
-//
-// #[tokio::main]
-// async fn main() {
-//   tracing_subscriber::fmt().with_target(false).compact().init();
-//   let socket_addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-//   tracing::info!("Server listening on {}", socket_addr);
-//   axum::Server::bind(&socket_addr)
-//     .serve(Router::new().route("/", get(hello_write_api)).into_make_service())
-//     .await
-//     .unwrap();
-// }

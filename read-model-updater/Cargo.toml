@@ -1,5 +1,5 @@
 [package]
-name = "cqrs-es-example-rmu"
+name = "cqrs-es-example-read-model-updater"
 version = "0.0.1"
 edition = "2021"
 

@@ -11,7 +11,7 @@ AWS='aws --endpoint-url=http://localhost:4566 --region ap-northeast-1'
 pushd ../../
 
 $AWS lambda create-function \
-  --function-name rmu \
+  --function-name read-model-updater \
   --handler bootstrap \
   --package-type Image \
   --code ImageUri=j5ik2o/cqrs-es-example-rs-rmu:latest \
