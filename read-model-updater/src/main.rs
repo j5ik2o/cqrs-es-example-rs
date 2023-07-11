@@ -71,21 +71,21 @@ use cqrs_es_example_domain::thread::events::ThreadEvent;
 // }
 
 async fn my_handler(event: LambdaEvent<dynamodb::Event>) -> Result<(), Error> {
-    tracing::info!("test = {:?}", event);
-    Ok(())
+  tracing::info!("test = {:?}", event);
+  Ok(())
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .with_ansi(false)
-        .without_time()
-        .init();
-    tracing::info!("main: start");
-    let func = service_fn(my_handler);
-    lambda_runtime::run(func).await?;
-    tracing::info!("main: finished");
-    Ok(())
+  tracing_subscriber::fmt()
+    .with_max_level(tracing::Level::DEBUG)
+    .with_target(false)
+    .with_ansi(false)
+    .without_time()
+    .init();
+  tracing::info!("main: start");
+  let func = service_fn(my_handler);
+  lambda_runtime::run(func).await?;
+  tracing::info!("main: finished");
+  Ok(())
 }
