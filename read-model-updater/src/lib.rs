@@ -132,6 +132,8 @@ mod test {
         let context = Context::try_from(headers).unwrap();
         let le = LambdaEvent::new(parsed, context);
 
-        update_read_model(MockThreadReadModelDao, le).await.unwrap();
+        let dao = MockThreadReadModelDao;
+
+        update_read_model(&dao, le).await;
     }
 }

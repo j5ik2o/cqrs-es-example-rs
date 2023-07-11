@@ -13,10 +13,8 @@ pub trait ThreadReadModelDao {
     fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()>;
 }
 
-#[cfg(test)]
-pub struct MockThreadReadModelDao {}
+pub struct MockThreadReadModelDao;
 
-#[cfg(test)]
 impl ThreadReadModelDao for MockThreadReadModelDao {
     fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()> {
         Ok(())
