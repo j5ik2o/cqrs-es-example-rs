@@ -4,9 +4,9 @@ use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 use ulid_generator_rs::ULID;
 
+use crate::ID_GENERATOR;
 use crate::thread::MemberRole;
 use crate::user_account::UserAccountId;
-use crate::ID_GENERATOR;
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct MemberId(ULID);
@@ -54,13 +54,13 @@ pub struct Members {
 }
 
 impl Members {
-  pub fn new(administor_id: UserAccountId) -> Self {
-    let mut my_self = Self {
-      members_ids_by_user_account_id: BTreeMap::new(),
-      members: BTreeMap::new(),
-    };
-    my_self.add_member(Member::new(MemberId::new(), administor_id, MemberRole::Admin));
-    my_self
+  pub fn new(administrator_id: UserAccountId) -> Self {
+      let mut my_self = Self {
+          members_ids_by_user_account_id: BTreeMap::new(),
+          members: BTreeMap::new(),
+      };
+      my_self.add_member(Member::new(MemberId::new(), administrator_id, MemberRole::Admin));
+      my_self
   }
 
   pub fn is_administrator(&self, user_account_id: &UserAccountId) -> bool {
