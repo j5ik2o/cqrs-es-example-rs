@@ -18,28 +18,28 @@ use cqrs_es_example_read_model_updater::thread_read_model_dao::ThreadReadModelDa
 
 #[tokio::main]
 async fn main() -> Result<()> {
-  tracing_subscriber::fmt()
-    .with_max_level(tracing::Level::INFO)
-    .with_target(false)
-    .with_ansi(false)
-    .without_time()
-    .init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .with_target(false)
+        .with_ansi(false)
+        .without_time()
+        .init();
 
-  let app_settings = load_app_config().unwrap();
+    let app_settings = load_app_config().unwrap();
 
     let pool = MySqlPool::connect(&app_settings.database.url).await?;
     let dynamodb_client = create_aws_client(&app_settings.aws).await;
     let dynamodb_streams_client = create_aws_dynamodb_streams_client(&app_settings.aws).await;
-  let _ = stream_events_driver(
-      &dynamodb_client,
-      &dynamodb_streams_client,
-      pool,
-      &app_settings.stream.journal_table_name,
-      app_settings.stream.max_item_count,
-  )
-  .await?;
+    let _ = stream_events_driver(
+        &dynamodb_client,
+        &dynamodb_streams_client,
+        pool,
+        &app_settings.stream.journal_table_name,
+        app_settings.stream.max_item_count,
+    )
+        .await?;
 
-  Ok(())
+    Ok(())
 }
 
 fn convert_to(src: aws_sdk_dynamodbstreams::types::AttributeValue) -> serde_dynamo::AttributeValue {
@@ -71,7 +71,11 @@ async fn stream_events_driver(
     journal_table_name: &str,
     max_item_count: usize,
 ) -> Result<()> {
-    let describe_table_out = dynamodb_client.describe_table().table_name(journal_table_name).send().await?;
+    let describe_table_out = dynamodb_client
+        .describe_table()
+        .table_name(journal_table_name)
+        .send()
+        .await?;
     let stream_arn = describe_table_out.table().unwrap().latest_stream_arn().unwrap();
 
     let dao = ThreadReadModelDaoImpl::new(pool);
@@ -83,16 +87,16 @@ async fn stream_events_driver(
 
         let mut builder = dynamodb_streams_client.describe_stream().stream_arn(stream_arn);
         if let Some(shard_id) = last_evaluated_shard_id.clone() {
-      builder = builder.exclusive_start_shard_id(shard_id);
-    }
-    let describe_stream_output = builder.send().await?;
-    let shards = describe_stream_output
-      .stream_description()
-      .unwrap()
-      .shards()
-      .unwrap()
-      .iter()
-      .cloned()
+            builder = builder.exclusive_start_shard_id(shard_id);
+        }
+        let describe_stream_output = builder.send().await?;
+        let shards = describe_stream_output
+            .stream_description()
+            .unwrap()
+            .shards()
+            .unwrap()
+            .iter()
+            .cloned()
       .collect::<Vec<_>>();
 
     for shard in shards {
@@ -168,15 +172,15 @@ async fn stream_events_driver(
           cqrs_es_example_read_model_updater::update_read_model(&dao, lambda_event).await;
         }
         processed_record_count += records.len();
-        shard_iterator_opt = get_records_output.next_shard_iterator().map(|s| s.to_owned())
+          shard_iterator_opt = get_records_output.next_shard_iterator().map(|s| s.to_owned())
       }
     }
 
-    let next_last_evaluated_shard_id = describe_stream_output
-      .stream_description()
-      .unwrap()
-      .last_evaluated_shard_id()
-        .map(|s| s.to_owned());
+        let next_last_evaluated_shard_id = describe_stream_output
+            .stream_description()
+            .unwrap()
+            .last_evaluated_shard_id()
+            .map(|s| s.to_owned());
 
         if next_last_evaluated_shard_id.is_none() {
             break;
@@ -230,16 +234,16 @@ async fn create_aws_dynamodb_streams_client(aws_settings: &AwsSettings) -> Dynam
     if let Some(endpoint_url) = aws_settings.endpoint_url.clone() {
         config_loader = config_loader.endpoint_url(endpoint_url);
     }
-  match (
-    aws_settings.access_key_id.clone(),
-    aws_settings.secret_access_key.clone(),
-  ) {
-    (Some(access_key_id), Some(secret_access_key)) => {
-      config_loader = config_loader.credentials_provider(Credentials::new(
-        access_key_id,
-        secret_access_key,
-        None,
-        None,
+    match (
+        aws_settings.access_key_id.clone(),
+        aws_settings.secret_access_key.clone(),
+    ) {
+        (Some(access_key_id), Some(secret_access_key)) => {
+            config_loader = config_loader.credentials_provider(Credentials::new(
+                access_key_id,
+                secret_access_key,
+                None,
+                None,
         "default",
       ));
     }

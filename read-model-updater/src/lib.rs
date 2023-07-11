@@ -31,7 +31,6 @@ pub async fn update_read_model<D: ThreadReadModelDao>(thread_read_model_dao: &D,
                     ThreadEvent::ThreadMemberRemoved(body) => thread_read_model_dao.delete_member(body).await.unwrap(),
                     ThreadEvent::ThreadMessagePosted(body) => thread_read_model_dao.post_message(body).await.unwrap(),
                     ThreadEvent::ThreadMessageDeleted(body) => thread_read_model_dao.delete_message(body).await.unwrap(),
-                    _ => {}
                 }
             }
             _ => {}

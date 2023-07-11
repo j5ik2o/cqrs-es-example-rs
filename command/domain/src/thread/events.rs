@@ -1,11 +1,11 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use ulid_generator_rs::{ULIDGenerator, ULID};
+use ulid_generator_rs::{ULID, ULIDGenerator};
 
-use crate::thread::member::{Member, Members};
-use crate::thread::{Message, MessageId, ThreadId, ThreadName};
-use crate::user_account::UserAccountId;
 use crate::{Event, ID_GENERATOR};
+use crate::thread::{Message, MessageId, ThreadId, ThreadName};
+use crate::thread::member::{Member, Members};
+use crate::user_account::UserAccountId;
 
 pub type ThreadEventId = ULID;
 
@@ -108,11 +108,11 @@ impl ThreadCreated {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThreadDeleted {
-  pub(crate) id: ThreadEventId,
-  pub(crate) aggregate_id: ThreadId,
-  pub(crate) seq_nr: usize,
-  pub(crate) executor_id: UserAccountId,
-  pub(crate) occurred_at: DateTime<Utc>,
+    pub id: ThreadEventId,
+    pub aggregate_id: ThreadId,
+    pub seq_nr: usize,
+    pub executor_id: UserAccountId,
+    pub occurred_at: DateTime<Utc>,
 }
 
 impl ThreadDeleted {
@@ -131,12 +131,12 @@ impl ThreadDeleted {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThreadRenamed {
-  pub(crate) id: ThreadEventId,
-  pub(crate) aggregate_id: ThreadId,
-  pub(crate) seq_nr: usize,
-  pub(crate) name: ThreadName,
-  pub(crate) executor_id: UserAccountId,
-  pub(crate) occurred_at: DateTime<Utc>,
+    pub id: ThreadEventId,
+    pub aggregate_id: ThreadId,
+    pub seq_nr: usize,
+    pub name: ThreadName,
+    pub executor_id: UserAccountId,
+    pub occurred_at: DateTime<Utc>,
 }
 
 impl ThreadRenamed {
@@ -262,13 +262,13 @@ impl ThreadMemberRemoved {
 
 #[cfg(test)]
 mod tests {
-  use crate::thread::events::{ThreadCreated, ThreadEvent};
-  use crate::thread::member::Members;
-  use crate::thread::{ThreadId, ThreadName};
-  use crate::user_account::UserAccountId;
-  use crate::Event;
+    use crate::Event;
+    use crate::thread::{ThreadId, ThreadName};
+    use crate::thread::events::{ThreadCreated, ThreadEvent};
+    use crate::thread::member::Members;
+    use crate::user_account::UserAccountId;
 
-  #[test]
+    #[test]
   fn test_to_json() {
     let thread_id = ThreadId::new();
     let thread_name = ThreadName::new("test".to_string());

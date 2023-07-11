@@ -1,6 +1,6 @@
 {
   "db": "MySQL",
-  "8817beb8112642b504ebedb10be263a4daebf0e18b29594685340cadc2c423e5": {
+  "09374def50354aeb3b437eb9cd753e76d09c6278a25c2596bdda876f4eb6c03a": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -8,6 +8,26 @@
         "Right": 4
       }
     },
-    "query": "\n            INSERT INTO threads (id, name, owner_id, created_at)\n            VALUES (?, ?, ?, ?)\n            "
+    "query": "INSERT INTO threads (id, name, owner_id, created_at) VALUES (?, ?, ?, ?)"
+  },
+  "0992fcd48da276469abcfd83fd6e34d25632b996f5e4ef773ab1f80b25acadb4": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM threads WHERE id = ?"
+  },
+  "2bd185465186622ab281563057c8dcf9af5eb7a3a424501f538331299d301f7d": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "UPDATE threads SET name = ? WHERE id = ?"
   }
 }
