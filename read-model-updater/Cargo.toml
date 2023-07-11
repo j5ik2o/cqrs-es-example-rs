@@ -33,7 +33,9 @@ serde_dynamo = "4.2.3"
 config = "0.13.1"
 cqrs-es-example-domain = { version = "0.0.1", path = "../command/domain" }
 sqlx = { version = "0.6.3", default-features = false, features = ["macros", "mysql", "chrono", "runtime-tokio-native-tls"] }
-
+refinery-core = "0.8"
+refinery = { version = "0.8", features = ["rusqlite", "mysql"] }
 # openssl = { version = "0.10.55", features = ["vendored"] }
 
 http = "*"
+# mysql = "23.0.0"

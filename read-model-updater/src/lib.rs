@@ -1,3 +1,5 @@
+extern crate serde;
+
 use anyhow::Result;
 use aws_lambda_events::dynamodb;
 use config::Environment;
@@ -5,10 +7,9 @@ use lambda_runtime::LambdaEvent;
 use serde::Deserialize;
 use serde_dynamo::AttributeValue;
 use serde_json::Value;
-use sqlx::{MySql, MySqlPool, Pool};
 use tokio::runtime::Runtime;
 
-use cqrs_es_example_domain::thread::events::{ThreadCreated, ThreadDeleted, ThreadEvent, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted, ThreadRenamed};
+use cqrs_es_example_domain::thread::events::ThreadEvent;
 
 use crate::thread_read_model_dao::ThreadReadModelDao;
 
@@ -102,7 +103,6 @@ pub fn load_app_config() -> Result<AppSettings> {
 #[allow(deprecated)]
 mod test {
     use aws_lambda_events::dynamodb::Event;
-    use chrono::{TimeZone, Utc};
     use http::{HeaderMap, HeaderValue};
     use lambda_runtime::Context;
     use serde_json;

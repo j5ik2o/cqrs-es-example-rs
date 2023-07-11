@@ -100,3 +100,43 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
     }
 }
 
+#[cfg(test)]
+#[allow(deprecated)]
+mod tests {
+    use refinery_core::mysql;
+    use sqlx::MySqlPool;
+
+    use cqrs_es_example_domain::thread::{ThreadId, ThreadName};
+    use cqrs_es_example_domain::thread::events::ThreadCreated;
+    use cqrs_es_example_domain::thread::member::Members;
+    use cqrs_es_example_domain::user_account::UserAccountId;
+
+    use crate::thread_read_model_dao::{ThreadReadModelDao, ThreadReadModelDaoImpl};
+
+    mod embedded {
+        use refinery::embed_migrations;
+
+        embed_migrations!("../tools/rdb-migration/migrations");
+    }
+
+    fn refinery_migrate() {
+        let opts = mysql::Opts::from_url("mysql://ceer:ceer@localhost:3306/ceer").unwrap();
+        let pool = mysql::Pool::new(opts).unwrap();
+        let mut conn = pool.get_conn().unwrap();
+        let report = embedded::migrations::runner().run(&mut conn).unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_insert_thread() {
+        refinery_migrate();
+        let pool = MySqlPool::connect("mysql://ceer:ceer@localhost:3306/ceer").await.unwrap();
+        let dao = ThreadReadModelDaoImpl::new(pool);
+        let aggregate_id = ThreadId::new();
+        let seq_nr = 1;
+        let name = ThreadName::new("test".to_string());
+        let admin_id = UserAccountId::new();
+        let members = Members::new(admin_id);
+        let body = ThreadCreated::new(aggregate_id, seq_nr, name, members);
+        let _ = dao.insert_thread(&body).await;
+    }
+}
