@@ -13,7 +13,10 @@ use crate::thread_read_model_dao::ThreadReadModelDao;
 
 pub mod thread_read_model_dao;
 
-pub async fn update_read_model<D: ThreadReadModelDao>(thread_read_model_dao: &D, event: LambdaEvent<dynamodb::Event>) {
+pub async fn update_read_model<D: ThreadReadModelDao>(
+    thread_read_model_dao: &D,
+    event: LambdaEvent<dynamodb::Event>,
+) {
     let runtime = Runtime::new().unwrap();
     event.payload.records.iter().for_each(|record| {
         let attribute_values = record.change.new_image.clone().into_inner();
@@ -27,20 +30,28 @@ pub async fn update_read_model<D: ThreadReadModelDao>(thread_read_model_dao: &D,
                 let ev = serde_json::from_str::<ThreadEvent>(&payload_str).unwrap();
                 runtime.block_on(async {
                     match &ev {
-                        ThreadEvent::ThreadCreated(body) =>
-                            thread_read_model_dao.insert_thread(body).await.unwrap(),
-                        ThreadEvent::ThreadDeleted(body) =>
-                            thread_read_model_dao.delete_thread(body).await.unwrap(),
-                        ThreadEvent::ThreadRenamed(body) =>
-                            thread_read_model_dao.update_thread_name(body).await.unwrap(),
-                        ThreadEvent::ThreadMemberAdd(body) =>
-                            thread_read_model_dao.insert_member(body).await.unwrap(),
-                        ThreadEvent::ThreadMemberRemoved(body) =>
-                            thread_read_model_dao.delete_member(body).await.unwrap(),
-                        ThreadEvent::ThreadMessagePosted(body) =>
-                            thread_read_model_dao.post_message(body).await.unwrap(),
-                        ThreadEvent::ThreadMessageDeleted(body) =>
-                            thread_read_model_dao.delete_message(body).await.unwrap(),
+                        ThreadEvent::ThreadCreated(body) => {
+                            thread_read_model_dao.insert_thread(body).await.unwrap()
+                        }
+                        ThreadEvent::ThreadDeleted(body) => {
+                            thread_read_model_dao.delete_thread(body).await.unwrap()
+                        }
+                        ThreadEvent::ThreadRenamed(body) => thread_read_model_dao
+                            .update_thread_name(body)
+                            .await
+                            .unwrap(),
+                        ThreadEvent::ThreadMemberAdd(body) => {
+                            thread_read_model_dao.insert_member(body).await.unwrap()
+                        }
+                        ThreadEvent::ThreadMemberRemoved(body) => {
+                            thread_read_model_dao.delete_member(body).await.unwrap()
+                        }
+                        ThreadEvent::ThreadMessagePosted(body) => {
+                            thread_read_model_dao.post_message(body).await.unwrap()
+                        }
+                        ThreadEvent::ThreadMessageDeleted(body) => {
+                            thread_read_model_dao.delete_message(body).await.unwrap()
+                        }
                         _ => {}
                     }
                 });
@@ -95,7 +106,6 @@ pub fn load_app_config() -> Result<AppSettings> {
     let app_config = config.try_deserialize()?;
     Ok(app_config)
 }
-
 
 #[cfg(test)]
 #[allow(deprecated)]

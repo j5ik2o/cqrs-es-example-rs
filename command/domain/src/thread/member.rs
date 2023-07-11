@@ -4,9 +4,9 @@ use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 use ulid_generator_rs::ULID;
 
-use crate::ID_GENERATOR;
 use crate::thread::MemberRole;
 use crate::user_account::UserAccountId;
+use crate::ID_GENERATOR;
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct MemberId(ULID);
@@ -54,28 +54,33 @@ pub struct Members {
 }
 
 impl Members {
-    pub fn new(administrator_id: UserAccountId) -> Self {
-        let mut my_self = Self {
-            members_ids_by_user_account_id: BTreeMap::new(),
-            members: BTreeMap::new(),
-        };
-        my_self.add_member(Member::new(MemberId::new(), administrator_id, MemberRole::Admin));
-        my_self
-    }
+  pub fn new(administrator_id: UserAccountId) -> Self {
+    let mut my_self = Self {
+      members_ids_by_user_account_id: BTreeMap::new(),
+      members: BTreeMap::new(),
+    };
+    my_self.add_member(Member::new(MemberId::new(), administrator_id, MemberRole::Admin));
+    my_self
+  }
 
-    pub fn administrator_id(&self) -> &Member {
-        self.members.iter().find(|(_, member)| member.role == MemberRole::Admin).unwrap().1
-    }
+  pub fn administrator_id(&self) -> &Member {
+    self
+      .members
+      .iter()
+      .find(|(_, member)| member.role == MemberRole::Admin)
+      .unwrap()
+      .1
+  }
 
-    pub fn is_administrator(&self, user_account_id: &UserAccountId) -> bool {
-        self.is_role(user_account_id, &[MemberRole::Admin])
-    }
+  pub fn is_administrator(&self, user_account_id: &UserAccountId) -> bool {
+    self.is_role(user_account_id, &[MemberRole::Admin])
+  }
 
-    pub fn is_member(&self, user_account_id: &UserAccountId) -> bool {
-        self.is_role(user_account_id, &[MemberRole::Member, MemberRole::Admin])
-    }
+  pub fn is_member(&self, user_account_id: &UserAccountId) -> bool {
+    self.is_role(user_account_id, &[MemberRole::Member, MemberRole::Admin])
+  }
 
-    pub fn is_role(&self, user_account_id: &UserAccountId, roles: &[MemberRole]) -> bool {
+  pub fn is_role(&self, user_account_id: &UserAccountId, roles: &[MemberRole]) -> bool {
     if let Some(member_id) = self.members_ids_by_user_account_id.get(&user_account_id.to_string()) {
       if let Some(member) = self.members.get(&member_id.to_string()) {
         return roles.contains(&member.role);

@@ -1,7 +1,10 @@
 use anyhow::Result;
 use sqlx::MySqlPool;
 
-use cqrs_es_example_domain::thread::events::{ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted, ThreadRenamed};
+use cqrs_es_example_domain::thread::events::{
+    ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted,
+    ThreadMessagePosted, ThreadRenamed,
+};
 
 #[async_trait::async_trait]
 pub trait ThreadReadModelDao {
@@ -47,7 +50,6 @@ impl ThreadReadModelDao for MockThreadReadModelDao {
     }
 }
 
-
 pub struct ThreadReadModelDaoImpl {
     pool: MySqlPool,
 }
@@ -63,7 +65,11 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
     async fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()> {
         let id = thread_created.id.to_string();
         let name = thread_created.name.to_string();
-        let administrator_id = thread_created.members.administrator_id().user_account_id.to_string();
+        let administrator_id = thread_created
+            .members
+            .administrator_id()
+            .user_account_id
+            .to_string();
         let created_at = thread_created.occurred_at;
 
         sqlx::query!(
@@ -71,8 +77,13 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
             INSERT INTO threads (id, name, owner_id, created_at)
             VALUES (?, ?, ?, ?)
             "#,
-            id, name, administrator_id, created_at
-        ).execute(&self.pool).await?;
+            id,
+            name,
+            administrator_id,
+            created_at
+        )
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
@@ -105,18 +116,18 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
-    use std::{env, thread};
     use std::future::Future;
+    use std::{env, thread};
 
     use refinery_core::mysql;
     use sqlx::MySqlPool;
-    use testcontainers::{clients, Container};
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
+    use testcontainers::{clients, Container};
 
-    use cqrs_es_example_domain::thread::{ThreadId, ThreadName};
     use cqrs_es_example_domain::thread::events::ThreadCreated;
     use cqrs_es_example_domain::thread::member::Members;
+    use cqrs_es_example_domain::thread::{ThreadId, ThreadName};
     use cqrs_es_example_domain::user_account::UserAccountId;
 
     use crate::thread_read_model_dao::{ThreadReadModelDao, ThreadReadModelDaoImpl};

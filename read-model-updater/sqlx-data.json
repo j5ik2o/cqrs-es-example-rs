@@ -1,0 +1,13 @@
+{
+  "db": "MySQL",
+  "8817beb8112642b504ebedb10be263a4daebf0e18b29594685340cadc2c423e5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 4
+      }
+    },
+    "query": "\n            INSERT INTO threads (id, name, owner_id, created_at)\n            VALUES (?, ?, ?, ?)\n            "
+  }
+}

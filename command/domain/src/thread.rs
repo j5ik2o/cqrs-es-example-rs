@@ -3,17 +3,17 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use ulid_generator_rs::{ULID, ULIDError};
 use ulid_generator_rs::serde::ulid_as_uuid;
+use ulid_generator_rs::{ULIDError, ULID};
 
 use crate::aggregate::{Aggregate, AggregateId};
-use crate::ID_GENERATOR;
 use crate::thread::events::{
-    ThreadCreated, ThreadDeleted, ThreadEvent, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted,
-    ThreadMessagePosted, ThreadRenamed,
+  ThreadCreated, ThreadDeleted, ThreadEvent, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted,
+  ThreadMessagePosted, ThreadRenamed,
 };
 use crate::thread::member::{Member, MemberId, Members};
 use crate::user_account::UserAccountId;
+use crate::ID_GENERATOR;
 
 pub mod events;
 pub mod member;
@@ -58,26 +58,26 @@ impl Display for ThreadId {
 pub struct ThreadName(String);
 
 impl ThreadName {
-    pub fn new(name: String) -> Self {
-        Self(name)
-    }
+  pub fn new(name: String) -> Self {
+    Self(name)
+  }
 }
 
 impl Display for ThreadName {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.0)
+  }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MessageId {
-    #[serde(with = "ulid_as_uuid")]
-    value: ULID,
+  #[serde(with = "ulid_as_uuid")]
+  value: ULID,
 }
 
 impl MessageId {
-    pub fn new() -> Self {
-        let value = ID_GENERATOR.lock().unwrap().generate().unwrap();
+  pub fn new() -> Self {
+    let value = ID_GENERATOR.lock().unwrap().generate().unwrap();
     Self { value }
   }
 }
@@ -267,13 +267,13 @@ impl Thread {
     }
     let member = Member::new(member_id, user_account_id, role);
     self.members.add_member(member.clone());
-      self.seq_nr_counter += 1;
-      Ok(ThreadEvent::ThreadMemberAdd(ThreadMemberAdded::new(
-          self.id.clone(),
-          self.seq_nr_counter,
-          member,
-          executor_id,
-      )))
+    self.seq_nr_counter += 1;
+    Ok(ThreadEvent::ThreadMemberAdd(ThreadMemberAdded::new(
+      self.id.clone(),
+      self.seq_nr_counter,
+      member,
+      executor_id,
+    )))
   }
 
   pub fn remove_member(&mut self, user_account_id: UserAccountId, executor_id: UserAccountId) -> Result<ThreadEvent> {

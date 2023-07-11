@@ -4,9 +4,9 @@ use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
 use aws_lambda_events::dynamodb;
 use aws_lambda_events::dynamodb::{StreamRecord, StreamViewType};
-use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use aws_sdk_dynamodbstreams::config::{Credentials, Region};
 use aws_sdk_dynamodbstreams::types::ShardIteratorType;
+use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use chrono::Utc;
 use config::Environment;
 use http::{HeaderMap, HeaderValue};
@@ -14,8 +14,8 @@ use lambda_runtime::{Context, LambdaEvent};
 use serde::Deserialize;
 use sqlx::{MySql, MySqlPool, Pool};
 
-use cqrs_es_example_read_model_updater::{AwsSettings, load_app_config};
 use cqrs_es_example_read_model_updater::thread_read_model_dao::ThreadReadModelDaoImpl;
+use cqrs_es_example_read_model_updater::{load_app_config, AwsSettings};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -36,7 +36,7 @@ async fn main() -> Result<()> {
         &app_settings.rmu.stream_arn,
         app_settings.rmu.max_item_count,
     )
-        .await?;
+    .await?;
 
     Ok(())
 }
@@ -237,4 +237,3 @@ async fn create_aws_dynamodb_streams_client(aws_settings: &AwsSettings) -> Dynam
     let client = DynamoDBStreamsClient::new(&config);
     client
 }
-
