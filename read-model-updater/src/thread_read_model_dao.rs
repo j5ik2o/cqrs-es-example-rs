@@ -103,8 +103,13 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
+    use std::future::Future;
+
     use refinery_core::mysql;
     use sqlx::MySqlPool;
+    use testcontainers::{clients, Container};
+    use testcontainers::core::WaitFor;
+    use testcontainers::images::generic::GenericImage;
 
     use cqrs_es_example_domain::thread::{ThreadId, ThreadName};
     use cqrs_es_example_domain::thread::events::ThreadCreated;
@@ -119,8 +124,9 @@ mod tests {
         embed_migrations!("../tools/rdb-migration/migrations");
     }
 
-    fn refinery_migrate() {
-        let opts = mysql::Opts::from_url("mysql://ceer:ceer@localhost:3306/ceer").unwrap();
+    fn refinery_migrate(port: u16) {
+        let opts = mysql::Opts::from_url(&format!("mysql://ceer:ceer@127.0.0.1:{}/ceer", port)).unwrap();
+        println!("opts: {:?}", opts);
         let pool = mysql::Pool::new(opts).unwrap();
         let mut conn = pool.get_conn().unwrap();
         let report = embedded::migrations::runner().run(&mut conn).unwrap();
@@ -128,8 +134,23 @@ mod tests {
 
     #[tokio::test]
     async fn test_insert_thread() {
-        refinery_migrate();
-        let pool = MySqlPool::connect("mysql://ceer:ceer@localhost:3306/ceer").await.unwrap();
+        let docker = clients::Cli::default();
+        let image = GenericImage::new("mysql", "8.0")
+            .with_exposed_port(3306)
+            .with_wait_for(WaitFor::seconds(5))
+            .with_env_var("MYSQL_ROOT_PASSWORD", "password")
+            .with_env_var("MYSQL_DATABASE", "ceer")
+            .with_env_var("MYSQL_USER", "ceer")
+            .with_env_var("MYSQL_PASSWORD", "ceer");
+        // .with_entrypoint("--character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --ngram_token_size=2");
+
+        let mysql_node: Container<GenericImage> = docker.run(image);
+        let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+        println!("port: {}", mysql_port);
+        refinery_migrate(port);
+
+        let pool = MySqlPool::connect(&format!("mysql://ceer:ceer@localhost:{}/ceer", port)).await.unwrap();
         let dao = ThreadReadModelDaoImpl::new(pool);
         let aggregate_id = ThreadId::new();
         let seq_nr = 1;

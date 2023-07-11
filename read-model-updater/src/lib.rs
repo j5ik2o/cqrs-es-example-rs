@@ -1,5 +1,3 @@
-extern crate serde;
-
 use anyhow::Result;
 use aws_lambda_events::dynamodb;
 use config::Environment;

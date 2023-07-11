@@ -38,4 +38,7 @@ refinery = { version = "0.8", features = ["rusqlite", "mysql"] }
 # openssl = { version = "0.10.55", features = ["vendored"] }
 
 http = "*"
-# mysql = "23.0.0"
+
+[dev-dependencies]
+testcontainers = "0.14.0"
+mime = "0.3.16"
