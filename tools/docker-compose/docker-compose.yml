@@ -13,15 +13,18 @@ services:
       MYSQL_USER: ceer
       MYSQL_PASSWORD: ceer
       MYSQL_DATABASE: ceer
-  #  flyway:
-  #    image: flyway/flyway:9.2.1
-  #    command: -url=jdbc:mysql://mysql-local/cqrs-es-example-rs -user=root -password=passwd migrate -X
-  #    volumes:
-  #      - ../flyway/sql:/flyway/sql
-  #      - ../flyway/drivers:/flyway/drivers
-  #    depends_on:
-  #      mysql:
-  #        condition: service_healthy
+  refinery:
+    image: ghcr.io/rust-db/refinery:main
+    command: migrate -e DATABASE_URL -p /app/migrations
+    environment:
+      RUST_LOG: debug
+      RUST_BACKTRACE: 1
+      DATABASE_URL: mysql://ceer:ceer@mysql-local:3306/ceer
+    volumes:
+      - ../rdb-migration/migrations:/app/migrations
+    depends_on:
+      mysql:
+        condition: service_healthy
   localstack:
     image: localstack/localstack:latest
     hostname: localstack-local

@@ -121,3 +121,9 @@ ceer-root $ minikube version
 minikube version: v1.30.1
 commit: 08896fd1dc362c097c925146c4a0d0dac715ace0
 ```
+
+### sqlx-cli
+
+```shell
+$ cargo install sqlx-cli
+```

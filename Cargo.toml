@@ -10,5 +10,4 @@ members = [
     "query/processor",
     "query/interface-adaptor",
     "query/read-api-server",
-    # "query/refinery"
 ]
