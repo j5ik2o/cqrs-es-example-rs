@@ -3,6 +3,7 @@
 CREATE TABLE `threads`
 (
     `id`         varchar(64) NOT NULL,
+    `name`       varchar(64) NOT NULL,
     `owner_id`   varchar(64) NOT NULL,
     `created_at` datetime    NOT NULL,
     PRIMARY KEY (`id`)
@@ -11,10 +12,11 @@ CREATE TABLE `threads`
 
 CREATE TABLE `members`
 (
+    `id`         varchar(64) NOT NULL,
     `thread_id`  varchar(64) NOT NULL,
     `account_id` varchar(64) NOT NULL,
     `created_at` datetime    NOT NULL,
-    PRIMARY KEY (`thread_id`, `account_id`),
+    PRIMARY KEY (`id`),
     FOREIGN KEY (`thread_id`) REFERENCES threads (`id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
