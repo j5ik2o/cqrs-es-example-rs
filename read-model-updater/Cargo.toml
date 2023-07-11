@@ -17,6 +17,7 @@ chrono = { version = "0.4.*", features = ["serde"] }
 downcast-rs = "1.2.0"
 once_cell = "1.18.0"
 aws-config = "0.55.1"
+aws-sdk-dynamodb = { version = "0.28.0" }
 aws-sdk-dynamodbstreams = "0.28.0"
 async-trait = "0.1.71"
 
@@ -33,13 +34,13 @@ serde_dynamo = "4.2.3"
 config = "0.13.1"
 cqrs-es-example-domain = { version = "0.0.1", path = "../command/domain" }
 sqlx = { version = "0.6.3", default-features = false, features = ["offline", "macros", "mysql", "chrono", "runtime-tokio-native-tls"] }
-refinery-core = "0.8"
-refinery = { version = "0.8", features = ["rusqlite", "mysql"] }
-# openssl = { version = "0.10.55", features = ["vendored"] }
+openssl = { version = "0.10.55", features = ["vendored"] }
 
 http = "*"
 
 [dev-dependencies]
 testcontainers = "0.14.0"
+refinery-core = "0.8"
+refinery = { version = "0.8", features = ["mysql"] }
 mime = "0.3.16"
 env_logger = "0.10.0"

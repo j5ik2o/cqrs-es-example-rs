@@ -4,18 +4,17 @@ use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
 use aws_lambda_events::dynamodb;
 use aws_lambda_events::dynamodb::{StreamRecord, StreamViewType};
+use aws_sdk_dynamodb::Client as DynamoDBClient;
+use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use aws_sdk_dynamodbstreams::config::{Credentials, Region};
 use aws_sdk_dynamodbstreams::types::ShardIteratorType;
-use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use chrono::Utc;
-use config::Environment;
 use http::{HeaderMap, HeaderValue};
 use lambda_runtime::{Context, LambdaEvent};
-use serde::Deserialize;
 use sqlx::{MySql, MySqlPool, Pool};
 
+use cqrs_es_example_read_model_updater::{AwsSettings, load_app_config};
 use cqrs_es_example_read_model_updater::thread_read_model_dao::ThreadReadModelDaoImpl;
-use cqrs_es_example_read_model_updater::{load_app_config, AwsSettings};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -28,13 +27,15 @@ async fn main() -> Result<()> {
 
   let app_settings = load_app_config().unwrap();
 
-  let pool = MySqlPool::connect(&app_settings.database.url).await?;
-  let dynamodb_streams_client = create_aws_dynamodb_streams_client(&app_settings.aws).await;
+    let pool = MySqlPool::connect(&app_settings.database.url).await?;
+    let dynamodb_client = create_aws_client(&app_settings.aws).await;
+    let dynamodb_streams_client = create_aws_dynamodb_streams_client(&app_settings.aws).await;
   let _ = stream_events_driver(
-    &dynamodb_streams_client,
-    pool,
-    &app_settings.rmu.stream_arn,
-    app_settings.rmu.max_item_count,
+      &dynamodb_client,
+      &dynamodb_streams_client,
+      pool,
+      &app_settings.stream.journal_table_name,
+      app_settings.stream.max_item_count,
   )
   .await?;
 
@@ -64,20 +65,24 @@ fn convert_to(src: aws_sdk_dynamodbstreams::types::AttributeValue) -> serde_dyna
 }
 
 async fn stream_events_driver(
-  dynamodb_streams_client: &DynamoDBStreamsClient,
-  pool: Pool<MySql>,
-  stream_arn: &str,
-  max_item_count: usize,
+    dynamodb_client: &DynamoDBClient,
+    dynamodb_streams_client: &DynamoDBStreamsClient,
+    pool: Pool<MySql>,
+    journal_table_name: &str,
+    max_item_count: usize,
 ) -> Result<()> {
-  let dao = ThreadReadModelDaoImpl::new(pool);
-  let mut last_evaluated_shard_id: Option<String> = None;
-  loop {
-    tracing::info!("stream_arn = {:?}", stream_arn);
-    tracing::info!("last_evaluated_shard_id = {:?}", last_evaluated_shard_id);
-    tracing::info!("max_item_count = {:?}", max_item_count);
+    let describe_table_out = dynamodb_client.describe_table().table_name(journal_table_name).send().await?;
+    let stream_arn = describe_table_out.table().unwrap().latest_stream_arn().unwrap();
 
-    let mut builder = dynamodb_streams_client.describe_stream().stream_arn(stream_arn);
-    if let Some(shard_id) = last_evaluated_shard_id.clone() {
+    let dao = ThreadReadModelDaoImpl::new(pool);
+    let mut last_evaluated_shard_id: Option<String> = None;
+    loop {
+        tracing::info!("stream_arn = {:?}", stream_arn);
+        tracing::info!("last_evaluated_shard_id = {:?}", last_evaluated_shard_id);
+        tracing::info!("max_item_count = {:?}", max_item_count);
+
+        let mut builder = dynamodb_streams_client.describe_stream().stream_arn(stream_arn);
+        if let Some(shard_id) = last_evaluated_shard_id.clone() {
       builder = builder.exclusive_start_shard_id(shard_id);
     }
     let describe_stream_output = builder.send().await?;
@@ -171,26 +176,60 @@ async fn stream_events_driver(
       .stream_description()
       .unwrap()
       .last_evaluated_shard_id()
-      .map(|s| s.to_owned());
+        .map(|s| s.to_owned());
 
-    if next_last_evaluated_shard_id.is_none() {
-      break;
+        if next_last_evaluated_shard_id.is_none() {
+            break;
+        }
+
+        last_evaluated_shard_id = next_last_evaluated_shard_id;
     }
 
-    last_evaluated_shard_id = next_last_evaluated_shard_id;
-  }
+    Ok(())
+}
 
-  Ok(())
+async fn create_aws_client(aws_settings: &AwsSettings) -> DynamoDBClient {
+    let region_name = aws_settings.region_name.clone();
+    let region = Region::new(region_name);
+    let region_provider_chain = RegionProviderChain::default_provider().or_else(region);
+
+    let mut config_loader = aws_config::from_env().region(region_provider_chain);
+    if let Some(endpoint_url) = aws_settings.endpoint_url.clone() {
+        tracing::info!("endpoint_url = {}", endpoint_url);
+        config_loader = config_loader.endpoint_url(endpoint_url);
+    }
+
+    match (
+        aws_settings.access_key_id.clone(),
+        aws_settings.secret_access_key.clone(),
+    ) {
+        (Some(access_key_id), Some(secret_access_key)) => {
+            tracing::info!("access_key_id = {}", access_key_id);
+            tracing::info!("secret_access_key = {}", secret_access_key);
+            config_loader = config_loader.credentials_provider(Credentials::new(
+                access_key_id,
+                secret_access_key,
+                None,
+                None,
+                "default",
+            ));
+        }
+        _ => {}
+    }
+
+    let config = config_loader.load().await;
+    let client = DynamoDBClient::new(&config);
+    client
 }
 
 async fn create_aws_dynamodb_streams_client(aws_settings: &AwsSettings) -> DynamoDBStreamsClient {
-  let region_name = aws_settings.region_name.clone();
-  let region = Region::new(region_name);
-  let region_provider_chain = RegionProviderChain::default_provider().or_else(region);
-  let mut config_loader = aws_config::from_env().region(region_provider_chain);
-  if let Some(endpoint_url) = aws_settings.endpoint_url.clone() {
-    config_loader = config_loader.endpoint_url(endpoint_url);
-  }
+    let region_name = aws_settings.region_name.clone();
+    let region = Region::new(region_name);
+    let region_provider_chain = RegionProviderChain::default_provider().or_else(region);
+    let mut config_loader = aws_config::from_env().region(region_provider_chain);
+    if let Some(endpoint_url) = aws_settings.endpoint_url.clone() {
+        config_loader = config_loader.endpoint_url(endpoint_url);
+    }
   match (
     aws_settings.access_key_id.clone(),
     aws_settings.secret_access_key.clone(),

@@ -7,7 +7,8 @@ set -eu
 # shellcheck disable=SC2046
 cd $(dirname "$0") || exit
 
-while getopts d OPT; do
+F_OPTION=""
+while getopts f OPT; do
   # shellcheck disable=SC2220
   case ${OPT} in
   "f") F_OPTION=1 ;;
@@ -26,7 +27,7 @@ docker buildx build --builder amd-arm --platform linux/arm64 \
   --build-context messense/rust-musl-cross:arm64-musl=docker-image://messense/rust-musl-cross:aarch64-musl \
   -t $LOCAL_ARM64_URI --load -f command/write-api-server/Dockerfile .
 
-if [ $F_OPTION == 1 ]; then
+if [[ "$F_OPTION" == 1 ]]; then
 docker buildx build --builder amd-arm --platform linux/amd64 \
   --build-context messense/rust-musl-cross:amd64-musl=docker-image://messense/rust-musl-cross:x86_64-musl \
   -t $LOCAL_AMD64_URI --load -f command/write-api-server/Dockerfile .

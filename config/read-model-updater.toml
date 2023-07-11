@@ -8,6 +8,9 @@ endpoint_url = "http://localhost:4566"
 access_key_id = "x"
 secret_access_key = "x"
 
-[rmu]
-stream_arn = "arn:aws:dynamodb:ap-northeast-1:000000000000:table/journal/stream/2023-07-10T05:45:04.275"
+[stream]
+journal_table_name = "journal"
 max_item_count = 100
+
+[database]
+url = "mysql://ceer:ceer@localhost:3306/ceer"

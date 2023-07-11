@@ -8,6 +8,7 @@ services:
       - 18080:8080
     environment:
       AWS_REGION: ap-northeast-1
+      RUST_LOG: debug
       RUST_BACKTRACE: full
       APP__API__HOST: "0.0.0.0"
       APP__API__PORT: 8080
@@ -26,28 +27,30 @@ services:
       - localstack
       - dynamodb-admin
       - dynamodb-setup
-#  read-model-updater-1:
-#    image: j5ik2o/cqrs-es-example-rs-read-model-updater:latest-arm64
-#    container_name: read-model-updater-1
-#    ports:
-#      - 18081:8080
-#    environment:
-#      AWS_REGION: ap-northeast-1
-#      RUST_BACKTRACE: full
-#      APP__API__HOST: "0.0.0.0"
-#      APP__API__PORT: 8080
-#      APP__AWS__REGION_NAME: ${AWS_REGION}
-#      APP__AWS__ENDPOINT_URL: http://localstack:4566
-#      APP__AWS__ACCESS_KEY_ID: x
-#      APP__AWS__SECRET_ACCESS_KEY: x
-#      APP__RMU__STREAM_ARN: ${APP__RMU__STREAM_ARN- }
-#      APP__RMU__MAX_ITEM_COUNT: 32
-#    #volumes:
-#    #  - ../../config:/config
-#    depends_on:
-#      - localstack
-#      - dynamodb-admin
-#      - dynamodb-setup
+  read-model-updater-1:
+    image: j5ik2o/cqrs-es-example-rs-local-rmu:latest-arm64
+    container_name: read-model-updater-1
+    ports:
+      - 18081:8080
+    environment:
+      AWS_REGION: ap-northeast-1
+      RUST_LOG: debug
+      RUST_BACKTRACE: full
+      APP__API__HOST: "0.0.0.0"
+      APP__API__PORT: 8080
+      APP__AWS__REGION_NAME: ${AWS_REGION}
+      APP__AWS__ENDPOINT_URL: http://localstack:4566
+      APP__AWS__ACCESS_KEY_ID: x
+      APP__AWS__SECRET_ACCESS_KEY: x
+      APP__STREAM__JOURNAL_TABLE_NAME: journal
+      APP__STREAM__MAX_ITEM_COUNT: 32
+      APP__DATABASE__URL: mysql://ceer:ceer@mysql-local:3306/ceer
+    #volumes:
+    #  - ../../config:/config
+    depends_on:
+      - localstack
+      - dynamodb-admin
+      - dynamodb-setup
 #  read-api-server-1:
 #    image: cqrs-es-example-rs-read-api-server
 #    container_name: read-api-server-1
