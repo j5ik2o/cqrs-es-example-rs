@@ -65,6 +65,7 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
         let name = thread_created.name.to_string();
         let administrator_id = thread_created.members.administrator_id().user_account_id.to_string();
         let created_at = thread_created.occurred_at;
+
         sqlx::query!(
             r#"
             INSERT INTO threads (id, name, owner_id, created_at)
@@ -72,6 +73,7 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
             "#,
             id, name, administrator_id, created_at
         ).execute(&self.pool).await?;
+
         Ok(())
     }
 
@@ -103,6 +105,7 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
+    use std::{env, thread};
     use std::future::Future;
 
     use refinery_core::mysql;
@@ -124,40 +127,63 @@ mod tests {
         embed_migrations!("../tools/rdb-migration/migrations");
     }
 
+    fn make_database_url_for_migration(port: u16) -> String {
+        format!("mysql://root:password@localhost:{}/ceer", port)
+    }
+
+    fn make_database_url_for_application(port: u16) -> String {
+        format!("mysql://ceer:ceer@localhost:{}/ceer", port)
+    }
+
     fn refinery_migrate(port: u16) {
-        let opts = mysql::Opts::from_url(&format!("mysql://ceer:ceer@127.0.0.1:{}/ceer", port)).unwrap();
-        println!("opts: {:?}", opts);
-        let pool = mysql::Pool::new(opts).unwrap();
+        let url = make_database_url_for_migration(port);
+        log::debug!("url: {:?}", url);
+        let opts = mysql::Opts::from_url(&url).unwrap();
+        let mut pool_result;
+        while {
+            pool_result = mysql::Pool::new(opts.clone());
+            pool_result.is_err()
+        } {
+            log::debug!("wait for mysql...");
+            thread::sleep(std::time::Duration::from_secs(1));
+        }
+        let pool = pool_result.unwrap();
         let mut conn = pool.get_conn().unwrap();
         let report = embedded::migrations::runner().run(&mut conn).unwrap();
     }
 
+    fn init() {
+        env::set_var("RUST_LOG", "debug");
+        let _ = env_logger::builder().is_test(true).try_init();
+    }
+
     #[tokio::test]
     async fn test_insert_thread() {
+        init();
         let docker = clients::Cli::default();
         let image = GenericImage::new("mysql", "8.0")
             .with_exposed_port(3306)
-            .with_wait_for(WaitFor::seconds(5))
+            .with_wait_for(WaitFor::message_on_stdout("Ready for start up"))
             .with_env_var("MYSQL_ROOT_PASSWORD", "password")
             .with_env_var("MYSQL_DATABASE", "ceer")
             .with_env_var("MYSQL_USER", "ceer")
             .with_env_var("MYSQL_PASSWORD", "ceer");
-        // .with_entrypoint("--character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --ngram_token_size=2");
-
         let mysql_node: Container<GenericImage> = docker.run(image);
         let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
-        println!("port: {}", mysql_port);
-        refinery_migrate(port);
+        refinery_migrate(mysql_port);
 
-        let pool = MySqlPool::connect(&format!("mysql://ceer:ceer@localhost:{}/ceer", port)).await.unwrap();
+        let url = make_database_url_for_application(mysql_port);
+        let pool = MySqlPool::connect(&url).await.unwrap();
         let dao = ThreadReadModelDaoImpl::new(pool);
+
         let aggregate_id = ThreadId::new();
         let seq_nr = 1;
         let name = ThreadName::new("test".to_string());
         let admin_id = UserAccountId::new();
         let members = Members::new(admin_id);
         let body = ThreadCreated::new(aggregate_id, seq_nr, name, members);
+
         let _ = dao.insert_thread(&body).await;
     }
 }
