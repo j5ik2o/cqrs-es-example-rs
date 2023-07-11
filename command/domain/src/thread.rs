@@ -58,20 +58,26 @@ impl Display for ThreadId {
 pub struct ThreadName(String);
 
 impl ThreadName {
-  pub fn new(name: String) -> Self {
-    Self(name)
-  }
+    pub fn new(name: String) -> Self {
+        Self(name)
+    }
+}
+
+impl Display for ThreadName {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MessageId {
-  #[serde(with = "ulid_as_uuid")]
-  value: ULID,
+    #[serde(with = "ulid_as_uuid")]
+    value: ULID,
 }
 
 impl MessageId {
-  pub fn new() -> Self {
-    let value = ID_GENERATOR.lock().unwrap().generate().unwrap();
+    pub fn new() -> Self {
+        let value = ID_GENERATOR.lock().unwrap().generate().unwrap();
     Self { value }
   }
 }
