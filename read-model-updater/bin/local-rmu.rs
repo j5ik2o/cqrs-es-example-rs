@@ -14,7 +14,8 @@ use lambda_runtime::{Context, LambdaEvent};
 use serde::Deserialize;
 use sqlx::{MySql, MySqlPool, Pool};
 
-use cqrs_es_example_read_model_updater::ThreadReadModelDaoImpl;
+use cqrs_es_example_read_model_updater::{AwsSettings, load_app_config};
+use cqrs_es_example_read_model_updater::thread_read_model_dao::ThreadReadModelDaoImpl;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -237,41 +238,3 @@ async fn create_aws_dynamodb_streams_client(aws_settings: &AwsSettings) -> Dynam
     client
 }
 
-#[derive(Deserialize, Debug)]
-struct AwsSettings {
-    region_name: String,
-    endpoint_url: Option<String>,
-    access_key_id: Option<String>,
-    secret_access_key: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-struct DatabaseSettings {
-    url: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct RmuSettings {
-    stream_arn: String,
-    max_item_count: usize,
-}
-
-#[derive(Deserialize, Debug)]
-struct AppSettings {
-    aws: AwsSettings,
-    rmu: RmuSettings,
-    database: DatabaseSettings,
-}
-
-fn load_app_config() -> Result<AppSettings> {
-    let config = config::Config::builder()
-        .add_source(config::File::with_name("config/read-model-updater").required(false))
-        .add_source(
-            Environment::with_prefix("APP")
-                .try_parsing(true)
-                .separator("__"),
-        )
-        .build()?;
-    let app_config = config.try_deserialize()?;
-    Ok(app_config)
-}

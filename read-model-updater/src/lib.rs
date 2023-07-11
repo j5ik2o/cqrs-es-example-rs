@@ -1,94 +1,17 @@
 use anyhow::Result;
 use aws_lambda_events::dynamodb;
+use config::Environment;
 use lambda_runtime::LambdaEvent;
+use serde::Deserialize;
 use serde_dynamo::AttributeValue;
 use serde_json::Value;
 use sqlx::{MySql, MySqlPool, Pool};
 
 use cqrs_es_example_domain::thread::events::{ThreadCreated, ThreadDeleted, ThreadEvent, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted, ThreadRenamed};
 
-pub trait ThreadReadModelDao {
-    fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()>;
-    fn delete_thread(&self, thread_deleted: &ThreadDeleted) -> Result<()>;
-    fn update_thread_name(&self, thread_renamed: &ThreadRenamed) -> Result<()>;
-    fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()>;
-    fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()>;
-    fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()>;
-    fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()>;
-}
+use crate::thread_read_model_dao::ThreadReadModelDao;
 
-pub struct MockThreadReadModelDao {}
-
-impl ThreadReadModelDao for MockThreadReadModelDao {
-    fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()> {
-        Ok(())
-    }
-
-    fn delete_thread(&self, thread_deleted: &ThreadDeleted) -> Result<()> {
-        Ok(())
-    }
-
-    fn update_thread_name(&self, thread_renamed: &ThreadRenamed) -> Result<()> {
-        Ok(())
-    }
-
-    fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()> {
-        Ok(())
-    }
-
-    fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
-        Ok(())
-    }
-
-    fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()> {
-        Ok(())
-    }
-
-    fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
-        Ok(())
-    }
-}
-
-pub struct ThreadReadModelDaoImpl {
-    pool: MySqlPool,
-}
-
-impl ThreadReadModelDaoImpl {
-    pub fn new(pool: MySqlPool) -> Self {
-        Self { pool }
-    }
-}
-
-impl ThreadReadModelDao for ThreadReadModelDaoImpl {
-    fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()> {
-        Ok(())
-    }
-
-    fn delete_thread(&self, thread_deleted: &ThreadDeleted) -> Result<()> {
-        Ok(())
-    }
-
-    fn update_thread_name(&self, thread_renamed: &ThreadRenamed) -> Result<()> {
-        Ok(())
-    }
-
-    fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()> {
-        Ok(())
-    }
-
-    fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
-        Ok(())
-    }
-
-    fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()> {
-        Ok(())
-    }
-
-    fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
-        Ok(())
-    }
-}
-
+pub mod thread_read_model_dao;
 
 pub async fn update_read_model<D: ThreadReadModelDao>(thread_read_model_dao: &D, event: LambdaEvent<dynamodb::Event>) {
     event.payload.records.iter().for_each(|record| {
@@ -131,6 +54,46 @@ fn get_type_string(payload_str: &String) -> String {
     type_value_str.to_string()
 }
 
+#[derive(Deserialize, Debug)]
+pub struct AwsSettings {
+    pub region_name: String,
+    pub endpoint_url: Option<String>,
+    pub access_key_id: Option<String>,
+    pub secret_access_key: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DatabaseSettings {
+    pub url: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct RmuSettings {
+    pub stream_arn: String,
+    pub max_item_count: usize,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct AppSettings {
+    pub aws: AwsSettings,
+    pub rmu: RmuSettings,
+    pub database: DatabaseSettings,
+}
+
+pub fn load_app_config() -> Result<AppSettings> {
+    let config = config::Config::builder()
+        .add_source(config::File::with_name("config/read-model-updater").required(false))
+        .add_source(
+            Environment::with_prefix("APP")
+                .try_parsing(true)
+                .separator("__"),
+        )
+        .build()?;
+    let app_config = config.try_deserialize()?;
+    Ok(app_config)
+}
+
+
 #[cfg(test)]
 #[allow(deprecated)]
 mod test {
@@ -139,6 +102,8 @@ mod test {
     use http::{HeaderMap, HeaderValue};
     use lambda_runtime::Context;
     use serde_json;
+
+    use crate::thread_read_model_dao::MockThreadReadModelDao;
 
     use super::*;
 
