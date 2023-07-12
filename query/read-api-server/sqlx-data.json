@@ -1,0 +1,67 @@
+{
+  "db": "MySQL",
+  "452c39575aa056e44579736ad1abc1b96945a2f01c795f70d8fbdac52ce128bf": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4099
+            },
+            "max_size": 256,
+            "type": "VarString"
+          }
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 256,
+            "type": "VarString"
+          }
+        },
+        {
+          "name": "owner_id",
+          "ordinal": 2,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 256,
+            "type": "VarString"
+          }
+        },
+        {
+          "name": "created_at",
+          "ordinal": 3,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4225
+            },
+            "max_size": 19,
+            "type": "Datetime"
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id, name, owner_id, created_at FROM threads WHERE id = ?"
+  }
+}

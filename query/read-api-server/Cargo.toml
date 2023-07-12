@@ -10,10 +10,28 @@ downcast-rs = "1.2.0"
 cqrs-es-example-query-processor = { version = "0.0.1", path = "../processor" }
 cqrs-es-example-query-interface-adaptor = { version = "0.0.1", path = "../interface-adaptor" }
 axum = "0.6.18"
+
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+
 tokio = { version = "1", features = ["full"] }
 hyper = { version = "0.14.26", features = ["full"] }
 tower = "0.4.12"
-async-graphql = "5.0.10"
+async-graphql = { vesrion = "5.0.10", features = ["chrono"] }
 async-graphql-axum = "5.0.10"
 
+sqlx = { version = "0.6.3", default-features = false, features = ["offline", "macros", "mysql", "chrono", "runtime-tokio-native-tls"] }
 openssl = { version = "0.10.55", features = ["vendored"] }
+config = "0.13.1"
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+testcontainers = "0.14.0"
+refinery-core = "0.8"
+refinery = { version = "0.8", features = ["mysql"] }
+mime = "0.3.16"
+env_logger = "0.10.0"
+
+[[bin]]
+name = "export-sdl"
+path = "bin/export-sdl.rs"
