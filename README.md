@@ -25,7 +25,7 @@
 
 ### システム構成図
 
-![](./system-layout.png)
+![](./system-layout-2.png)
 
 ## 開発環境
 
