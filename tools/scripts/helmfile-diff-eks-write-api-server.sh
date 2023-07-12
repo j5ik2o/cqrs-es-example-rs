@@ -19,6 +19,6 @@ export AWS_DEFAULT_REGION=$AWS_REGION
 
 pushd ../helmfile.d
 
-helmfile --namespace ceer --selector group=write-api-server -e "${PREFIX}-${APPLICATION_NAME}-eks" diff
+helmfile --debug --namespace ceer --selector group=write-api-server -e "${PREFIX}-${APPLICATION_NAME}-eks" diff
 
 popd

@@ -1,7 +1,7 @@
 # https://github.com/chatwork/charts/tree/master/akka
 image:
   repository: '{{ .Values.writeApiServer.image.repository }}'
-  tags: '{{ env "WRITE_API_SERVER_IMAGE_TAG" | default .Values.writeApiServer.image.tag}}'
+  tag: '{{ env "WRITE_API_SERVER_IMAGE_TAG" | default .Values.writeApiServer.image.tag}}'
   pullPolicy: '{{ .Values.writeApiServer.image.pullPolicy}}'
 
 {{- if .Values.ecrCred.enabled }}
@@ -9,70 +9,49 @@ imagePullSecrets:
   - name: ecr-cred-regcred
 {{- end }}
 
-akka:
-  cluster:
-    enabled: true
-  discovery:
-    enabled: true
-  remote:
-    enabled: true
-  management:
-    enabled: true
-    port: 8558
-    nodePort: 30132
-    service:
-      enabled: true
-      type: NodePort
-    healthChecks:
-      livenessPath: health/alive
-      readinessPath: health/ready
-
-  http:
-    enabled: true
-    port: 8081
-    portName: http
-
-    service:
-      enabled: true
-      annotations:
+service:
+  enabled: true
+  annotations:
 {{- if eq .Values.writeApiServer.service.type "LoadBalancer" }}
-        service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-        external-dns.alpha.kubernetes.io/hostname: '{{ .Values.writeApi.writeApiServer.frontend.hostname }}'
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    external-dns.alpha.kubernetes.io/hostname: '{{ .Values.writeApi.writeApiServer.frontend.hostname }}'
 {{- end }}
-      labels: {}
-      type: {{ .Values.writeApiServer.service.type }}
-      ports:
-        - targetPort: http
-          name: http
-          port: {{ .Values.writeApiServer.service.port }}
-          {{- if (and (eq .Values.writeApiServer.service.type "NodePort") ( .Values.writeApiServer.service.nodePort)) }}
-          nodePort: {{ .Values.writeApiServer.service.nodePort }}
-          {{- end }}
-          protocol: TCP
-    {{- if .Values.writeApiServer.ingress.enabled }}
-    ingresses:
-      - annotations:
-          alb.ingress.kubernetes.io/target-type: ip
-          alb.ingress.kubernetes.io/backend-protocol-version: HTTP1
-          alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
-          alb.ingress.kubernetes.io/certificate-arn: {{ .Values.writeApiServer.ingress.alb.certificateArn }}
-          alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
-          alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
-          alb.ingress.kubernetes.io/healthy-threshold-count: "5"
-          alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
-          alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
-          alb.ingress.kubernetes.io/healthcheck-port: traffic-port
-          alb.ingress.kubernetes.io/scheme: {{ .Values.writeApiServer.ingress.alb.scheme }}
-          external-dns.alpha.kubernetes.io/hostname: {{ .Values.writeApiServer.hostname }}
-          external-dns.alpha.kubernetes.io/set-identifier: {{ .Environment.Name }}
-          external-dns.alpha.kubernetes.io/aws-weight: {{ .Values.writeApiServer.externalDNS.awsWeight | quote }}
-        ingressClassName: alb
-        hosts:
-          - host: {{ .Values.writeApiServer.hostname }}
-            paths:
-              - "/*"
-        targetPort: {{ .Values.writeApiServer.service.port }}
-    {{- end }}
+  labels: {}
+  type: {{ .Values.writeApiServer.service.type }}
+  ports:
+    - targetPort: http
+      name: http
+      port: {{ .Values.writeApiServer.service.port }}
+{{- if (and (eq .Values.writeApiServer.service.type "NodePort") ( .Values.writeApiServer.service.nodePort)) }}
+      nodePort: {{ .Values.writeApiServer.service.nodePort }}
+{{- end }}
+      protocol: TCP
+
+{{- if .Values.writeApiServer.ingress.enabled }}
+ingress:
+  enabled: true
+  annotations:
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol-version: HTTP1
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.writeApiServer.ingress.alb.certificateArn }}
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "5"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    alb.ingress.kubernetes.io/scheme: {{ .Values.writeApiServer.ingress.alb.scheme }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.writeApiServer.hostname }}
+    external-dns.alpha.kubernetes.io/set-identifier: {{ .Environment.Name }}
+    external-dns.alpha.kubernetes.io/aws-weight: {{ .Values.writeApiServer.externalDNS.awsWeight | quote }}
+  ingressClassName: alb
+  hosts:
+    - host: {{ .Values.writeApiServer.hostname }}
+      paths:
+        - path: "/*"
+          targetPort: {{ .Values.writeApiServer.service.port }}
+{{- end }}
 
 affinity: {}
 
@@ -96,7 +75,7 @@ env:
 lifecycle:
   preStop:
     exec:
-      command: [ "sh", "-c", "sleep {{ .Values.writeApiServer.processTimeoutInSec}}" ]
+      command: [ "sh", "-c", "sleep {{ .Values.writeApiServer.processTimeoutInSec }}" ]
 
 livenessProbe:
   enabled: false
@@ -139,9 +118,9 @@ rbac:
 
 serviceAccount:
   create: {{ .Values.writeApiServer.serviceAccount.create }}
-  {{- if .Values.writeApiServer.serviceAccount.name }}
+{{- if .Values.writeApiServer.serviceAccount.name }}
   name: {{ .Values.writeApiServer.serviceAccount.name }}
-  {{- end }}
+{{- end }}
 
 podDisruptionBudget:
   enabled: true
