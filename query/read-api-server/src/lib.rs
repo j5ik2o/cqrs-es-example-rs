@@ -1,13 +1,14 @@
 use anyhow::Result;
-use async_graphql::{Object, SimpleObject};
+use async_graphql::{Context, Object, SimpleObject};
 use chrono::NaiveDateTime;
 use config::Environment;
 use serde::Deserialize;
+use sqlx::MySqlPool;
 
 #[derive(Deserialize, Debug)]
 pub struct ApiSettings {
-  host: String,
-  port: u16,
+  pub host: String,
+  pub port: u16,
 }
 
 #[derive(Deserialize, Debug)]
