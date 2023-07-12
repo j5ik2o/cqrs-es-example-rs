@@ -1,9 +1,11 @@
 use anyhow::Result;
-use async_graphql::{Object, SimpleObject, Subscription};
-use async_graphql::futures_util::StreamExt;
+use async_graphql::{Context, Object, SimpleObject, Subscription};
+use async_graphql::futures_util::{Stream, StreamExt};
 use chrono::NaiveDateTime;
 use config::Environment;
+use redis::Client;
 use serde::Deserialize;
+use sqlx::MySqlPool;
 
 #[derive(Deserialize, Debug)]
 pub struct ApiSettings {

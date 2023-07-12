@@ -4,8 +4,8 @@ version = "0.0.1"
 edition = "2021"
 
 [[bin]]
-name = "local-rmu"
-path = "bin/local-rmu.rs"
+name = "local"
+path = "bin/local.rs"
 
 [dependencies]
 aws-config = "0.55.1"

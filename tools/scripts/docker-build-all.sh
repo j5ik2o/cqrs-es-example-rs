@@ -16,4 +16,4 @@ done
 
 ./docker-build-write-api-server.sh $F_OPTION
 ./docker-build-read-api-server.sh $F_OPTION
-./docker-build-local-rmu.sh $F_OPTION
+./docker-build-read-model-updater-local.sh $F_OPTION

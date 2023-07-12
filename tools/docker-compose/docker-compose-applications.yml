@@ -26,7 +26,7 @@ services:
       - dynamodb-admin
       - dynamodb-setup
   read-model-updater-1:
-    image: j5ik2o/cqrs-es-example-rs-local-rmu:latest-arm64
+    image: j5ik2o/cqrs-es-example-rs-read-model-updater-local:latest-arm64
     container_name: read-model-updater-1
     ports:
       - 18081:8080

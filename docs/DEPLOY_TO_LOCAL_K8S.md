@@ -95,7 +95,7 @@ $ stern 'write-api-server-*' -n adceet
 次に Read Model Updater をデプロイします。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-local-rmu.sh
+ceer-root $ ./tools/scripts/helmfile-apply-read-model-updater-local.sh
 ```
 
 しばらく待ちます。ログにエラーがないことを確認してください。

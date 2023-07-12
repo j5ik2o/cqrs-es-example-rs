@@ -18,9 +18,9 @@ WORKDIR /app
 
 ENV CARGO_BUILD_TARGET_DIR /tmp/target
 
-RUN CARGO_BUILD_INCREMENTAL=true cargo build -p ${NAME} --release --bin local-rmu --target $(cat /arch)-unknown-linux-musl \
+RUN CARGO_BUILD_INCREMENTAL=true cargo build -p ${NAME} --release --bin local --target $(cat /arch)-unknown-linux-musl \
     && mkdir -p /home/rust/src/target/release \
-    && cp /tmp/target/$(cat /arch)-unknown-linux-musl/release/local-rmu /home/rust/src/target/release/app
+    && cp /tmp/target/$(cat /arch)-unknown-linux-musl/release/local /home/rust/src/target/release/app
 
 FROM --platform=$TARGETPLATFORM alpine
 RUN apk --no-cache add ca-certificates

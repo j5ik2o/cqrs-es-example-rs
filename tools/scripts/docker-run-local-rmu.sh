@@ -15,4 +15,4 @@ docker run -v $(pwd)/../../config:/config \
   -e APP__AWS__SECRET_ACCESS_KEY=x \
   -e APP__STREAM_JOURNAL_TABLE_NAME=journal \
   -e APP__STREAM_MAX_ITEM_COUNT=100 \
-  -d j5ik2o/cqrs-es-example-rs-local-rmu:latest-arm64
+  -d j5ik2o/cqrs-es-example-rs-read-model-updater-local:latest-arm64
