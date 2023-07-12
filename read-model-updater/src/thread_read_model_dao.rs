@@ -2,8 +2,8 @@ use anyhow::Result;
 use sqlx::MySqlPool;
 
 use cqrs_es_example_domain::thread::events::{
-  ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted,
-  ThreadRenamed,
+    ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted,
+    ThreadRenamed,
 };
 
 #[async_trait::async_trait]
@@ -122,25 +122,24 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
-  
-  use std::{env, thread};
+    use std::{env, thread};
 
-  use once_cell::sync::Lazy;
-  use refinery_core::mysql;
-  use sqlx::MySqlPool;
-  use testcontainers::clients::Cli;
-  use testcontainers::core::WaitFor;
-  use testcontainers::images::generic::GenericImage;
-  use testcontainers::Container;
+    use once_cell::sync::Lazy;
+    use refinery_core::mysql;
+    use sqlx::MySqlPool;
+    use testcontainers::clients::Cli;
+    use testcontainers::Container;
+    use testcontainers::core::WaitFor;
+    use testcontainers::images::generic::GenericImage;
 
-  use cqrs_es_example_domain::thread::events::{ThreadCreated, ThreadDeleted};
-  use cqrs_es_example_domain::thread::member::Members;
-  use cqrs_es_example_domain::thread::{ThreadId, ThreadName};
-  use cqrs_es_example_domain::user_account::UserAccountId;
+    use cqrs_es_example_domain::thread::{ThreadId, ThreadName};
+    use cqrs_es_example_domain::thread::events::{ThreadCreated, ThreadDeleted};
+    use cqrs_es_example_domain::thread::member::Members;
+    use cqrs_es_example_domain::user_account::UserAccountId;
 
-  use crate::thread_read_model_dao::{ThreadReadModelDao, ThreadReadModelDaoImpl};
+    use crate::thread_read_model_dao::{ThreadReadModelDao, ThreadReadModelDaoImpl};
 
-  static DOCKER: Lazy<Cli> = Lazy::new(|| Cli::default());
+    static DOCKER: Lazy<Cli> = Lazy::new(|| Cli::default());
 
   static MYSQL_IMAGE: Lazy<GenericImage> = Lazy::new(|| {
     GenericImage::new("mysql", "8.0")
@@ -153,9 +152,9 @@ mod tests {
   });
 
   mod embedded {
-    use refinery::embed_migrations;
+      use refinery::embed_migrations;
 
-    embed_migrations!("../tools/rdb-migration/migrations");
+      embed_migrations!("../tools/rdb-migration/migrations");
   }
 
   fn make_database_url_for_migration(port: u16) -> String {

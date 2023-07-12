@@ -5,16 +5,16 @@ use aws_config::meta::region::RegionProviderChain;
 use aws_lambda_events::dynamodb;
 use aws_lambda_events::dynamodb::{StreamRecord, StreamViewType};
 use aws_sdk_dynamodb::Client as DynamoDBClient;
+use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use aws_sdk_dynamodbstreams::config::{Credentials, Region};
 use aws_sdk_dynamodbstreams::types::ShardIteratorType;
-use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use chrono::Utc;
 use http::{HeaderMap, HeaderValue};
 use lambda_runtime::{Context, LambdaEvent};
 use sqlx::{MySql, MySqlPool, Pool};
 
+use cqrs_es_example_read_model_updater::{AwsSettings, load_app_config};
 use cqrs_es_example_read_model_updater::thread_read_model_dao::ThreadReadModelDaoImpl;
-use cqrs_es_example_read_model_updater::{load_app_config, AwsSettings};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -169,7 +169,7 @@ async fn stream_events_driver(
           let context = Context::try_from(headers).unwrap();
           let lambda_event = LambdaEvent::new(event, context);
 
-          cqrs_es_example_read_model_updater::update_read_model(&dao, lambda_event).await;
+          let _ = cqrs_es_example_read_model_updater::update_read_model(&dao, lambda_event).await?;
         }
         processed_record_count += records.len();
         shard_iterator_opt = get_records_output.next_shard_iterator().map(|s| s.to_owned())
