@@ -4,12 +4,12 @@ environments:
 helmDefaults:
   wait: false
 helmfiles:
-  - 'regcred/helmfile.yaml'
-  - 'localstack/helmfile.yaml'
-  - 'dynamodb/helmfile.yaml'
-  - 'dynamodb-setup/helmfile.yaml'
-  - 'mysql/helmfile.yaml'
-  - 'flyway/helmfile.yaml'
-  - 'read-api-server/helmfile.yaml'
-  - 'read-model-updater/helmfile.yaml'
+  #  - 'regcred/helmfile.yaml'
+  #  - 'localstack/helmfile.yaml'
+  #  - 'dynamodb/helmfile.yaml'
+  #  - 'dynamodb-setup/helmfile.yaml'
+  #  - 'mysql/helmfile.yaml'
+  #  - 'flyway/helmfile.yaml'
+  #  - 'read-api-server/helmfile.yaml'
+  #  - 'read-model-updater/helmfile.yaml'
   - 'write-api-server/helmfile.yaml'

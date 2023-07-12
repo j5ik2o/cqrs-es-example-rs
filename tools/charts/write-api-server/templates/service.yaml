@@ -1,3 +1,5 @@
+{{- if .Values.service.enabled }}
+{{- $svcType := .Values.service.type }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,9 +9,15 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
+    {{- range $i, $v := .Values.service.ports }}
+    - targetPort: {{ $v.targetPort }}
+      name: "{{ $v.name }}"
+      port: {{ $v.port }}
+      {{- if and (eq $svcType "NodePort") $v.nodePort }}
+      nodePort: {{ $v.nodePort }}
+      {{- end }}
+      protocol: "{{ $v.protocol }}"
+    {{- end }}
   selector:
     {{- include "write-api-server.selectorLabels" . | nindent 4 }}
+{{- end }}

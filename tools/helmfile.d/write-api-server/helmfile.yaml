@@ -7,10 +7,10 @@ releases:
   - name: write-api-server
     namespace: '{{ .Namespace | default "ceer" }}'
     labels:
-      subsystem: write-api
+      subsystem: write-api-server
       group: write-api-server
     chart: ../../charts/write-api-server
-    version: '{{ .Values.writeApi.writeApiServer.version }}'
-    installedTemplate: '{{ .Values.writeApi.writeApiServer.enabled }}'
+    version: '{{ .Values.writeApiServer.version }}'
+    installedTemplate: '{{ .Values.writeApiServer.enabled }}'
     values:
       - values/settings.yaml.gotmpl

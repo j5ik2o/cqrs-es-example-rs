@@ -14,7 +14,6 @@ while getopts f OPT; do
 done
 
 
-./docker-build-write-api-server.sh $F_OPTION
-./docker-build-read-api-server.sh $F_OPTION
-./docker-build-read-model-updater-local.sh $F_OPTION
-./docker-build-read-model-updater.sh $F_OPTION
+./docker-ecr-push-write-api-server.sh $F_OPTION
+./docker-ecr-push-read-api-server.sh $F_OPTION
+./docker-ecr-push-read-model-updater.sh $F_OPTION
