@@ -68,3 +68,10 @@ GraphiQL IDEから以下のクエリを実行する。threadIdに上記コマン
   }
 }
 ```
+
+curlで実行する場合は以下のようになります。
+
+```shell
+curl -X POST -H "Content-Type: application/json" -d '{ "query": "{ getThread(threadId: \"01H541BDRT2XP2QNH93MSPFAMH\"){ id } }" }' http://localhost:18082
+{"data":{"getThread":{"id":"01H541BDRT2XP2QNH93MSPFAMH"}}}%
+```
