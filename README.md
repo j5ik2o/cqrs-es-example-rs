@@ -2,7 +2,11 @@
 
 ステータス:実装中
 
-## コンポーネント構成
+このリポジトリは、RustでのCQRS/ESのサンプル実装です。
+
+## 概要
+
+### コンポーネント構成
 
 - Write API (WIP)
     - 書き込み専用のWeb API
@@ -11,7 +15,7 @@
 - Read API
     - 読み込み専用Werb API
 
-## ミドルウェア構成
+### ミドルウェア構成
 
 - DynamoDB(Journal, Snapshot)
 - DynamoDB Streams
@@ -19,7 +23,22 @@
 - RDS(Aurora)
 - Redis(PubSub用途)
 
-## ストリーム構成
+### システム構成図
 
-Client -> Write API(Web API) - Event -> DynamoDB,DynamoDB Streams -> RMU(Lambda) - SQL/PubSub -> DynamoDB(Read Model) -> Read API(GraphQL Query/Subscription) -> Client
+![](./system-layout.png)
 
+## 開発環境
+
+- [ツールのセットアップ](docs/TOOLS_INSTALLATION.md)
+
+### ローカル環境
+
+- [ローカルマシンでのデバッグ](docs/DEBUG_ON_LOCAL_MACHINE.md)
+- [Docker Composeでのデバッグ](docs/DEBUG_ON_DOCKER_COMPOSE.md)
+- [ローカルKubernetesでのデプロイ](docs/DEPLOY_TO_LOCAL_K8S.md)
+- [Minikubeへのデプロイ](docs/DEPLOY_TO_MINIKUBE.md)
+
+### AWS環境
+
+- [AWSのセットアップ](docs/AWS_SETUP.md)
+- [EKSへのデプロイ](docs/DEPLOY_TO_EKS.md)
