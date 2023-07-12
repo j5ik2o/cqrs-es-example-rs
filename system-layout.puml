@@ -4,13 +4,13 @@
 node "Client" as client {
 }
 
-node "Write API Server" as writeAPI {
+node "Write API Server\n(HTTP/Web API)" as writeAPI {
     [Thread Aggregate] as threadAggregate
 }
 
-node "Read API Server" as readAPI {
-    [GraphQL Query] as query
-    [GraphQL Subscription] as subscripton
+node "Read API Server\n(GraphQL Server)" as readAPI {
+    [Query] as query
+    [Subscription(未実装)] as subscripton
 }
 
 node "Read Model Updater\n(Lambda)" as updater {
@@ -32,18 +32,19 @@ query -[hidden]- subscripton
 
 writeAPI -d-> threadAggregate
 
-threadAggregate -d-> journal
-threadAggregate -d-> snapshot
+threadAggregate -d-> journal: Put Item
+threadAggregate -d-> snapshot: Put/Update Item
 
-journal -r-> updater
+journal -r-> updater: DynamoDB\nStreams
 
-updater -r-> thread
-updater -r-> member
+updater -r-> thread: SQL Insert/Update/Delete
+updater -r-> member: SQL Insert/Update/Delete
 
-thread --> query
-member --> query
+thread --> query: SQL Select
+member --> query: SQL Select
+query -> readAPI
 
 client -d-> writeAPI
-client -r-> readAPI
+client <-r- readAPI
 
 @enduml
