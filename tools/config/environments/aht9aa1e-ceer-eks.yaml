@@ -1,0 +1,73 @@
+localstack:
+  enabled: false
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1000Mi"
+    requests:
+      cpu: "0.5"
+      memory: "500Mi"
+regcred:
+  enabled: false
+  server:
+  username:
+  password:
+ecrCred:
+  enabled: false
+  server:
+  password:
+writeApiServer:
+  enabled: true
+  version: 0.0.1
+  image:
+    repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-write-api-server
+    tag: latest-amd64
+    pullPolicy: IfNotPresent
+  env:
+    - name: "RUST_LOG"
+      value: "info"
+    - name: "RUST_BACKTRACE"
+      value: "full"
+    - name: "APP__API__HOST"
+      value: "0.0.0.0"
+    - name: "APP__API__PORT"
+      value: "8080"
+    - name: "APP__PERSISTENCE__JOURNAL_TABLE_NAME"
+      value: "aht9aa1e-journal"
+    - name: "APP__PERSISTENCE__JOURNAL_AID_INDEX_NAME"
+      value: "aht9aa1e-journal-aid-index"
+    - name: "APP__PERSISTENCE__SNAPSHOT_TABLE_NAME"
+      value: "aht9aa1e-snapshot"
+    - name: "APP__PERSISTENCE__SNAPSHOT_AID_INDEX_NAME"
+      value: "aht9aa1e-snapshot-aid-index"
+    - name: "APP__PERSISTENCE__JOURNAL_SHARD_COUNT"
+      value: "64"
+  resources:
+    limits:
+      cpu: "1"
+      memory: "2Gi"
+    requests:
+      cpu: "0.5"
+      memory: "1Gi"
+  service:
+    type: ClusterIP
+    port: 8080
+    nodePort: 30031
+  ingress:
+    enabled: true
+    alb:
+      scheme: internet-facing
+      certificateArn: arn:aws:acm:ap-northeast-1:738575627980:certificate/f26b49bf-7740-4e2a-96c6-7594c96dae9c
+  replicaCount: 3
+  autoscaling:
+    enabled: false
+  processTimeoutInSec: 10
+  hostname: j5ik2o.cwtest.info
+  externalDNS:
+    awsWeight: 100
+  serviceAccount:
+    create: false
+    name: ceer
+  datadog:
+    logs:
+      enabled: false
