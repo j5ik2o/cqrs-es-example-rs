@@ -5,7 +5,7 @@ set -eu
 # shellcheck disable=SC2046
 cd $(dirname "$0") || exit
 
-F_OPTION="-f ../docker-compose/docker-compose-api.yml"
+F_OPTION="-f ../docker-compose/docker-compose-applications.yml"
 
 while getopts d OPT; do
   # shellcheck disable=SC2220
@@ -24,5 +24,5 @@ OUTPUT_ENV=1
 
 source ../../env.sh
 
-docker-compose -f ../docker-compose/docker-compose.yml ${F_OPTION} down -v --remove-orphans
-docker-compose -f ../docker-compose/docker-compose.yml ${F_OPTION} up --remove-orphans --force-recreate --renew-anon-volumes -d "$@"
+docker-compose -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} down -v --remove-orphans
+docker-compose -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} up --remove-orphans --force-recreate --renew-anon-volumes -d "$@"
