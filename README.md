@@ -13,7 +13,7 @@
 - Read Model Updater
     - ジャーナルを基にリードモデル構築するLambda
 - Read API
-    - 読み込み専用Werb API
+    - GraphQLサーバ(Query,Subscription)
 
 ### システム構成図
 
