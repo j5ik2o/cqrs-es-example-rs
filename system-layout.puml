@@ -1,0 +1,49 @@
+@startuml
+'https://plantuml.com/component-diagram
+
+node "Client" as client {
+}
+
+node "Write API Server" as writeAPI {
+    [Thread Aggregate] as threadAggregate
+}
+
+node "Read API Server" as readAPI {
+    [GraphQL Query] as query
+    [GraphQL Subscription] as subscripton
+}
+
+node "Read Model Updater\n(Lambda)" as updater {
+}
+
+database "DynamoDB" {
+    [Journal(Events)] as journal
+    [Snapshot] as snapshot
+}
+
+database "RDS(Aurora)" {
+  [Thread] as thread
+  [Member] as member
+}
+
+journal -[hidden]- snapshot
+thread -[hidden]- member
+query -[hidden]- subscripton
+
+writeAPI -d-> threadAggregate
+
+threadAggregate -d-> journal
+threadAggregate -d-> snapshot
+
+journal -r-> updater
+
+updater -r-> thread
+updater -r-> member
+
+thread --> query
+member --> query
+
+client -d-> writeAPI
+client -r-> readAPI
+
+@enduml
