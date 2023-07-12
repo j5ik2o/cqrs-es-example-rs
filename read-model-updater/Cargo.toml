@@ -13,7 +13,6 @@ aws-sdk-dynamodb = { version = "0.28.0" }
 aws-sdk-dynamodbstreams = "0.28.0"
 config = "0.13.1"
 
-
 backtrace = "0.3.67"
 simple_logger = "4.1.0"
 log = "0.4.17"
@@ -23,6 +22,7 @@ chrono = { version = "0.4.*", features = ["serde"] }
 downcast-rs = "1.2.0"
 once_cell = "1.18.0"
 async-trait = "0.1.71"
+http = "0.2.4"
 
 aws_lambda_events = { version = "0.10.0", default-features = false, features = ["dynamodb"] }
 lambda_runtime = "0.8.1"
@@ -37,9 +37,7 @@ serde_dynamo = "4.2.3"
 
 cqrs-es-example-domain = { version = "0.0.1", path = "../command/domain" }
 sqlx = { version = "0.6.3", default-features = false, features = ["offline", "macros", "mysql", "chrono", "runtime-tokio-rustls"] }
-# openssl = { version = "0.10.55", features = ["vendored"] }
-
-http = "*"
+redis = { version = "0.23.0", features = ["tokio-comp"] }
 
 [dev-dependencies]
 testcontainers = "0.14.0"

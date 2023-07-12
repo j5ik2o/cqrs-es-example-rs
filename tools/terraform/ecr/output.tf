@@ -5,3 +5,7 @@ output "aws_ecr_repository_arn" {
 output "aws_ecr_repository_url" {
   value = concat(aws_ecr_repository.this.*.repository_url, [""])[0]
 }
+
+output "id" {
+  value = concat(aws_ecr_repository.this.*.id, [""])[0]
+}

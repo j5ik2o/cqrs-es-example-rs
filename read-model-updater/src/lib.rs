@@ -60,6 +60,11 @@ pub struct DatabaseSettings {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct RedisSettings {
+    pub url: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct StreamSettings {
     pub journal_table_name: String,
     pub max_item_count: usize,
@@ -70,6 +75,7 @@ pub struct AppSettings {
     pub aws: AwsSettings,
     pub stream: StreamSettings,
     pub database: DatabaseSettings,
+    pub redis: RedisSettings,
 }
 
 pub fn load_app_config() -> Result<AppSettings> {

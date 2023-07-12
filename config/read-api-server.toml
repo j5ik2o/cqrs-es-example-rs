@@ -10,3 +10,6 @@ secret_access_key = "x"
 
 [database]
 url = "mysql://ceer:ceer@localhost:3306/ceer"
+
+[redis]
+url = "redis://localhost:6379/"

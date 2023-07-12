@@ -6,7 +6,7 @@ set -eu
 cd $(dirname "$0") || exit
 
 export AWS_PAGER=""
-AWS='aws --endpoint-url=http://localhost:4566 --region ap-northeast-1'
+AWS='aws --profile ${AWS_PROFILE} --region ap-northeast-1'
 
 ARN=$(sh ./get-journal-stream-arn.sh)
 

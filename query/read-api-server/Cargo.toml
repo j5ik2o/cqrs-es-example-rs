@@ -24,6 +24,7 @@ sqlx = { version = "0.6.3", default-features = false, features = ["offline", "ma
 openssl = { version = "0.10.55", features = ["vendored"] }
 config = "0.13.1"
 serde = { version = "1.0", features = ["derive"] }
+redis = { version = "0.23.0", features = ["tokio-comp"] }
 
 [dev-dependencies]
 testcontainers = "0.14.0"
