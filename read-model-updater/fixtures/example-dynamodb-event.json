@@ -34,7 +34,7 @@
             "N": "1"
           },
           "payload": {
-            "S": "{\"type\":\"ThreadCreated\",\"id\":\"01H4ZC8VY8VV7S375BEHZ1TTXD\",\"aggregate_id\":{\"value\":\"01893ec4-6fc8-fc9d-6792-cb1e870a24bd\"},\"seq_nr\":1,\"name\":\"ABC\",\"members\":{\"members_ids_by_user_account_id\":{\"01H4ZC8VY8WJVMBJ557JX69DQD\":\"01H4ZC8VY8SS7M96RVDZWR5NZT\"},\"members\":{\"01H4ZC8VY8SS7M96RVDZWR5NZT\":{\"id\":\"01H4ZC8VY8SS7M96RVDZWR5NZT\",\"user_account_id\":{\"value\":\"01H4ZC8VY8WJVMBJ557JX69DQD\"},\"role\":\"Admin\"}}},\"occurred_at\":\"2023-07-10T07:46:48.392788Z\"}"
+            "S": "{\"type\":\"ThreadCreated\",\"id\":\"01H4ZC8VY8VV7S375BEHZ1TTXD\",\"aggregate_id\":{\"value\":\"01H4ZC8VY8WJVMBJ557JX69DQD\"},\"seq_nr\":1,\"name\":\"ABC\",\"members\":{\"members_ids_by_user_account_id\":{\"01H4ZC8VY8WJVMBJ557JX69DQD\":\"01H4ZC8VY8SS7M96RVDZWR5NZT\"},\"members\":{\"01H4ZC8VY8SS7M96RVDZWR5NZT\":{\"id\":\"01H4ZC8VY8SS7M96RVDZWR5NZT\",\"user_account_id\":{\"value\":\"01H4ZC8VY8WJVMBJ557JX69DQD\"},\"role\":\"Admin\"}}},\"occurred_at\":\"2023-07-10T07:46:48.392788Z\"}"
           },
           "occurred_at": {
             "N": "1688975208392"
