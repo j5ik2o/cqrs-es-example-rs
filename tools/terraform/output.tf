@@ -82,3 +82,41 @@ output "ecr_read_model_updater_repository_url" {
 output "ecr_read_api_server_repository_url" {
   value = module.ceer-ecr-read-api-server.aws_ecr_repository_url
 }
+
+output "aurora_cluster_endpoint" {
+  description = "Writer endpoint for the cluster"
+  value       = module.aurora.cluster_endpoint
+}
+
+output "aurora_cluster_reader_endpoint" {
+  description = "A read-only endpoint for the cluster, automatically load-balanced across replicas"
+  value       = module.aurora.cluster_reader_endpoint
+}
+
+output "aurora_cluster_engine_version_actual" {
+  description = "The running version of the cluster database"
+  value       = module.aurora.cluster_engine_version_actual
+}
+
+output "aurora_cluster_database_name" {
+  description = "Name for an automatically created database on cluster creation"
+  value       = module.aurora.cluster_database_name
+}
+
+output "aurora_cluster_port" {
+  description = "The database port"
+  value       = module.aurora.cluster_port
+}
+
+output "aurora_cluster_master_password" {
+  description = "The database master password"
+  value       = module.aurora.cluster_master_password
+  sensitive   = true
+}
+
+output "aurora_cluster_master_username" {
+  description = "The database master username"
+  value       = module.aurora.cluster_master_username
+  sensitive   = true
+}
+

@@ -1,4 +1,5 @@
 locals {
+  name             = replace("${var.prefix}-${var.name}", "_", "-")
   eks_cluster_name = replace("${var.prefix}-eks-${var.name}", "_", "-")
   account_id       = data.aws_caller_identity.current.account_id
 

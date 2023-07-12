@@ -4,12 +4,12 @@ environments:
       - '../../config/environments/{{ .Environment.Name }}.yaml'
 ---
 releases:
-  - name: read-model-updater
+  - name: read-model-updater-local
     namespace: '{{ .Namespace | default "ceer" }}'
     labels:
-      subsystem: read-model-updater
-      group: read-model-updater
-    chart: ../../charts/read-model-updater
+      subsystem: read-model-updater-local
+      group: read-model-updater-local
+    chart: ../../charts/read-model-updater-local
     version: '{{ .Values.readModelUpdater.version }}'
     installedTemplate: '{{ .Values.readModelUpdater.enabled }}'
     values:

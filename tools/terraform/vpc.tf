@@ -8,7 +8,7 @@ module "vpc" {
   public_subnets  = var.aws_subnet_public
   private_subnets = var.aws_subnet_private
 
-  database_subnets = [] # var.aws_subnet_database
+  database_subnets = var.aws_subnet_database
 
   enable_nat_gateway   = true
   single_nat_gateway   = true
