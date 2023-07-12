@@ -13,10 +13,9 @@ ceer-root $ ./tools/scripts/docker-build-push.sh
 
 ## Helmfile の設定ファイルを編集します。
 
-シェル
+```shell
 ceer-root $ vi ./tools/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml
 ceer-root # tools/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml
-
 ```
 
 コンソールに表示されるタグの値に注目してください。
