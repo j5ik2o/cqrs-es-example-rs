@@ -3,7 +3,6 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use ulid_generator_rs::serde::ulid_as_uuid;
 use ulid_generator_rs::{ULIDError, ULID};
 
 use crate::aggregate::{Aggregate, AggregateId};
@@ -20,7 +19,6 @@ pub mod member;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ThreadId {
-  #[serde(with = "ulid_as_uuid")]
   value: ULID,
 }
 
@@ -71,7 +69,6 @@ impl Display for ThreadName {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MessageId {
-  #[serde(with = "ulid_as_uuid")]
   value: ULID,
 }
 
