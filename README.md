@@ -15,14 +15,6 @@
 - Read API
     - 読み込み専用Werb API
 
-### ミドルウェア構成
-
-- DynamoDB(Journal, Snapshot)
-- DynamoDB Streams
-- Lambda
-- RDS(Aurora)
-- Redis(PubSub用途)
-
 ### システム構成図
 
 ![](./system-layout.png)
