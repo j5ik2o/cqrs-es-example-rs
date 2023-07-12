@@ -1,6 +1,6 @@
 ---
 environments:
-  { { .Environment.Name } }:
+  {{ .Environment.Name }}:
 helmDefaults:
   wait: false
 helmfiles:
