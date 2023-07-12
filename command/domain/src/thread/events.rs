@@ -280,7 +280,7 @@ mod tests {
       Members::new(admin_user_account_id),
     ));
     let json = serde_json::to_string(&event);
-    let occurred_at = event.occurred_at().timestamp_millis();
+    let _occurred_at = event.occurred_at().timestamp_millis();
     println!("{}", json.unwrap());
   }
 }

@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 use anyhow::Result;
 use aws_sdk_dynamodb::types::{AttributeValue, Put, TransactWriteItem, Update};
 use aws_sdk_dynamodb::Client;
-use log::info;
+
 use serde::{de, Serialize};
 
 use cqrs_es_example_domain::aggregate::{Aggregate, AggregateId};

@@ -21,31 +21,31 @@ pub struct MockThreadReadModelDao;
 
 #[async_trait::async_trait]
 impl ThreadReadModelDao for MockThreadReadModelDao {
-  async fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()> {
+  async fn insert_thread(&self, _thread_created: &ThreadCreated) -> Result<()> {
     Ok(())
   }
 
-  async fn delete_thread(&self, thread_deleted: &ThreadDeleted) -> Result<()> {
+  async fn delete_thread(&self, _thread_deleted: &ThreadDeleted) -> Result<()> {
     Ok(())
   }
 
-  async fn update_thread_name(&self, thread_renamed: &ThreadRenamed) -> Result<()> {
+  async fn update_thread_name(&self, _thread_renamed: &ThreadRenamed) -> Result<()> {
     Ok(())
   }
 
-  async fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()> {
+  async fn insert_member(&self, _thread_member_added: &ThreadMemberAdded) -> Result<()> {
     Ok(())
   }
 
-  async fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
+  async fn delete_member(&self, _thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
     Ok(())
   }
 
-  async fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()> {
+  async fn post_message(&self, _thread_message_posted: &ThreadMessagePosted) -> Result<()> {
     Ok(())
   }
 
-  async fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
+  async fn delete_message(&self, _thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
     Ok(())
   }
 }
@@ -102,19 +102,19 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
     Ok(())
   }
 
-  async fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()> {
+  async fn insert_member(&self, _thread_member_added: &ThreadMemberAdded) -> Result<()> {
     Ok(())
   }
 
-  async fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
+  async fn delete_member(&self, _thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
     Ok(())
   }
 
-  async fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()> {
+  async fn post_message(&self, _thread_message_posted: &ThreadMessagePosted) -> Result<()> {
     Ok(())
   }
 
-  async fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
+  async fn delete_message(&self, _thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
     Ok(())
   }
 }
@@ -122,7 +122,7 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
-  use std::future::Future;
+  
   use std::{env, thread};
 
   use once_cell::sync::Lazy;
@@ -180,7 +180,7 @@ mod tests {
     }
     let pool = pool_result.unwrap();
     let mut conn = pool.get_conn().unwrap();
-    let report = embedded::migrations::runner().run(&mut conn).unwrap();
+    let _report = embedded::migrations::runner().run(&mut conn).unwrap();
   }
 
   fn init() {

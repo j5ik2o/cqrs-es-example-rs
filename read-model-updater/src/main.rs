@@ -2,17 +2,17 @@
 extern crate log;
 
 use anyhow::Result;
-use aws_config::meta::region::RegionProviderChain;
-use aws_lambda_events::event::dynamodb;
-use aws_sdk_dynamodbstreams::operation::describe_stream::builders::DescribeStreamFluentBuilder;
-use aws_sdk_dynamodbstreams::types::ShardIteratorType;
-use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
-use lambda_runtime::{service_fn, Error, LambdaEvent};
-use serde::Deserialize;
-use serde_dynamo::AttributeValue;
-use tracing::instrument::WithSubscriber;
 
-use cqrs_es_example_domain::thread::events::ThreadEvent;
+use aws_lambda_events::event::dynamodb;
+
+
+
+use lambda_runtime::{service_fn, Error, LambdaEvent};
+
+
+
+
+
 
 //
 // static INIT: Once = Once::new();
