@@ -43,7 +43,7 @@ struct AwsSettings {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
   tracing_subscriber::fmt()
     .with_max_level(tracing::Level::DEBUG)
     .with_target(false)
@@ -51,23 +51,23 @@ async fn main() {
     .without_time()
     .init();
 
-  let app_config = load_app_config().unwrap();
-  let aws_client = create_aws_client(&app_config.aws).await;
-  let socket_addr = SocketAddr::new(IpAddr::from_str(&app_config.api.host).unwrap(), app_config.api.port);
+  let app_settings = load_app_config().unwrap();
+  let aws_client = create_aws_client(&app_settings.aws).await;
   let egg = EventPersistenceGateway::new(
     aws_client,
-    app_config.persistence.journal_table_name.clone(),
-    app_config.persistence.journal_aid_index_name.clone(),
-    app_config.persistence.snapshot_table_name.clone(),
-    app_config.persistence.snapshot_aid_index_name.clone(),
-    app_config.persistence.journal_shard_count.clone(),
+    app_settings.persistence.journal_table_name.clone(),
+    app_settings.persistence.journal_aid_index_name.clone(),
+    app_settings.persistence.snapshot_table_name.clone(),
+    app_settings.persistence.snapshot_aid_index_name.clone(),
+    app_settings.persistence.journal_shard_count.clone(),
   );
   let repository = ThreadRepositoryImpl::new(egg);
+  let socket_addr = SocketAddr::new(IpAddr::from_str(&app_settings.api.host).unwrap(), app_settings.api.port);
   tracing::info!("Server listening on {}", socket_addr);
-  axum::Server::bind(&socket_addr)
+  let _ = axum::Server::bind(&socket_addr)
     .serve(create_router(repository).into_make_service())
-    .await
-    .unwrap();
+    .await?;
+  Ok(())
 }
 
 fn load_app_config() -> Result<AppSettings> {
