@@ -15,18 +15,57 @@ docker-composeとしてdynamodb-localとdynamodb-adminを起動します。
 
 ## 動作確認
 
-### アプリケーションの動作確認
+### アプリケーションの確認
 
 以下のコマンドで動作確認を行う。
 
 ```shell
-$ curl -s -X GET http://localhost:18080/hello
-Hello World！
+$ curl -s -X GET http://localhost:8080/
+Hello, Write API!%
 ```
+
+GraphiQL IDEのページが返ってくればOK。
+
+http://localhost:8082/
 
 APIを呼び出して動作を確認する。
 
 ```shell
-$ curl -v -X POST -H "Content-Type: application/json" -d "{ {"accountId"： \"01G41J1A2GVT5HE45AH7GP711P\" }" http://127.0.0.1:18080/threads
-{"threadId":"01GBCN25M496HB4PK9EWQMH28J"}
+$ ./tools/scripts/create-thread.sh
+{"Success":{"id":{"value":"01H541BDRT2XP2QNH93MSPFAMH"}}}
+```
+
+GraphiQL IDEから以下のクエリを実行する。threadIdに上記コマンドで作成したID値を指定してください。
+
+```graphql
+{
+  getThread(threadId: "01H541BDRT2XP2QNH93MSPFAMH") {
+    id
+    name
+    ownerId
+    createdAt
+  }
+}
+```
+
+以下のようなレスポンスが返ってくればOK。
+
+```graphql
+{
+  "data": {
+    "getThread": {
+      "id": "01H541BDRT2XP2QNH93MSPFAMH",
+      "name": "test",
+      "ownerId": "01H4J5WDZDXYJ4NWRDT5AR1J6E",
+      "createdAt": "2023-07-12T03:12:10"
+    }
+  }
+}
+```
+
+curlで実行する場合は以下のようになります。
+
+```shell
+curl -X POST -H "Content-Type: application/json" -d '{ "query": "{ getThread(threadId: \"01H541BDRT2XP2QNH93MSPFAMH\"){ id } }" }' http://localhost:8082
+{"data":{"getThread":{"id":"01H541BDRT2XP2QNH93MSPFAMH"}}}%
 ```
