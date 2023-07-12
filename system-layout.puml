@@ -22,8 +22,8 @@ database "DynamoDB" {
 }
 
 database "RDS(Aurora)" {
-  [Thread] as thread
-  [Member] as member
+  [Thread Read Model] as thread
+  [Member Read Model] as member
 }
 
 journal -[hidden]- snapshot
