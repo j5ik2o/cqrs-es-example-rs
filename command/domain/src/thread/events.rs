@@ -207,12 +207,12 @@ impl ThreadMessageDeleted {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThreadMemberAdded {
-  pub(crate) id: ThreadEventId,
-  pub(crate) aggregate_id: ThreadId,
-  pub(crate) seq_nr: usize,
-  pub(crate) member: Member,
-  pub(crate) executor_id: UserAccountId,
-  pub(crate) occurred_at: DateTime<Utc>,
+  pub id: ThreadEventId,
+  pub aggregate_id: ThreadId,
+  pub seq_nr: usize,
+  pub member: Member,
+  pub executor_id: UserAccountId,
+  pub occurred_at: DateTime<Utc>,
 }
 
 impl ThreadMemberAdded {

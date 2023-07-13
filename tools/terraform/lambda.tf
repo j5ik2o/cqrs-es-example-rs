@@ -1,7 +1,7 @@
 module "lambda_function" {
   source = "registry.terraform.io/terraform-aws-modules/lambda/aws"
 
-  create = false
+  create = true
 
   function_name = "read-model-updater"
   description   = "read-model-updater"

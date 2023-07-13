@@ -9,11 +9,12 @@ use cqrs_es_example_read_model_updater::thread_read_model_dao::ThreadReadModelDa
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    tracing_subscriber::fmt()
+    tracing_subscriber::fmt().json()
         .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
+        .with_current_span(false)
         .with_ansi(false)
         .without_time()
+        .with_target(false)
         .init();
 
     tracing::info!("main: start");

@@ -29,5 +29,15 @@
       }
     },
     "query": "UPDATE threads SET name = ? WHERE id = ?"
+  },
+  "6b122310531b06fc56336edca92fd75b3bb75a3d6a54e1e5280d989de20f7735": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 4
+      }
+    },
+    "query": "INSERT INTO members (id, thread_id, account_id, created_at) VALUES (?, ?, ?, ?)"
   }
 }

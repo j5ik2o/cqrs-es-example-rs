@@ -1,22 +1,25 @@
+use std::fmt::Debug;
+
 use anyhow::Result;
 use sqlx::MySqlPool;
 
 use cqrs_es_example_domain::thread::events::{
-    ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted,
-    ThreadRenamed,
+  ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted,
+  ThreadRenamed,
 };
 
 #[async_trait::async_trait]
-pub trait ThreadReadModelDao {
+pub trait ThreadReadModelDao: Debug {
   async fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()>;
   async fn delete_thread(&self, thread_deleted: &ThreadDeleted) -> Result<()>;
-  async fn update_thread_name(&self, thread_renamed: &ThreadRenamed) -> Result<()>;
+  async fn rename_thread(&self, thread_renamed: &ThreadRenamed) -> Result<()>;
   async fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()>;
   async fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()>;
   async fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()>;
   async fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()>;
 }
 
+#[derive(Debug)]
 pub struct MockThreadReadModelDao;
 
 #[async_trait::async_trait]
@@ -29,7 +32,7 @@ impl ThreadReadModelDao for MockThreadReadModelDao {
     Ok(())
   }
 
-  async fn update_thread_name(&self, _thread_renamed: &ThreadRenamed) -> Result<()> {
+  async fn rename_thread(&self, _thread_renamed: &ThreadRenamed) -> Result<()> {
     Ok(())
   }
 
@@ -50,6 +53,7 @@ impl ThreadReadModelDao for MockThreadReadModelDao {
   }
 }
 
+#[derive(Debug)]
 pub struct ThreadReadModelDaoImpl {
   pool: MySqlPool,
 }
@@ -91,7 +95,7 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
     Ok(())
   }
 
-  async fn update_thread_name(&self, thread_renamed: &ThreadRenamed) -> Result<()> {
+  async fn rename_thread(&self, thread_renamed: &ThreadRenamed) -> Result<()> {
     let aggregate_id = thread_renamed.aggregate_id.to_string();
     let name = thread_renamed.name.to_string();
 
@@ -102,7 +106,22 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
     Ok(())
   }
 
-  async fn insert_member(&self, _thread_member_added: &ThreadMemberAdded) -> Result<()> {
+  async fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()> {
+    let aggregate_id = thread_member_added.aggregate_id.to_string();
+    let member_id = thread_member_added.member.id.to_string();
+    let account_id = thread_member_added.member.user_account_id.to_string();
+    let created_at = thread_member_added.occurred_at;
+
+    sqlx::query!(
+      "INSERT INTO members (id, thread_id, account_id, created_at) VALUES (?, ?, ?, ?)",
+      aggregate_id,
+      member_id,
+      account_id,
+      created_at
+    )
+    .execute(&self.pool)
+    .await?;
+
     Ok(())
   }
 
@@ -122,24 +141,24 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
-    use std::{env, thread};
+  use std::{env, thread};
 
-    use once_cell::sync::Lazy;
-    use refinery_core::mysql;
-    use sqlx::MySqlPool;
-    use testcontainers::clients::Cli;
-    use testcontainers::Container;
-    use testcontainers::core::WaitFor;
-    use testcontainers::images::generic::GenericImage;
+  use once_cell::sync::Lazy;
+  use refinery_core::mysql;
+  use sqlx::MySqlPool;
+  use testcontainers::clients::Cli;
+  use testcontainers::core::WaitFor;
+  use testcontainers::images::generic::GenericImage;
+  use testcontainers::Container;
 
-    use cqrs_es_example_domain::thread::{ThreadId, ThreadName};
-    use cqrs_es_example_domain::thread::events::{ThreadCreated, ThreadDeleted};
-    use cqrs_es_example_domain::thread::member::Members;
-    use cqrs_es_example_domain::user_account::UserAccountId;
+  use cqrs_es_example_domain::thread::events::{ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadRenamed};
+  use cqrs_es_example_domain::thread::member::{Member, MemberId, Members};
+  use cqrs_es_example_domain::thread::{MemberRole, ThreadId, ThreadName};
+  use cqrs_es_example_domain::user_account::UserAccountId;
 
-    use crate::thread_read_model_dao::{ThreadReadModelDao, ThreadReadModelDaoImpl};
+  use crate::thread_read_model_dao::{ThreadReadModelDao, ThreadReadModelDaoImpl};
 
-    static DOCKER: Lazy<Cli> = Lazy::new(|| Cli::default());
+  static DOCKER: Lazy<Cli> = Lazy::new(|| Cli::default());
 
   static MYSQL_IMAGE: Lazy<GenericImage> = Lazy::new(|| {
     GenericImage::new("mysql", "8.0")
@@ -152,9 +171,9 @@ mod tests {
   });
 
   mod embedded {
-      use refinery::embed_migrations;
+    use refinery::embed_migrations;
 
-      embed_migrations!("../tools/rdb-migration/migrations");
+    embed_migrations!("../tools/rdb-migration/migrations");
   }
 
   fn make_database_url_for_migration(port: u16) -> String {
@@ -232,5 +251,62 @@ mod tests {
 
     let body = ThreadDeleted::new(aggregate_id, seq_nr + 1, admin_id);
     let _ = dao.delete_thread(&body).await;
+  }
+
+  #[tokio::test]
+  async fn test_rename_thread() {
+    init();
+    let mysql_node: Container<GenericImage> = DOCKER.run(MYSQL_IMAGE.clone());
+    let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+    refinery_migrate(mysql_port);
+
+    let url = make_database_url_for_application(mysql_port);
+    let pool = MySqlPool::connect(&url).await.unwrap();
+    let dao = ThreadReadModelDaoImpl::new(pool);
+
+    let aggregate_id = ThreadId::new();
+    let seq_nr = 1;
+    let name = ThreadName::new("test".to_string());
+    let admin_id = UserAccountId::new();
+    let members = Members::new(admin_id.clone());
+    let body = ThreadCreated::new(aggregate_id.clone(), seq_nr, name, members);
+
+    let _ = dao.insert_thread(&body).await;
+
+    let name = ThreadName::new("test-2".to_string());
+
+    let body = ThreadRenamed::new(aggregate_id, seq_nr + 1, name, admin_id);
+    let _ = dao.rename_thread(&body).await;
+  }
+
+  #[tokio::test]
+  async fn test_insert_member() {
+    init();
+    let mysql_node: Container<GenericImage> = DOCKER.run(MYSQL_IMAGE.clone());
+    let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+    refinery_migrate(mysql_port);
+
+    let url = make_database_url_for_application(mysql_port);
+    let pool = MySqlPool::connect(&url).await.unwrap();
+    let dao = ThreadReadModelDaoImpl::new(pool);
+
+    let aggregate_id = ThreadId::new();
+    let seq_nr = 1;
+    let name = ThreadName::new("test".to_string());
+    let admin_id = UserAccountId::new();
+    let members = Members::new(admin_id.clone());
+    let body = ThreadCreated::new(aggregate_id.clone(), seq_nr, name, members);
+
+    let _ = dao.insert_thread(&body).await;
+
+    let member_id = MemberId::new();
+    let user_account_id = UserAccountId::new();
+    let role = MemberRole::Member;
+    let member = Member::new(member_id, user_account_id, role);
+
+    let body = ThreadMemberAdded::new(aggregate_id, seq_nr + 1, member, admin_id);
+    let _ = dao.insert_member(&body).await;
   }
 }
