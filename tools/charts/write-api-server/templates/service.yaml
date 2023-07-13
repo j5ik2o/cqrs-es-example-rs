@@ -9,15 +9,13 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    {{- range $i, $v := .Values.service.ports }}
-    - targetPort: {{ $v.targetPort }}
-      name: "{{ $v.name }}"
-      port: {{ $v.port }}
-      {{- if and (eq $svcType "NodePort") $v.nodePort }}
-      nodePort: {{ $v.nodePort }}
+    - port: {{ .Values.service.port }}
+      {{- if and (eq $svcType "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
       {{- end }}
-      protocol: "{{ $v.protocol }}"
-    {{- end }}
+      targetPort: http
+      protocol: TCP
+      name: http
   selector:
     {{- include "write-api-server.selectorLabels" . | nindent 4 }}
 {{- end }}

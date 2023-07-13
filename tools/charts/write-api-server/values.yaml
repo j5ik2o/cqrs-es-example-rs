@@ -39,12 +39,12 @@ securityContext: { }
 service:
   enabled: true
   type: ClusterIP
-  ports:
-  # - targetPort: http
-  #   name: http
-  #   port: 8080
-  #   nodePort: 38080
-  #   protocol: TCP
+  targetPort: http
+  name: http
+  port: 8080
+  nodePort: 38080
+  protocol: TCP
+  annotations: { }
 
 
 ingress:

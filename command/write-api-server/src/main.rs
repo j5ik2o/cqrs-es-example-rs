@@ -81,6 +81,7 @@ fn load_app_config() -> Result<AppSettings> {
 }
 
 async fn create_aws_client(aws_settings: &AwsSettings) -> Client {
+  tracing::info!("create_aws_client: start");
   let region_name = aws_settings.region_name.clone();
   let region = Region::new(region_name);
   let region_provider_chain = RegionProviderChain::default_provider().or_else(region);
@@ -110,6 +111,8 @@ async fn create_aws_client(aws_settings: &AwsSettings) -> Client {
   }
 
   let config = config_loader.load().await;
+  tracing::info!("create_aws_client: SdkConfig = {:#?}", config);
   let client = Client::new(&config);
+  tracing::info!("create_aws_client: finish");
   client
 }
