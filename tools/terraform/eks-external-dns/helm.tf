@@ -24,6 +24,16 @@ resource "helm_release" "external-dns" {
   }
 
   set {
+    name = "interval"
+    value = "5m"
+  }
+
+  set {
+    name = "triggerLoopOnEvent"
+    value = "true"
+  }
+
+  set {
     name  = "policy"
     value = "upsert-only"
   }

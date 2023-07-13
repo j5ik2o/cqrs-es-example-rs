@@ -64,7 +64,7 @@ writeApiServer:
   autoscaling:
     enabled: false
   processTimeoutInSec: 10
-  hostname: write-ceer.j5ik2o.cwtest.info
+  hostname: write-ceer-j5ik2o.cwtest.info
   externalDNS:
     awsWeight: 100
   serviceAccount:

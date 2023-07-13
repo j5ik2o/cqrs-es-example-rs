@@ -2,7 +2,7 @@
 image:
   repository: '{{ .Values.writeApiServer.image.repository }}'
   tag: '{{ env "WRITE_API_SERVER_IMAGE_TAG" | default .Values.writeApiServer.image.tag}}'
-  pullPolicy: '{{ .Values.writeApiServer.image.pullPolicy}}'
+  pullPolicy: '{{ .Values.writeApiServer.image.pullPolicy }}'
 
 {{- if .Values.ecrCred.enabled }}
 imagePullSecrets:
@@ -32,7 +32,7 @@ ingress:
   annotations:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/backend-protocol-version: HTTP1
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
     alb.ingress.kubernetes.io/certificate-arn: {{ .Values.writeApiServer.ingress.alb.certificateArn }}
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
     alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
@@ -48,7 +48,7 @@ ingress:
   hosts:
     - host: {{ .Values.writeApiServer.hostname }}
       paths:
-        - path: "/"
+        - path: /
           pathType: Prefix
           backend:
             service:

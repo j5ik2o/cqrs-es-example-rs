@@ -35,7 +35,8 @@ resource "aws_iam_policy" "external-dns" {
       "Effect": "Allow",
       "Action": [
         "route53:ListHostedZones",
-        "route53:ListResourceRecordSets"
+        "route53:ListResourceRecordSets",
+        "route53:ListTagsForResource"
       ],
       "Resource": [
         "*"

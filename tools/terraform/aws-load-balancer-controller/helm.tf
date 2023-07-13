@@ -2,7 +2,7 @@ resource "helm_release" "aws-load-balancer-controller" {
   count     = var.create ? 1 : 0
   name      = "aws-load-balancer-controller"
   namespace = "kube-system"
-  chart     = "https://aws.github.io/eks-charts/aws-load-balancer-controller-1.5.4.tgz"
+  chart     = "https://aws.github.io/eks-charts/aws-load-balancer-controller-1.5.5.tgz"
 
   lifecycle {
     create_before_destroy = true

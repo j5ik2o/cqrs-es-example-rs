@@ -15,5 +15,5 @@ ecr_enabled = true
 datadog_enabled = false
 datadog-api-key = "xxxx"
 
-zone_id   = "Z04260904MHUVKBG7V9R"
-zone_name = "j5ik2o.cwtest.info"
+zone_id   = "Z20E1ZAK4UG4IP"
+zone_name = "cwtest.info"
