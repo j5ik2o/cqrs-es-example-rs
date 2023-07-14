@@ -2,7 +2,7 @@ resource "helm_release" "external-dns" {
   count     = var.create ? 1 : 0
   name      = "external-dns"
   namespace = local.k8s_service_namespace
-  chart     = "https://github.com/kubernetes-sigs/external-dns/releases/download/external-dns-helm-chart-1.13.0/external-dns-1.13.0.tgz"
+  chart     = "https://github.com/kubernetes-sigs/external-dns/releases/download/external-dns-helm-chart-1.12.2/external-dns-1.12.2.tgz"
 
   lifecycle {
     create_before_destroy = true
@@ -25,17 +25,17 @@ resource "helm_release" "external-dns" {
 
   set {
     name = "interval"
-    value = "60m"
+    value = var.interval
   }
 
   set {
     name = "triggerLoopOnEvent"
-    value = "true"
+    value = var.triggerLoopOnEvent
   }
 
   set {
     name  = "policy"
-    value = "upsert-only"
+    value = var.policy
   }
 
   set {

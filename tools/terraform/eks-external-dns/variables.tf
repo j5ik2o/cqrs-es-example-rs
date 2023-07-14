@@ -24,3 +24,15 @@ variable "k8s_service_namespace" {
 
 variable "eks_cluster_oidc_issuer_url" {
 }
+
+variable "interval" {
+  default = "30m"
+}
+
+variable "triggerLoopOnEvent" {
+  default = true
+}
+
+variable "policy" {
+  default = "upsert-only"
+}
