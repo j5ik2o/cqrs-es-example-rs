@@ -25,7 +25,7 @@ resource "helm_release" "external-dns" {
 
   set {
     name = "interval"
-    value = "5m"
+    value = "60m"
   }
 
   set {
