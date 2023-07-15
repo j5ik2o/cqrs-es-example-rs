@@ -1,105 +1,136 @@
+# https://github.com/chatwork/charts/tree/master/akka
 image:
-repository: '{{ .Values.readApiServer.image.repository }}'
-tag: '{{ env "READ_API_SERVER_IMAGE_TAG" | default .Values.readApiServer.image.tag }}'
-pullPolicy: '{{ .Values.readApiServer.image.pullPolicy }}'
+  repository: '{{ .Values.readApiServer.image.repository }}'
+  tag: '{{ env "WRITE_API_SERVER_IMAGE_TAG" | default .Values.readApiServer.image.tag}}'
+  pullPolicy: '{{ .Values.readApiServer.image.pullPolicy }}'
 
 {{- if .Values.ecrCred.enabled }}
-    imagePullSecrets:
-    - name: ecr-cred-regcred
+imagePullSecrets:
+  - name: ecr-cred-regcred
 {{- end }}
 
-nameOverride: ""
-fullnameOverride: ""
+service:
+  enabled: true
+{{- if eq .Values.readApiServer.service.type "LoadBalancer" }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    external-dns.alpha.kubernetes.io/hostname: '{{ .Values.readApiServer.hostname }}'
+{{- end }}
+  labels: {}
+  type: {{ .Values.readApiServer.service.type }}
+  targetPort: http
+  name: http
+  port: {{ .Values.readApiServer.service.port }}
+{{- if (and (eq .Values.readApiServer.service.type "NodePort") ( .Values.readApiServer.service.nodePort)) }}
+  nodePort: {{ .Values.readApiServer.service.nodePort }}
+{{- end }}
+  protocol: TCP
+
+{{- if .Values.readApiServer.ingress.enabled }}
+ingress:
+  enabled: true
+  annotations:
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol-version: HTTP1
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.readApiServer.ingress.alb.certificateArn }}
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "5"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    alb.ingress.kubernetes.io/scheme: {{ .Values.readApiServer.ingress.alb.scheme }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.readApiServer.hostname }}
+    external-dns.alpha.kubernetes.io/set-identifier: {{ .Environment.Name }}
+    external-dns.alpha.kubernetes.io/aws-weight: {{ .Values.readApiServer.externalDNS.awsWeight | quote }}
+  className: alb
+  hosts:
+    - host: {{ .Values.readApiServer.hostname }}
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: write-api-server
+              port:
+                number: {{ .Values.readApiServer.service.port }}
+{{- end }}
 
 affinity: {}
 
-command: {}
-
 env:
-{{- with .Values.readApiServer.env }}
-    {{- toYaml . | nindent 2 }}
-{{- end }}
-- name: "AWS_REGION"
-value: {{ requiredEnv "AWS_REGION" }}
+  {{- with .Values.readApiServer.env }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  - name: "AWS_REGION"
+    value: {{ requiredEnv "AWS_REGION" }}
 
-startupProbe:
-enabled: false
+lifecycle:
+  preStop:
+    exec:
+      command: [ "sh", "-c", "sleep {{ .Values.readApiServer.processTimeoutInSec }}" ]
 
 livenessProbe:
-enabled: true
-initialDelaySeconds: 30
-periodSeconds: 5
-timeoutSeconds: 3
-successThreshold: 1
-failureThreshold: 3
-
-nodeSelector: {}
+  enabled: false
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 1
+  successThreshold: 1
+  failureThreshold: 3
 
 podAnnotations: {}
 
 podLabels: {}
 
-podSecurityContext:
-fsGroup: 0
+startupProbe:
+  enabled: false
 
 readinessProbe:
-enabled: true
-initialDelaySeconds: 30
-periodSeconds: 5
-timeoutSeconds: 3
-successThreshold: 1
-failureThreshold: 3
+  enabled: false
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 1
+  successThreshold: 1
+  failureThreshold: 3
 
 replicaCount: {{ .Values.readApiServer.replicaCount }}
 
 resources:
-{{- toYaml .Values.readApiServer.resources | nindent 2 }}
-
-securityContext: {}
-# capabilities:
-#   drop:
-#   - ALL
-# readOnlyRootFilesystem: true
-# runAsNonRoot: true
-# runAsUser: 1000
+  {{- toYaml .Values.readApiServer.resources | nindent 2 }}
 
 strategy:
-type: RollingUpdate
-rollingUpdate:
-maxSurge: 10%
-maxUnavailable: 0%
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 10%
+    maxUnavailable: 0%
 
-terminationGracePeriodSeconds: {{ add .Values.readApiServer.processTimeoutInSec 5 }}
+terminationGracePeriodSeconds:  {{ add .Values.readApiServer.processTimeoutInSec 5 }}
 
 rbac:
-create: true
+  create: true
 
 serviceAccount:
-create: {{ .Values.readApiServer.serviceAccount.create }}
+  create: {{ .Values.readApiServer.serviceAccount.create }}
 {{- if .Values.readApiServer.serviceAccount.name }}
-    name: {{ .Values.readApiServer.serviceAccount.name }}
+  name: {{ .Values.readApiServer.serviceAccount.name }}
 {{- end }}
 
-service:
-type: {{ .Values.readApiServer.service.type }}
-port: {{ .Values.readApiServer.service.port }}
-nodePort: {{ .Values.readApiServer.service.nodePort }}
-
 podDisruptionBudget:
-enabled: true
-maxUnavailable: 1
+  enabled: true
+  maxUnavailable: 1
 
 autoscaling:
-{{- toYaml .Values.readApiServer.autoscaling | nindent 2 }}
+  {{- toYaml .Values.readApiServer.autoscaling | nindent 2 }}
 
 metrics:
-enabled: false
-port: 9095
-path: "/"
+  enabled: false
+  port: 9095
+  path: "/"
 
 configmaps:
-chart.conf: ""
-akka.conf: ""
-kamon.conf: ""
+  chart.conf: ""
+  akka.conf: ""
+  kamon.conf: ""
 
 useResourceApplicationConf: false
