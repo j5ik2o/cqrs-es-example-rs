@@ -1,14 +1,9 @@
 # EKSへのデプロイ
 
-まず、Docker for MacのKubernetesオプションを有効にします（Enable Kubernetes）。
-Docker for Macのリソース設定も確認してください。十分なリソースを与える必要があります。
-
-## Dockerイメージをプッシュする
-
-Dockerのローカルリポジトリにイメージをプッシュしてください。
+## DockerイメージをECRにプッシュする
 
 ```shell
-ceer-root $ ./tools/scripts/docker-build-push.sh
+ceer-root $ ./tools/scripts/docker-ecr-push-with-build.sh
 ```
 
 ## Helmfile の設定ファイルを編集します。
@@ -28,10 +23,10 @@ yamlファイルの以下の項目を適切に設定してください。
 
 ## アプリケーションのデプロイ
 
-次にバックエンドのロールをデプロイします。
+次にデプロイします。
 
 ```shell
-tools/scripts $ ./helmfile-apply-eks.sh
+ceer-root $ ./tools/scripts/helmfile-apply-eks.sh
 ```
 
 クラスタが形成されるまでしばらく待ちます。ログにエラーがないことを確認してください。
