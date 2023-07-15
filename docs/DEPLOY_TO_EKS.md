@@ -21,8 +21,10 @@ ceer-root # tools/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml
 コンソールに表示されるタグの値に注目してください。
 yamlファイルの以下の項目を適切に設定してください。
 
-- writeApi.writeApiServer.image.repository
-- writeApi.writeApiServer.image.tag
+- writeApiServer.image.repository
+- writeApiServer.image.tag
+- readApiServer.image.repository
+- readApiServer.image.tag
 
 ## アプリケーションのデプロイ
 
