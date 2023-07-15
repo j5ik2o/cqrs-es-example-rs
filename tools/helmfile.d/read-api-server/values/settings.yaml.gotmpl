@@ -1,7 +1,7 @@
 # https://github.com/chatwork/charts/tree/master/akka
 image:
   repository: '{{ .Values.readApiServer.image.repository }}'
-  tag: '{{ env "WRITE_API_SERVER_IMAGE_TAG" | default .Values.readApiServer.image.tag}}'
+  tag: '{{ env "READ_API_SERVER_IMAGE_TAG" | default .Values.readApiServer.image.tag}}'
   pullPolicy: '{{ .Values.readApiServer.image.pullPolicy }}'
 
 {{- if .Values.ecrCred.enabled }}
