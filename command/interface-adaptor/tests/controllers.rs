@@ -33,7 +33,9 @@ async fn create_thread<TR: ThreadRepository>(
   let create_thread_response_body_str = String::from_utf8(create_thread_response_body_bytes.to_vec()).unwrap();
   let thread_command_response_body =
     serde_json::from_str::<ThreadCommandResponseBody>(&create_thread_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = thread_command_response_body else { panic!("missing thread id"); };
+  let ThreadCommandResponseBody::Success { id } = thread_command_response_body else {
+    panic!("missing thread id");
+  };
   id
 }
 
@@ -58,7 +60,9 @@ async fn delete_thread<TR: ThreadRepository>(
   let delete_thread_response_body_str = String::from_utf8(delete_thread_response_body_bytes.to_vec()).unwrap();
   let delete_command_response_body =
     serde_json::from_str::<ThreadCommandResponseBody>(&delete_thread_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = delete_command_response_body else { panic!("missing thread id"); };
+  let ThreadCommandResponseBody::Success { id } = delete_command_response_body else {
+    panic!("missing thread id");
+  };
   id
 }
 
@@ -88,7 +92,9 @@ async fn rename_thread<TR: ThreadRepository>(
   let rename_thread_response_body_str = String::from_utf8(rename_thread_response_body_bytes.to_vec()).unwrap();
   let rename_thread_response_body =
     serde_json::from_str::<ThreadCommandResponseBody>(&rename_thread_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = rename_thread_response_body else { panic!("missing thread id"); };
+  let ThreadCommandResponseBody::Success { id } = rename_thread_response_body else {
+    panic!("missing thread id");
+  };
   id
 }
 
@@ -120,7 +126,9 @@ async fn add_member<TR: ThreadRepository>(
   let add_member_response_body_str = String::from_utf8(add_member_response_body_bytes.to_vec()).unwrap();
   let add_member_response_body =
     serde_json::from_str::<ThreadCommandResponseBody>(&add_member_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = add_member_response_body else { panic!("missing thread id"); };
+  let ThreadCommandResponseBody::Success { id } = add_member_response_body else {
+    panic!("missing thread id");
+  };
   id
 }
 
@@ -150,7 +158,9 @@ async fn remove_member<TR: ThreadRepository>(
   let remove_member_response_body_str = String::from_utf8(remove_member_response_body_bytes.to_vec()).unwrap();
   let remove_member_response_body =
     serde_json::from_str::<ThreadCommandResponseBody>(&remove_member_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = remove_member_response_body else { panic!("missing thread id"); };
+  let ThreadCommandResponseBody::Success { id } = remove_member_response_body else {
+    panic!("missing thread id");
+  };
   id
 }
 
@@ -182,7 +192,9 @@ async fn post_message<TR: ThreadRepository>(
   let post_message_response_body_str = String::from_utf8(post_message_response_body_bytes.to_vec()).unwrap();
   let post_message_response_body =
     serde_json::from_str::<ThreadCommandResponseBody>(&post_message_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = post_message_response_body else { panic!("missing thread id"); };
+  let ThreadCommandResponseBody::Success { id } = post_message_response_body else {
+    panic!("missing thread id");
+  };
   id
 }
 
@@ -216,7 +228,9 @@ async fn delete_message<TR: ThreadRepository>(
   let delete_message_response_body_str = String::from_utf8(delete_message_response_body_bytes.to_vec()).unwrap();
   let delete_message_response_body =
     serde_json::from_str::<ThreadCommandResponseBody>(&delete_message_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = delete_message_response_body else { panic!("missing thread id"); };
+  let ThreadCommandResponseBody::Success { id } = delete_message_response_body else {
+    panic!("missing thread id");
+  };
   id
 }
 

@@ -114,9 +114,9 @@ mod test {
     let reparsed: Event = serde_json::from_slice(output.as_bytes()).unwrap();
     assert_eq!(parsed, reparsed);
 
-    //let event = parsed.records.pop().unwrap();
-    //let date = Utc.ymd(2016, 12, 2).and_hms(1, 27, 0);
-    //assert_eq!(date, event.change.approximate_creation_date_time);
+    // let event = parsed.records.pop().unwrap();
+    // let date = Utc.ymd(2016, 12, 2).and_hms(1, 27, 0);
+    // assert_eq!(date, event.change.approximate_creation_date_time);
 
     let mut headers = HeaderMap::new();
     headers.insert("lambda-runtime-aws-request-id", HeaderValue::from_static("my-id"));
