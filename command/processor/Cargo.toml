@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 log = "0.4.19"
-tracing = "0.1.37"
 
 anyhow = "1.0.71"
 chrono = "0.4.26"

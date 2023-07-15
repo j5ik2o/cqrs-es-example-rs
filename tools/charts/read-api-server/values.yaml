@@ -83,7 +83,7 @@ tolerations: [ ]
 affinity: { }
 
 http:
-  port: 8081
+  port: 8080
 
 command: [ ]
 

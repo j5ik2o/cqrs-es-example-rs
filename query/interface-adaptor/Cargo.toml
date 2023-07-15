@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = "1.0.71"
 chrono = "0.4.26"
 downcast-rs = "1.2.0"
+axum = "0.6.18"
 async-graphql = { vesrion = "5.0.10", features = ["chrono"] }
 sqlx = { version = "0.6.3", default-features = false, features = ["offline", "macros", "mysql", "chrono", "runtime-tokio-rustls"] }
 tokio = { version = "1", features = ["full"] }

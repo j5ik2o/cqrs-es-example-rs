@@ -27,6 +27,8 @@ ECR_BASE_URL=$(./tools/terraform/terraform-output.sh -raw ecr_read_api_server_re
 
 popd
 
+TAG=$(docker images --no-trunc --quiet $LOCAL_AMD64_URI | grep sha256 | cut -d ":" -f2)
+
 REMOTE_MANIFEST_URI=${ECR_BASE_URL}:${TAG}
 REMOTE_AMD64_URI=${ECR_BASE_URL}:${TAG}-amd64
 REMOTE_ARM64_URI=${ECR_BASE_URL}:${TAG}-arm64
@@ -51,3 +53,5 @@ echo ">>> docker manifest inspect"
 docker manifest inspect ${REMOTE_MANIFEST_URI}
 echo ">>> docker manifest push"
 docker manifest push ${REMOTE_MANIFEST_URI}
+
+echo "HASH=${TAG}"

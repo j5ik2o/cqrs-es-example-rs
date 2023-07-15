@@ -1,6 +1,8 @@
 use anyhow::Result;
 use async_graphql::futures_util::{Stream, StreamExt};
 use async_graphql::{Context, Object, SimpleObject, Subscription};
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use chrono::NaiveDateTime;
 use redis::Client;
 use sqlx::MySqlPool;
@@ -49,4 +51,12 @@ impl SubscriptionRoot {
         .filter_map(|msg| async move { msg.get_payload().ok() }),
     )
   }
+}
+
+pub async fn alive() -> impl IntoResponse {
+  (StatusCode::OK, "OK")
+}
+
+pub async fn ready() -> impl IntoResponse {
+  (StatusCode::OK, "OK")
 }

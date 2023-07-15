@@ -42,6 +42,8 @@ async fn main() -> Result<()> {
 
   let app = Router::new()
     .route("/", get(graphiql).post(graphql_handler))
+    .route("/health/alive", get(alive))
+    .route("/health/ready", get(ready))
     .layer(Extension(schema));
 
   let socket_addr = SocketAddr::new(IpAddr::from_str(&app_settings.api.host).unwrap(), app_settings.api.port);

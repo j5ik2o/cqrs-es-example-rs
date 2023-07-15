@@ -1,18 +1,16 @@
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
+use std::sync::Once;
 
 use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::config::{Credentials, Region};
 use aws_sdk_dynamodb::Client;
 use config::{Config, Environment};
-use serde::Deserialize;
-use tracing::log;
-use tracing_log::LogTracer;
-
 use cqrs_es_example_command_interface_adaptor::controllers::create_router;
 use cqrs_es_example_command_interface_adaptor::gateways::event_persistence_gateway::EventPersistenceGateway;
 use cqrs_es_example_command_interface_adaptor::gateways::thread_repository::ThreadRepositoryImpl;
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 struct AppSettings {
@@ -44,16 +42,22 @@ struct AwsSettings {
   secret_access_key: Option<String>,
 }
 
+static INIT: Once = Once::new();
+
+fn setup_logger() {
+  INIT.call_once(|| {
+    tracing_subscriber::fmt()
+      .with_max_level(tracing::Level::DEBUG)
+      .with_target(false)
+      .with_ansi(false)
+      .without_time()
+      .init();
+  });
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
-  tracing_subscriber::fmt()
-    .with_max_level(tracing::Level::DEBUG)
-    .with_target(false)
-    .with_ansi(false)
-    .without_time()
-    .init();
-
-  LogTracer::builder().with_max_level(log::LevelFilter::Debug).init()?;
+  setup_logger();
 
   let app_settings = load_app_config().unwrap();
   let aws_client = create_aws_client(&app_settings.aws).await;

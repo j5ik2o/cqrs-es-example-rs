@@ -21,7 +21,7 @@ writeApiServer:
   version: 0.0.1
   image:
     repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-write-api-server
-    tag: latest-amd64
+    tag: 3dfb42b1743e6e304af38aae7a20b21e55202f788576db00e301fd9e08184a35-amd64
     pullPolicy: Always
   env:
     - name: "RUST_LOG"
@@ -78,7 +78,7 @@ readApiServer:
   version: 0.0.1
   image:
     repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-read-api-server
-    tag: latest-amd64
+    tag: 0742f7fba8d2cae22700c03915c1065cf04979e1cf8d06bcb225e9b2e754e64e-amd64
     pullPolicy: Always
   env:
     - name: "RUST_LOG"
@@ -89,8 +89,6 @@ readApiServer:
       value: "0.0.0.0"
     - name: "APP__API__PORT"
       value: "8080"
-    - name: "APP__DATABASE__URL"
-      value: "mysql://ceer:ceer@xxxxxx:3306/ceer"
     - name: "APP__AWS__REGION_NAME"
       value: "ap-northeast-1"
   resources:
@@ -113,7 +111,7 @@ readApiServer:
   autoscaling:
     enabled: false
   processTimeoutInSec: 10
-  hostname: write-ceer-j5ik2o.cwtest.info
+  hostname: read-ceer-j5ik2o.cwtest.info
   externalDNS:
     awsWeight: 100
   serviceAccount:

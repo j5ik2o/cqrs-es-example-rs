@@ -22,7 +22,7 @@ pub struct RedisSettings {
 pub struct AppSettings {
   pub api: ApiSettings,
   pub database: DatabaseSettings,
-  pub redis: RedisSettings,
+  // pub redis: RedisSettings,
 }
 
 pub fn load_app_config() -> Result<AppSettings> {
