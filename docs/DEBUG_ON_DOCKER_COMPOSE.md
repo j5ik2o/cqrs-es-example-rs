@@ -1,4 +1,4 @@
-# Docker Composeでデバッグする
+# Docker Compose上でデバッグする
 
 ## ビルドイメージ
 
@@ -26,7 +26,7 @@ $ ./tools/scripts/docker-compose-up.sh
 以下のコマンドで動作確認を行う。
 
 ```shell
-$ curl -s -X GET http://localhost:18080/
+ceer-root $ ./tools/scripts/curl-get-root-write-api-server-on-local.sh
 Hello, Write API!%
 ```
 
@@ -37,7 +37,7 @@ http://localhost:18082/
 APIを呼び出して動作を確認する。
 
 ```shell
-$ PORT=18080 ./tools/scripts/create-thread.sh
+ceer-root $ ./tools/scripts/curl-post-write-api-server-on-local.sh
 {"Success":{"id":{"value":"01H541BDRT2XP2QNH93MSPFAMH"}}}
 ```
 
@@ -72,6 +72,6 @@ GraphiQL IDEから以下のクエリを実行する。threadIdに上記コマン
 curlで実行する場合は以下のようになります。
 
 ```shell
-curl -X POST -H "Content-Type: application/json" -d '{ "query": "{ getThread(threadId: \"01H541BDRT2XP2QNH93MSPFAMH\"){ id } }" }' http://localhost:18082
+ceer-root $ curl -X POST -H "Content-Type: application/json" -d '{ "query": "{ getThread(threadId: \"01H541BDRT2XP2QNH93MSPFAMH\"){ id } }" }' http://localhost:18082
 {"data":{"getThread":{"id":"01H541BDRT2XP2QNH93MSPFAMH"}}}%
 ```

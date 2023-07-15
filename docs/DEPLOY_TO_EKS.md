@@ -37,19 +37,41 @@ $ stern 'write-api-server-*' -n adceet
 
 すべてのPodがReady状態になっていることを確認する。
 
+IngressのAddressにホスト名が付いていることを確認する。
+
+```shell
+$ kubectl -n ceer get ingress write-api-server
+NAME               CLASS   HOSTS                           ADDRESS                                                                    PORTS   AGE
+write-api-server   alb     write-ceer-j5ik2o.cwtest.info   k8s-ceer-writeapi-f8152916e6-1353305610.ap-northeast-1.elb.amazonaws.com   80      145m
+```
+
+```shell
+$ ./tools/scripts/aws-route53-upsert-external-dns-of-write-api-server.sh
+```
+
+```shell
+$ kubectl -n ceer get ingress read-api-server
+NAME              CLASS   HOSTS                          ADDRESS                                                                   PORTS   AGE
+read-api-server   alb     read-ceer-j5ik2o.cwtest.info   k8s-ceer-readapis-818fc43feb-708519146.ap-northeast-1.elb.amazonaws.com   80      4h26m
+```
+
+```shell
+$ ./tools/scripts/aws-route53-upsert-external-dns-of-read-api-server.sh
+```
+
 ## アプリケーションのチェック
 
 フロントエンドが起動したら、以下のコマンドで動作を確認する。
 
 ```shell
-$ curl -X GET https://xxxxxx/hello
-Hello World！
+$ ./tools/scripts/curl-get-root-write-api-server-on-eks.sh
+Hello, Write API!%
 ```
 
 APIを呼び出して動作を確認する。
 
 ```shell
-$ curl -v -X POST -H "Content-Type: application/json" -d "{ \"accountId： \"01G41J1A2GVT5HE45AH7GP711P\" }" https://xxxxxx/threads
-{"threadId":"01GBCN25M496HB4PK9EWQMH28J"}
+$ ./tools/scripts/curl-post-write-api-server-on-eks.sh
+{"Success":{"id":{"value":"01H5DAYAN4ENF16AMT6Z6EQ0PC"}}} 
 ```
 
