@@ -22,7 +22,7 @@ writeApiServer:
   image:
     repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-write-api-server
     tag: latest-amd64
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   env:
     - name: "RUST_LOG"
       value: "info"
