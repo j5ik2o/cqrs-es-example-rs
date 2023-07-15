@@ -161,7 +161,7 @@ impl Thread {
     (my_self, event)
   }
 
-  pub fn apply_event(&mut self, event: &ThreadEvent) {
+  fn apply_event(&mut self, event: &ThreadEvent) {
     match event {
       ThreadEvent::ThreadDeleted(body) => {
         self.delete(body.executor_id.clone()).unwrap();
