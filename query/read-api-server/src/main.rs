@@ -11,7 +11,8 @@ use axum::routing::get;
 use axum::{Extension, Router};
 use sqlx::MySqlPool;
 
-use cqrs_es_example_read_api_server::{load_app_config, QueryRoot};
+use cqrs_es_example_query_interface_adaptor::*;
+use cqrs_es_example_read_api_server::load_app_config;
 
 type ApiSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
 

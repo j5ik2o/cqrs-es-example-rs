@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate log;
 
 use anyhow::Result;
@@ -7,8 +6,6 @@ use std::time::Duration;
 
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use sqlx::mysql::{MySqlConnectOptions, MySqlPoolOptions, MySqlSslMode};
-use sqlx::pool::PoolOptions;
-use sqlx::{MySql, MySqlPool};
 
 use cqrs_es_example_read_model_updater::thread_read_model_dao::ThreadReadModelDaoImpl;
 use cqrs_es_example_read_model_updater::{load_app_config, update_read_model};

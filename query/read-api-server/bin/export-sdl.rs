@@ -1,7 +1,7 @@
 use anyhow::Result;
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 
-use cqrs_es_example_read_api_server::QueryRoot;
+use cqrs_es_example_query_interface_adaptor::QueryRoot;
 
 #[tokio::main]
 async fn main() -> Result<()> {
