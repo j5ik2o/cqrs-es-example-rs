@@ -1,7 +1,7 @@
 module "lambda_function" {
   source = "registry.terraform.io/terraform-aws-modules/lambda/aws"
 
-  create = true
+  create = var.read_model_updater_enabled
 
   create_function = true
 
@@ -12,14 +12,15 @@ module "lambda_function" {
 
   timeout = 60
 
-#  image_uri     = "738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-read-model-updater:latest-amd64"
-#  package_type  = "Image"
+  image_uri = "${module.ceer-ecr-read-model-updater.aws_ecr_repository_url}:${var.read_model_updater_tag}"
+  package_type  = "Image"
   architectures = ["x86_64"]
 
-  handler                 = "bootstrap"
-  runtime                 = "provided.al2"
-  local_existing_package  = "${path.module}/../../target/lambda/cqrs-es-example-read-model-updater/bootstrap-0d385892717f221ea18475226115fedc.zip"
-  ignore_source_code_hash = true
+#  cargo-lambda-build-read-model-updater.shを使う場合の設定
+#  handler                 = "bootstrap"
+#  runtime                 = "provided.al2"
+#  local_existing_package  = "${path.module}/../../target/lambda/cqrs-es-example-read-model-updater/bootstrap-0d385892717f221ea18475226115fedc.zip"
+#  ignore_source_code_hash = true
 
   environment_variables = {
     "RUST_LOG"              = "debug"
