@@ -41,9 +41,6 @@ ingress:
     alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
     alb.ingress.kubernetes.io/healthcheck-port: traffic-port
     alb.ingress.kubernetes.io/scheme: {{ .Values.readApiServer.ingress.alb.scheme }}
-    external-dns.alpha.kubernetes.io/hostname: {{ .Values.readApiServer.hostname }}
-    external-dns.alpha.kubernetes.io/set-identifier: {{ .Environment.Name }}
-    external-dns.alpha.kubernetes.io/aws-weight: {{ .Values.readApiServer.externalDNS.awsWeight | quote }}
   className: alb
   hosts:
     - host: {{ .Values.readApiServer.hostname }}
