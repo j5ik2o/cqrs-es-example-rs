@@ -30,14 +30,16 @@ async fn main() -> Result<()> {
   let pool = MySqlPool::connect(&app_settings.database.url).await?;
   let dynamodb_client = create_aws_client(&app_settings.aws).await;
   let dynamodb_streams_client = create_aws_dynamodb_streams_client(&app_settings.aws).await;
-  let _ = stream_events_driver(
-    &dynamodb_client,
-    &dynamodb_streams_client,
-    pool,
-    &app_settings.stream.journal_table_name,
-    app_settings.stream.max_item_count,
-  )
-  .await?;
+  if let Some(stream_settings) = &app_settings.stream {
+    let _ = stream_events_driver(
+      &dynamodb_client,
+      &dynamodb_streams_client,
+      pool,
+      &stream_settings.journal_table_name,
+      stream_settings.max_item_count,
+    )
+    .await?;
+  }
 
   Ok(())
 }

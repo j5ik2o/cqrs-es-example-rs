@@ -12,7 +12,6 @@ use crate::thread_read_model_dao::ThreadReadModelDao;
 
 pub mod thread_read_model_dao;
 
-#[tracing::instrument(skip(event), fields(req_id = %event.context.request_id))]
 pub async fn update_read_model<D: ThreadReadModelDao>(
   thread_read_model_dao: &D,
   event: LambdaEvent<dynamodb::Event>,
@@ -79,10 +78,11 @@ pub struct StreamSettings {
 #[derive(Deserialize, Debug)]
 pub struct AppSettings {
   pub aws: AwsSettings,
-  pub stream: StreamSettings,
+  pub stream: Option<StreamSettings>,
   pub database: DatabaseSettings,
-  pub redis: RedisSettings,
 }
+
+// ---
 
 pub fn load_app_config() -> Result<AppSettings> {
   let config = config::Config::builder()
