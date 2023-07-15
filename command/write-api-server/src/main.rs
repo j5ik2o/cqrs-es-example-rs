@@ -7,6 +7,8 @@ use aws_sdk_dynamodb::config::{Credentials, Region};
 use aws_sdk_dynamodb::Client;
 use config::{Config, Environment};
 use serde::Deserialize;
+use tracing::log;
+use tracing_log::LogTracer;
 
 use cqrs_es_example_command_interface_adaptor::controllers::create_router;
 use cqrs_es_example_command_interface_adaptor::gateways::event_persistence_gateway::EventPersistenceGateway;
@@ -50,6 +52,8 @@ async fn main() -> Result<()> {
     .with_ansi(false)
     .without_time()
     .init();
+
+  LogTracer::builder().with_max_level(log::LevelFilter::Debug).init()?;
 
   let app_settings = load_app_config().unwrap();
   let aws_client = create_aws_client(&app_settings.aws).await;
