@@ -1,3 +1,5 @@
+以下の機能はまだ準備できていません。
+
 # Kubernetesへのデプロイ（Docker for Macの場合）
 
 まず、Docker for MacのKubernetesオプションを有効にします(Enable Kubernetes)。
