@@ -14,7 +14,17 @@ while getopts f OPT; do
 done
 
 
-./docker-build-write-api-server.sh $F_OPTION
-./docker-build-read-api-server.sh $F_OPTION
-./docker-build-read-model-updater-local.sh $F_OPTION
-./docker-build-read-model-updater.sh $F_OPTION
+PIDS=()
+
+./docker-build-write-api-server.sh $F_OPTION &
+PIDS+=($!)
+./docker-build-read-api-server.sh $F_OPTION &
+PIDS+=($!)
+./docker-build-read-model-updater-local.sh $F_OPTION &
+PIDS+=($!)
+./docker-build-read-model-updater.sh $F_OPTION &
+PIDS+=($!)
+
+for PID in "${PIDS[@]}"; do
+    wait "$PID"
+done
