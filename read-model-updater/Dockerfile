@@ -19,5 +19,6 @@ ENV CARGO_BUILD_TARGET_DIR /tmp/target
 RUN cargo build -p ${NAME} --release --target x86_64-unknown-linux-gnu
 
 FROM public.ecr.aws/lambda/provided:al2
-COPY --from=build /tmp/target/x86_64-unknown-linux-gnu/release/${NAME} ${LAMBDA_RUNTIME_DIR}/bootstrap
-CMD ["lambda-handler"]
+RUN mkdir -p /var/runtime && mkdir -p /tmp
+COPY --from=build /tmp/target/x86_64-unknown-linux-gnu/release/cqrs-es-example-read-model-updater /var/runtime/bootstrap
+CMD [ "lambda-handler" ]
