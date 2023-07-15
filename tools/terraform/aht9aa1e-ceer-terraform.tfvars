@@ -15,8 +15,5 @@ ecr_enabled = true
 datadog_enabled = false
 datadog-api-key = "xxxx"
 
-zone_id   = "Z20E1ZAK4UG4IP"
-zone_name = "cwtest.info"
-
 read_model_updater_enabled = true
 read_model_updater_tag = "9ed584699fe19cab82121fae2d4ac7f1eee2e49089ba463cdd7378085ccc7b39-amd64"

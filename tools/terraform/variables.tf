@@ -164,10 +164,8 @@ variable "datadog_enabled" {
   default = false
 }
 
-variable "zone_id" {}
-variable "zone_name" {}
-
 variable "read_model_updater_enabled" {
   default = false
 }
+
 variable "read_model_updater_tag" {}
