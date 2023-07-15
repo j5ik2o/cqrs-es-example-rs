@@ -5,7 +5,9 @@ module "external-dns" {
   zone_id                     = var.zone_id
   zone_name                   = var.zone_name
 
-  policy = "sync"
+  policy = "upsert-only"
+  interval = "30m"
+  trigger_loop_on_event = true
 
   depends_on = [
     module.eks
