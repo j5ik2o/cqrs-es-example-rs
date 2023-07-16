@@ -1,5 +1,6 @@
 pub trait AggregateId: std::fmt::Display {
   fn type_name(&self) -> String;
+  fn value(&self) -> String;
 }
 
 pub trait Aggregate: std::fmt::Debug {

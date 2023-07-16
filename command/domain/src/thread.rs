@@ -26,6 +26,10 @@ impl AggregateId for ThreadId {
   fn type_name(&self) -> String {
     "thread".to_string()
   }
+
+  fn value(&self) -> String {
+    self.value.to_string()
+  }
 }
 
 impl FromStr for ThreadId {
