@@ -1,5 +1,30 @@
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 
-[tasks.rustfmt]
-command = "rustfmt"
+[tasks.docker-build-write-api-server]
+workspace = false
+command = "./tools/scripts/docker-build-write-api-server.sh"
+args = ["all"]
+
+[tasks.docker-build-read-api-server]
+workspace = false
+command = "./tools/scripts/docker-build-read-api-server.sh"
+args = ["all"]
+
+[tasks.docker-build]
+workspace = false
+run_task = { name = ["docker-build-write-api-server", "docker-build-read-api-server"], parallel = true }
+
+[tasks.docker-ecr-push-write-api-server]
+workspace = false
+command = "./tools/scripts/docker-ecr-push-write-api-server.sh"
+dependencies = ["docker-build-write-api-server"]
+
+[tasks.docker-ecr-push-read-api-server]
+workspace = false
+command = "./tools/scripts/docker-ecr-push-read-api-server.sh"
+dependencies = ["docker-build-read-api-server"]
+
+[tasks.docker-ecr-push]
+workspace = false
+run_task = { name = ["docker-ecr-push-write-api-server", "docker-ecr-push-read-api-server"], parallel = true }
