@@ -33,9 +33,6 @@ REMOTE_MANIFEST_URI=${ECR_BASE_URL}:${TAG}
 REMOTE_AMD64_URI=${ECR_BASE_URL}:${TAG}-amd64
 REMOTE_ARM64_URI=${ECR_BASE_URL}:${TAG}-arm64
 
-echo ">>> ecr login"
-aws --profile ${AWS_PROFILE} ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_BASE_URL}
-
 echo ">>> docker tag"
 docker tag ${LOCAL_AMD64_URI} ${REMOTE_AMD64_URI}
 docker tag ${LOCAL_ARM64_URI} ${REMOTE_ARM64_URI}

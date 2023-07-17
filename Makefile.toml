@@ -1,30 +1,68 @@
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 
-[tasks.docker-build-write-api-server]
+# docker-build write-api-server
+
+[tasks.docker-build-write-api-server-amd64]
 workspace = false
 command = "./tools/scripts/docker-build-write-api-server.sh"
-args = ["all"]
+args = ["amd64"]
+
+[tasks.docker-build-write-api-server-arm64]
+workspace = false
+command = "./tools/scripts/docker-build-write-api-server.sh"
+args = ["arm64"]
+
+[tasks.docker-build-write-api-server]
+workspace = false
+run_task = { name = ["docker-build-write-api-server-amd64", "docker-build-write-api-server-arm64"], parallel = true }
+
+# docker-build read-api-server
+
+[tasks.docker-build-read-api-server-amd64]
+workspace = false
+command = "./tools/scripts/docker-build-read-api-server.sh"
+args = ["amd64"]
+
+[tasks.docker-build-read-api-server-arm64]
+workspace = false
+command = "./tools/scripts/docker-build-read-api-server.sh"
+args = ["arm64"]
 
 [tasks.docker-build-read-api-server]
 workspace = false
-command = "./tools/scripts/docker-build-read-api-server.sh"
-args = ["all"]
+run_task = { name = ["docker-build-read-api-server-amd64", "docker-build-read-api-server-arm64"], parallel = true }
 
-[tasks.docker-build]
+# docker-build-all
+
+[tasks.docker-build-all]
 workspace = false
 run_task = { name = ["docker-build-write-api-server", "docker-build-read-api-server"], parallel = true }
+
+# ---------------------------------------------
 
 [tasks.docker-ecr-push-write-api-server]
 workspace = false
 command = "./tools/scripts/docker-ecr-push-write-api-server.sh"
-dependencies = ["docker-build-write-api-server"]
 
 [tasks.docker-ecr-push-read-api-server]
 workspace = false
 command = "./tools/scripts/docker-ecr-push-read-api-server.sh"
-dependencies = ["docker-build-read-api-server"]
 
-[tasks.docker-ecr-push]
+# ecr-push
+
+[tasks.aws-ecr-login]
 workspace = false
-run_task = { name = ["docker-ecr-push-write-api-server", "docker-ecr-push-read-api-server"], parallel = true }
+command = "./tools/scripts/aws-ecr-login.sh"
+
+[tasks.docker-build-ecr-push-write-api-server]
+workspace = false
+dependencies = ["docker-build-write-api-server", "aws-ecr-login", "docker-ecr-push-write-api-server"]
+
+[tasks.docker-build-ecr-push-read-api-server]
+workspace = false
+dependencies = ["docker-build-read-api-server", "aws-ecr-login" , "docker-ecr-push-read-api-server"]
+
+[tasks.docker-ecr-build-push]
+workspace = false
+run_task = { name = ["docker-build", "docker-ecr-push-write-api-server", "docker-ecr-push-read-api-server"] }
