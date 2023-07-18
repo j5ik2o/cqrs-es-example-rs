@@ -1,10 +1,92 @@
+env_files = ["./common.env"]
+
+env_scripts = [
+'''
+#!/bin/sh
+echo "--- Using Environments -----------------"
+echo "AWS_PROFILE      = $AWS_PROFILE"
+echo "AWS_REGION       = $AWS_REGION"
+echo "PREFIX           = $PREFIX"
+echo "APPLICATION_NAME = $APPLICATION_NAME"
+echo "----------------------------------------"
+'''
+]
+
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+RUST_BACKTRACE=1
+RUST_TEST_THREADS=1
+
+#[env.TEST]
+#script = ['''
+#if [[ "1" == "0" ]]; then
+#echo ABC
+#else
+#echo DEF
+#fi
+#''']
+
+#[tasks.echo]
+#workspace = false
+#script = ['''
+#echo ${TEST}
+#''']
 
 
 [tasks.fmt]
+description = "ソースコードをフォーマットします"
 workspace = false
-script = ["cargo +nightly fmt"]
+install_script = ['''
+#!/bin/sh
+rustup which rustfmt --toolchain nightly
+if [[ $? -ne 0 ]]; then
+  rustup install nightly
+fi
+''']
+script = '''
+#!/bin/sh
+cargo +nightly fmt
+'''
+
+[tasks.terraform-create-lock-table]
+workspace = false
+condition_script = ["./tools/terraform/exisits-terraform-lock-table.sh"]
+command = "./tools/terraform/create-lock-table.sh"
+
+[tasks.terraform-create-tf-bucket]
+workspace = false
+condition_script = ["./tools/terraform/exisits-terraform-lf-bucket.sh"]
+command = "./tools/terraform/create-tf-bucket.sh"
+
+[tasks.terraform-init]
+workspace = false
+command = "./tools/terraform/terraform-init.sh"
+
+[tasks.terraform-plan]
+workspace = false
+command = "./tools/terraform/terraform-plan.sh"
+
+[tasks.terraform-apply]
+workspace = false
+command = "./tools/terraform/terraform-apply.sh"
+args = ["-auto-approve"]
+
+[tasks.terraform-destroy]
+workspace = false
+command = "./tools/terraform/terraform-destroy.sh"
+args = ["-auto-approve"]
+
+[tasks.update-kubeconfig]
+workspace = false
+command = "./tools/terraform/update-kubeconfig.sh"
+
+[tasks.export-auth-config-map]
+workspace = false
+command = "./tools/terraform/export-auth-config-map.sh"
+
+[tasks.apply-auth-config-map]
+workspace = false
+command = "./tools/terraform/apply-auth-config-map.sh"
 
 # docker-build write-api-server
 
@@ -52,7 +134,7 @@ command = "./tools/scripts/docker-build-read-model-updater-local.sh"
 
 [tasks.docker-build-prod-all]
 workspace = false
-run_task = { name = ["docker-build-write-api-server", "docker-build-read-api-server", "docker-build-read-model-updater-prod-amd64", "docker-build-read-model-updater-local-amd64"], parallel = true }
+run_task = { name = ["docker-build-write-api-server", "docker-build-read-api-server", "docker-build-read-model-updater-prod-amd64"], parallel = true }
 
 [tasks.docker-build-local-all]
 workspace = false
