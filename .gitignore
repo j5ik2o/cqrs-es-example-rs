@@ -30,3 +30,5 @@ env.sh
 
 .terraform/
 *.lock.hcl
+
+*.env
