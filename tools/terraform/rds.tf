@@ -4,7 +4,7 @@ resource "random_password" "master" {
 }
 
 module "aurora" {
-  source            = "terraform-aws-modules/rds-aurora/aws"
+  source            = "registry.terraform.io/terraform-aws-modules/rds-aurora/aws"
   name              = "${local.name}-mysql"
   engine            = "aurora-mysql"
   engine_mode       = "serverless"
@@ -14,8 +14,12 @@ module "aurora" {
 
   vpc_id               = module.vpc.vpc_id
   db_subnet_group_name = module.vpc.database_subnet_group_name
+
   security_group_rules = {
-    vpc_ingress = {
+    vpc1_ingress = {
+      source_security_group_id = module.vpc.default_security_group_id
+    }
+    vpc2_ingress = {
       cidr_blocks = module.vpc.private_subnets_cidr_blocks
     }
   }

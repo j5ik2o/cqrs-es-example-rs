@@ -43,15 +43,13 @@ module "lambda_function" {
     }
   }
   create_current_version_allowed_triggers = false
+
   attach_network_policy = true
-
-
-  vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [module.vpc.default_security_group_id]
+  vpc_subnet_ids         = module.vpc.private_subnets
 
   attach_policies    = true
   number_of_policies = 1
-
   policies = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole",
   ]
