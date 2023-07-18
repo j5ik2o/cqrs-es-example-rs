@@ -14,6 +14,10 @@ module "vpc" {
   single_nat_gateway   = true
   enable_dns_hostnames = true
 
+  manage_default_security_group  = true
+  default_security_group_ingress = []
+  default_security_group_egress  = []
+
   tags = {
     Name        = "${var.prefix}-vpc-${var.name}"
     Environment = var.prefix

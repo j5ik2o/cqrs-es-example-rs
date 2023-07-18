@@ -3,8 +3,6 @@ module "lambda_function" {
 
   create = var.read_model_updater_enabled
 
-  create_function = true
-
   function_name = "${var.prefix}-lambda-read-model-updater"
   description   = "read-model-updater"
 
@@ -45,16 +43,32 @@ module "lambda_function" {
   create_current_version_allowed_triggers = false
 
   attach_network_policy = true
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
+  vpc_security_group_ids = [aws_security_group.lambda.id]
   vpc_subnet_ids         = module.vpc.private_subnets
 
   attach_policies    = true
-  number_of_policies = 1
+  number_of_policies = 2
   policies = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonRDSDataFullAccess",
   ]
 
   depends_on = [
     module.aurora,
   ]
+}
+
+resource "aws_security_group" "lambda" {
+  name_prefix = "${var.prefix}-lambda-read-model-updater"
+  description = "Allow MySQL outbound traffic"
+  vpc_id      = module.vpc.vpc_id
+
+  egress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]
+  }
+
+  tags = local.tags
 }
