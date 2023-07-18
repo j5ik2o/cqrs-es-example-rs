@@ -17,12 +17,12 @@ ehthumbs_vista.db
 
 /Cargo.lock
 
-/infrastructure/Cargo.lock
-/command/domain/Cargo.lock
-/command/interface-adaptor/Cargo.lock
-/command/processor/Cargo.lock
-/query/interface-adaptor/Cargo.lock
-/query/processor/Cargo.lock
+/modules/infrastructure/Cargo.lock
+/modules/command/domain/Cargo.lock
+/modules/command/interface-adaptor/Cargo.lock
+/modules/command/processor/Cargo.lock
+/modules/query/interface-adaptor/Cargo.lock
+/modules/query/processor/Cargo.lock
 
 .env
 env.sh

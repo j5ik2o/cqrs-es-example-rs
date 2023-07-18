@@ -14,6 +14,6 @@ pushd ../../
 docker build \
   --platform=linux/amd64 \
   -t j5ik2o/cqrs-es-example-rs-read-model-updater:latest-amd64 \
-  -f read-model-updater/Dockerfile .
+  -f applications/read-model-updater/Dockerfile .
 
 popd

@@ -173,7 +173,7 @@ mod tests {
   mod embedded {
     use refinery::embed_migrations;
 
-    embed_migrations!("../tools/rdb-migration/migrations");
+    embed_migrations!("../../tools/rdb-migration/migrations");
   }
 
   fn make_database_url_for_migration(port: u16) -> String {

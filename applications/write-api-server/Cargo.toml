@@ -25,9 +25,9 @@ tokio = { version = "1", features = ["full"] }
 hyper = { version = "0.14.26", features = ["full"] }
 tower = "0.4.12"
 
-cqrs-es-example-domain = { version = "0.0.1", path = "../domain" }
-cqrs-es-example-command-processor = { version = "0.0.1", path = "../processor" }
-cqrs-es-example-command-interface-adaptor = { version = "0.0.1", path = "../interface-adaptor" }
+cqrs-es-example-domain = { version = "0.0.1", path = "../../modules/command/domain" }
+cqrs-es-example-command-processor = { version = "0.0.1", path = "../../modules/command/processor" }
+cqrs-es-example-command-interface-adaptor = { version = "0.0.1", path = "../../modules/command/interface-adaptor" }
 
 openssl = { version = "0.10.55", features = ["vendored"] }
 env_logger = "0.10.0"

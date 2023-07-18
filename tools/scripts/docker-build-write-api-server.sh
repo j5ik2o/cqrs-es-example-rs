@@ -33,7 +33,7 @@ if [ "$ARCH" == "arm64" ] || [ "$IS_ALL" -eq 1 ]; then
 
 docker buildx build --builder amd-arm --platform linux/arm64 \
   --build-context messense/rust-musl-cross:arm64-musl=docker-image://messense/rust-musl-cross:aarch64-musl \
-  -t $LOCAL_ARM64_URI --load -f command/${APP_NAME}/Dockerfile . &
+  -t $LOCAL_ARM64_URI --load -f applications/${APP_NAME}/Dockerfile . &
 PIDS+=($!)
 
 fi
@@ -42,7 +42,7 @@ if [ "$ARCH" == "amd64" ] || [ "$IS_ALL" -eq 1 ]; then
 
 docker buildx build --builder amd-arm --platform linux/amd64 \
   --build-context messense/rust-musl-cross:amd64-musl=docker-image://messense/rust-musl-cross:x86_64-musl \
-  -t $LOCAL_AMD64_URI --load -f command/${APP_NAME}/Dockerfile . &
+  -t $LOCAL_AMD64_URI --load -f applications/${APP_NAME}/Dockerfile . &
 PIDS+=($!)
 
 fi
