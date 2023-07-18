@@ -101,7 +101,7 @@ mod test {
   use lambda_runtime::Context;
   use serde_json;
 
-  use crate::thread_read_model_dao::MockThreadReadModelDao;
+  use crate::thread_read_model_dao::tests::MockThreadReadModelDao;
 
   use super::*;
 
