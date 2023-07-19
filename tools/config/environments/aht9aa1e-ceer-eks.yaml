@@ -7,6 +7,19 @@ localstack:
     requests:
       cpu: "0.5"
       memory: "500Mi"
+refinery:
+  enabled: true
+  image:
+    repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-refinery
+    tag: b7e2d69a5004e03710d96921d2fe64e9
+    pullPolicy: Always
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1000Mi"
+    requests:
+      cpu: "0.5"
+      memory: "500Mi"
 regcred:
   enabled: false
   server:
@@ -46,11 +59,11 @@ writeApiServer:
       value: "ap-northeast-1"
   resources:
     limits:
-      cpu: "2"
-      memory: "2Gi"
+      cpu: "512m"
+      memory: "512Mi"
     requests:
-      cpu: "1"
-      memory: "1Gi"
+      cpu: "256m"
+      memory: "256Mi"
   service:
     type: ClusterIP
     port: 8080
@@ -78,7 +91,7 @@ readApiServer:
   version: 0.0.1
   image:
     repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-read-api-server
-    tag: 0742f7fba8d2cae22700c03915c1065cf04979e1cf8d06bcb225e9b2e754e64e-amd64
+    tag: 7d4a16ef287e835c5cbd9bad1283d45e6e80653af6e4bb9e5c732734eee7a3be-amd64
     pullPolicy: Always
   env:
     - name: "RUST_LOG"
@@ -93,11 +106,11 @@ readApiServer:
       value: "ap-northeast-1"
   resources:
     limits:
-      cpu: "2"
-      memory: "2Gi"
+      cpu: "512m"
+      memory: "512Mi"
     requests:
-      cpu: "1"
-      memory: "1Gi"
+      cpu: "256m"
+      memory: "256Mi"
   service:
     type: ClusterIP
     port: 8080

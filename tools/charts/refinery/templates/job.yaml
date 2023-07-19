@@ -1,15 +1,20 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "flyway.fullname" . }}
+  name: {{ include "refinery.fullname" . }}
 spec:
   template:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          command: [ "flyway", "migrate", "-X" ]
+          command:
+            {{- toYaml .Values.command | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            {{- toYaml .Values.env | nindent 12 }}
+          envFrom:
+            {{- toYaml .Values.envFrom | nindent 12 }}
       restartPolicy: Never

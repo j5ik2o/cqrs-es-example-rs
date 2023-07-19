@@ -1,3 +1,12 @@
+module "ceer-ecr-refinery" {
+  source           = "./ecr"
+  enabled          = var.ecr_enabled
+  prefix           = var.prefix
+  application_name = var.name
+  owner            = var.owner
+  name             = "refinery"
+}
+
 module "ceer-ecr-write-api-server" {
   source           = "./ecr"
   enabled          = var.ecr_enabled

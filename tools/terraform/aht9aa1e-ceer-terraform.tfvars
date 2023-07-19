@@ -15,5 +15,5 @@ ecr_enabled = true
 datadog_enabled = false
 datadog-api-key = "xxxx"
 
-read_model_updater_enabled = false
+read_model_updater_enabled = true
 read_model_updater_tag = "9ed584699fe19cab82121fae2d4ac7f1eee2e49089ba463cdd7378085ccc7b39-amd64"

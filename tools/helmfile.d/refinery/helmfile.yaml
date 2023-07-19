@@ -5,13 +5,13 @@ environments:
 
 ---
 releases:
-  - name: flyway
+  - name: refinery
     namespace: '{{ .Namespace | default "ceer" }}'
     labels:
-      group: flyway
-    chart: ../../charts/flyway
+      group: refinery
+    chart: ../../charts/refinery
     version: 1.0.0
     wait: true
-    installedTemplate: '{{ .Values.flyway.enabled }}'
+    installedTemplate: '{{ .Values.refinery.enabled }}'
     values:
       - values/settings.yaml.gotmpl

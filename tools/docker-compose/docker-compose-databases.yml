@@ -25,6 +25,17 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=passwd
+    ports:
+      - 4040:80
+    depends_on:
+      - mysql
   localstack:
     image: localstack/localstack:latest
     hostname: localstack-local
