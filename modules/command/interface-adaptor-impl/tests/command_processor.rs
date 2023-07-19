@@ -1,7 +1,8 @@
 use common::*;
+use cqrs_es_example_command_interface_adaptor_if::ThreadRepository;
 use cqrs_es_example_command_processor::command_processor::ThreadCommandProcessor;
 use cqrs_es_example_domain::thread::member::Members;
-use cqrs_es_example_domain::thread::{MemberRole, Message, ThreadName, ThreadRepository};
+use cqrs_es_example_domain::thread::{MemberRole, Message, ThreadName};
 use cqrs_es_example_domain::user_account::UserAccountId;
 
 mod common;

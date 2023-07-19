@@ -1,7 +1,8 @@
 use anyhow::Result;
+use cqrs_es_example_command_interface_adaptor_if::ThreadRepository;
 
 use cqrs_es_example_domain::thread::events::ThreadEvent;
-use cqrs_es_example_domain::thread::{Thread, ThreadId, ThreadRepository};
+use cqrs_es_example_domain::thread::{Thread, ThreadId};
 
 use crate::gateways::event_persistence_gateway::EventPersistenceGateway;
 

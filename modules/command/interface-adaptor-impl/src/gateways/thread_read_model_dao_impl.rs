@@ -3,21 +3,11 @@ use std::fmt::Debug;
 use anyhow::Result;
 use sqlx::MySqlPool;
 
+use cqrs_es_example_command_interface_adaptor_if::ThreadReadModelDao;
 use cqrs_es_example_domain::thread::events::{
   ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted,
   ThreadRenamed,
 };
-
-#[async_trait::async_trait]
-pub trait ThreadReadModelDao: Debug {
-  async fn insert_thread(&self, thread_created: &ThreadCreated) -> Result<()>;
-  async fn delete_thread(&self, thread_deleted: &ThreadDeleted) -> Result<()>;
-  async fn rename_thread(&self, thread_renamed: &ThreadRenamed) -> Result<()>;
-  async fn insert_member(&self, thread_member_added: &ThreadMemberAdded) -> Result<()>;
-  async fn delete_member(&self, thread_member_removed: &ThreadMemberRemoved) -> Result<()>;
-  async fn post_message(&self, thread_message_posted: &ThreadMessagePosted) -> Result<()>;
-  async fn delete_message(&self, thread_message_deleted: &ThreadMessageDeleted) -> Result<()>;
-}
 
 #[derive(Debug)]
 pub struct ThreadReadModelDaoImpl {
@@ -107,64 +97,59 @@ impl ThreadReadModelDao for ThreadReadModelDaoImpl {
   }
 }
 
+#[derive(Debug)]
+pub struct MockThreadReadModelDao;
+
+#[async_trait::async_trait]
+impl ThreadReadModelDao for MockThreadReadModelDao {
+  async fn insert_thread(&self, _thread_created: &ThreadCreated) -> Result<()> {
+    Ok(())
+  }
+
+  async fn delete_thread(&self, _thread_deleted: &ThreadDeleted) -> Result<()> {
+    Ok(())
+  }
+
+  async fn rename_thread(&self, _thread_renamed: &ThreadRenamed) -> Result<()> {
+    Ok(())
+  }
+
+  async fn insert_member(&self, _thread_member_added: &ThreadMemberAdded) -> Result<()> {
+    Ok(())
+  }
+
+  async fn delete_member(&self, _thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
+    Ok(())
+  }
+
+  async fn post_message(&self, _thread_message_posted: &ThreadMessagePosted) -> Result<()> {
+    Ok(())
+  }
+
+  async fn delete_message(&self, _thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
+    Ok(())
+  }
+}
 #[cfg(test)]
 #[allow(deprecated)]
 pub mod tests {
-  use anyhow::Result;
-  use once_cell::sync::Lazy;
-  use refinery_core::mysql;
-  use sqlx::MySqlPool;
   use std::{env, thread};
+
+  use once_cell::sync::Lazy;
+  use sqlx::MySqlPool;
   use testcontainers::clients::Cli;
   use testcontainers::core::WaitFor;
   use testcontainers::images::generic::GenericImage;
   use testcontainers::Container;
 
-  use cqrs_es_example_domain::thread::events::{
-    ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadMemberRemoved, ThreadMessageDeleted, ThreadMessagePosted,
-    ThreadRenamed,
-  };
+  use crate::gateways::thread_read_model_dao_impl::ThreadReadModelDaoImpl;
+  use cqrs_es_example_command_interface_adaptor_if::ThreadReadModelDao;
+  use cqrs_es_example_domain::thread::events::{ThreadCreated, ThreadDeleted, ThreadMemberAdded, ThreadRenamed};
   use cqrs_es_example_domain::thread::member::{Member, MemberId, Members};
   use cqrs_es_example_domain::thread::{MemberRole, ThreadId, ThreadName};
   use cqrs_es_example_domain::user_account::UserAccountId;
 
-  use crate::thread_read_model_dao::{ThreadReadModelDao, ThreadReadModelDaoImpl};
-
-  #[derive(Debug)]
-  pub struct MockThreadReadModelDao;
-
-  #[async_trait::async_trait]
-  impl ThreadReadModelDao for MockThreadReadModelDao {
-    async fn insert_thread(&self, _thread_created: &ThreadCreated) -> Result<()> {
-      Ok(())
-    }
-
-    async fn delete_thread(&self, _thread_deleted: &ThreadDeleted) -> Result<()> {
-      Ok(())
-    }
-
-    async fn rename_thread(&self, _thread_renamed: &ThreadRenamed) -> Result<()> {
-      Ok(())
-    }
-
-    async fn insert_member(&self, _thread_member_added: &ThreadMemberAdded) -> Result<()> {
-      Ok(())
-    }
-
-    async fn delete_member(&self, _thread_member_removed: &ThreadMemberRemoved) -> Result<()> {
-      Ok(())
-    }
-
-    async fn post_message(&self, _thread_message_posted: &ThreadMessagePosted) -> Result<()> {
-      Ok(())
-    }
-
-    async fn delete_message(&self, _thread_message_deleted: &ThreadMessageDeleted) -> Result<()> {
-      Ok(())
-    }
-  }
-
-  static DOCKER: Lazy<Cli> = Lazy::new(|| Cli::default());
+  static DOCKER: Lazy<Cli> = Lazy::new(Cli::default);
 
   static MYSQL_IMAGE: Lazy<GenericImage> = Lazy::new(|| {
     GenericImage::new("mysql", "8.0")
@@ -179,7 +164,7 @@ pub mod tests {
   mod embedded {
     use refinery::embed_migrations;
 
-    embed_migrations!("../../tools/rdb-migration/migrations");
+    embed_migrations!("../../../tools/rdb-migration/migrations");
   }
 
   fn make_database_url_for_migration(port: u16) -> String {
@@ -193,10 +178,10 @@ pub mod tests {
   fn refinery_migrate(port: u16) {
     let url = make_database_url_for_migration(port);
     log::debug!("url: {:?}", url);
-    let opts = mysql::Opts::from_url(&url).unwrap();
+    let opts = refinery_core::mysql::Opts::from_url(&url).unwrap();
     let mut pool_result;
     while {
-      pool_result = mysql::Pool::new(opts.clone());
+      pool_result = refinery_core::mysql::Pool::new(opts.clone());
       pool_result.is_err()
     } {
       log::debug!("wait for mysql...");

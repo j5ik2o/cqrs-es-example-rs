@@ -10,15 +10,14 @@ use aws_sdk_dynamodb::types::{
   ProvisionedThroughput, ScalarAttributeType,
 };
 use aws_sdk_dynamodb::Client;
+use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway::EventPersistenceGateway;
+use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_repository::ThreadRepositoryImpl;
 use testcontainers::clients;
 use testcontainers::core::WaitFor;
 use testcontainers::images::generic::GenericImage;
 
-use cqrs_es_example_command_interface_adaptor::gateways::event_persistence_gateway::EventPersistenceGateway;
-use cqrs_es_example_command_interface_adaptor::gateways::thread_repository::ThreadRepositoryImpl;
-
 pub fn init_logger() {
-  let _ = env::set_var("RUST_LOG", "debug");
+  env::set_var("RUST_LOG", "debug");
   let _ = env_logger::builder().is_test(true).try_init();
 }
 
@@ -170,8 +169,8 @@ pub fn create_client(dynamodb_port: u16) -> Client {
     .endpoint_url(format!("http://localhost:{}", dynamodb_port))
     .credentials_provider(Credentials::new("x", "x", None, None, "default"))
     .build();
-  let client = Client::from_conf(config);
-  client
+
+  Client::from_conf(config)
 }
 
 async fn wait_table(client: &Client, target_table_name: &str) -> bool {
@@ -210,11 +209,11 @@ where
   let snapshot_aid_index_name = "snapshot-aid-index";
   let _ = create_snapshot_table(&client, snapshot_table_name, snapshot_aid_index_name).await;
 
-  while wait_table(&client, journal_table_name).await == false {
+  while !(wait_table(&client, journal_table_name).await) {
     thread::sleep(Duration::from_millis(1000));
   }
 
-  while wait_table(&client, snapshot_table_name).await == false {
+  while !(wait_table(&client, snapshot_table_name).await) {
     thread::sleep(Duration::from_millis(1000));
   }
 

@@ -3,11 +3,12 @@ use hyper::Body;
 use tower::util::ServiceExt;
 
 use common::*;
-use cqrs_es_example_command_interface_adaptor::controllers::{
+use cqrs_es_example_command_interface_adaptor_if::ThreadRepository;
+use cqrs_es_example_command_interface_adaptor_impl::controllers::{
   create_router, AddMemberRequestBody, CreateThreadRequestBody, DeleteMessageRequestBody, DeleteThreadRequestBody,
   EndpointPaths, PostMessageRequestBody, RemoveMemberRequestBody, RenameThreadRequestBody, ThreadCommandResponseBody,
 };
-use cqrs_es_example_domain::thread::{MemberRole, Message, MessageId, ThreadId, ThreadName, ThreadRepository};
+use cqrs_es_example_domain::thread::{MemberRole, Message, MessageId, ThreadId, ThreadName};
 use cqrs_es_example_domain::user_account::UserAccountId;
 
 mod common;

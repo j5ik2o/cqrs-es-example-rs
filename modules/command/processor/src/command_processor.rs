@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+use cqrs_es_example_command_interface_adaptor_if::ThreadRepository;
 use cqrs_es_example_domain::aggregate::Aggregate;
 use cqrs_es_example_domain::thread::member::{MemberId, Members};
 use cqrs_es_example_domain::thread::*;
@@ -17,7 +18,7 @@ impl<'a, TR: ThreadRepository> ThreadCommandProcessor<'a, TR> {
   pub async fn create_thread(&mut self, name: ThreadName, executor_id: UserAccountId) -> Result<ThreadId> {
     let members = Members::new(executor_id);
     let (t, te) = Thread::new(name, members);
-    let _ = self.thread_repository.store(&te, 1, Some(&t)).await?;
+    self.thread_repository.store(&te, 1, Some(&t)).await?;
     Ok(t.id().clone())
   }
 
@@ -38,7 +39,7 @@ impl<'a, TR: ThreadRepository> ThreadCommandProcessor<'a, TR> {
     let mut thread = self.thread_repository.find_by_id(&id).await?;
     let event = thread.rename(name, executor_id)?;
     let snapshot_opt = self.resolve_snapshot(thread.clone());
-    let _ = self
+    self
       .thread_repository
       .store(&event, thread.version(), snapshot_opt.as_ref())
       .await?;
@@ -57,7 +58,7 @@ impl<'a, TR: ThreadRepository> ThreadCommandProcessor<'a, TR> {
     let member_id = MemberId::new();
     let event = thread.add_member(member_id, user_account_id, role, executor_id)?;
     let snapshot_opt = self.resolve_snapshot(thread.clone());
-    let _ = self
+    self
       .thread_repository
       .store(&event, thread.version(), snapshot_opt.as_ref())
       .await?;
@@ -73,7 +74,7 @@ impl<'a, TR: ThreadRepository> ThreadCommandProcessor<'a, TR> {
     let mut thread = self.thread_repository.find_by_id(&id).await?;
     let event = thread.remove_member(user_account_id, executor_id)?;
     let snapshot_opt = self.resolve_snapshot(thread.clone());
-    let _ = self
+    self
       .thread_repository
       .store(&event, thread.version(), snapshot_opt.as_ref())
       .await?;
@@ -84,7 +85,7 @@ impl<'a, TR: ThreadRepository> ThreadCommandProcessor<'a, TR> {
     let mut thread = self.thread_repository.find_by_id(&id).await?;
     let event = thread.delete(executor_id)?;
     let snapshot_opt = self.resolve_snapshot(thread.clone());
-    let _ = self
+    self
       .thread_repository
       .store(&event, thread.version(), snapshot_opt.as_ref())
       .await?;
@@ -95,7 +96,7 @@ impl<'a, TR: ThreadRepository> ThreadCommandProcessor<'a, TR> {
     let mut thread = self.thread_repository.find_by_id(&id).await?;
     let event = thread.post_message(message, executor_id)?;
     let snapshot_opt = self.resolve_snapshot(thread.clone());
-    let _ = self
+    self
       .thread_repository
       .store(&event, thread.version(), snapshot_opt.as_ref())
       .await?;
@@ -111,7 +112,7 @@ impl<'a, TR: ThreadRepository> ThreadCommandProcessor<'a, TR> {
     let mut thread = self.thread_repository.find_by_id(&id).await?;
     let event = thread.delete_message(message_id, executor_id)?;
     let snapshot_opt = self.resolve_snapshot(thread.clone());
-    let _ = self
+    self
       .thread_repository
       .store(&event, thread.version(), snapshot_opt.as_ref())
       .await?;

@@ -9,11 +9,11 @@ use aws_sdk_dynamodbstreams::config::{Credentials, Region};
 use aws_sdk_dynamodbstreams::types::ShardIteratorType;
 use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use chrono::Utc;
+use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_read_model_dao_impl::ThreadReadModelDaoImpl;
 use http::{HeaderMap, HeaderValue};
 use lambda_runtime::{Context, LambdaEvent};
 use sqlx::{MySql, MySqlPool, Pool};
 
-use cqrs_es_example_read_model_updater::thread_read_model_dao::ThreadReadModelDaoImpl;
 use cqrs_es_example_read_model_updater::{load_app_config, AwsSettings};
 
 #[tokio::main]
@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
   let dynamodb_client = create_aws_client(&app_settings.aws).await;
   let dynamodb_streams_client = create_aws_dynamodb_streams_client(&app_settings.aws).await;
   if let Some(stream_settings) = &app_settings.stream {
-    let _ = stream_events_driver(
+    stream_events_driver(
       &dynamodb_client,
       &dynamodb_streams_client,
       pool,
@@ -97,9 +97,7 @@ async fn stream_events_driver(
       .unwrap()
       .shards()
       .unwrap()
-      .iter()
-      .cloned()
-      .collect::<Vec<_>>();
+      .to_vec();
 
     for shard in shards {
       tracing::info!("shard = {:?}", shard);
@@ -171,7 +169,7 @@ async fn stream_events_driver(
           let context = Context::try_from(headers).unwrap();
           let lambda_event = LambdaEvent::new(event, context);
 
-          let _ = cqrs_es_example_read_model_updater::update_read_model(&dao, lambda_event).await?;
+          cqrs_es_example_read_model_updater::update_read_model(&dao, lambda_event).await?;
         }
         processed_record_count += records.len();
         shard_iterator_opt = get_records_output.next_shard_iterator().map(|s| s.to_owned())
@@ -224,8 +222,8 @@ async fn create_aws_client(aws_settings: &AwsSettings) -> DynamoDBClient {
   }
 
   let config = config_loader.load().await;
-  let client = DynamoDBClient::new(&config);
-  client
+
+  DynamoDBClient::new(&config)
 }
 
 async fn create_aws_dynamodb_streams_client(aws_settings: &AwsSettings) -> DynamoDBStreamsClient {
@@ -252,6 +250,6 @@ async fn create_aws_dynamodb_streams_client(aws_settings: &AwsSettings) -> Dynam
     _ => {}
   }
   let config = config_loader.load().await;
-  let client = DynamoDBStreamsClient::new(&config);
-  client
+
+  DynamoDBStreamsClient::new(&config)
 }

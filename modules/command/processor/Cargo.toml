@@ -12,3 +12,4 @@ downcast-rs = "1.2.0"
 async-trait = "0.1.36"
 tokio = { version = "1", features = ["full"] }
 cqrs-es-example-domain = { version = "0.0.1", path = "../domain" }
+cqrs-es-example-command-interface-adaptor-if = { version = "0.0.1", path = "../interface-adaptor-if" }

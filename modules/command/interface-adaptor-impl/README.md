@@ -1,4 +1,4 @@
-# cqrs-es-example-command-interface-adaptor
+# cqrs-es-example-command-interface-adaptor-impl
 
 ## 概要
 

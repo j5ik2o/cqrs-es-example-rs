@@ -1,3 +1,5 @@
+mod gateways;
+
 use anyhow::Result;
 use async_graphql::futures_util::{Stream, StreamExt};
 use async_graphql::{Context, Object, SimpleObject, Subscription};

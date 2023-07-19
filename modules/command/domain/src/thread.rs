@@ -320,7 +320,7 @@ impl Thread {
     }
     let result = self.messages.iter().position(|message| message.id == message_id);
     match result {
-      None => return Err(anyhow!("Message not found")),
+      None => Err(anyhow!("Message not found")),
       Some(index) => {
         let message = &self.messages[index];
         let member = self.members.find_by_user_account_id(&message.sender_id).unwrap();
@@ -350,13 +350,6 @@ impl Thread {
       executor_id,
     )))
   }
-}
-
-#[async_trait::async_trait]
-pub trait ThreadRepository: Clone + Send + Sync + 'static {
-  async fn store(&mut self, event: &ThreadEvent, version: usize, snapshot: Option<&Thread>) -> Result<()>;
-
-  async fn find_by_id(&self, id: &ThreadId) -> Result<Thread>;
 }
 
 #[test]

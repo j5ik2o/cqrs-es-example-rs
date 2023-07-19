@@ -1,16 +1,13 @@
 use anyhow::Result;
 use aws_lambda_events::dynamodb;
 use config::Environment;
+use cqrs_es_example_command_interface_adaptor_if::ThreadReadModelDao;
 use lambda_runtime::LambdaEvent;
 use serde::Deserialize;
 use serde_dynamo::AttributeValue;
 use serde_json::Value;
 
 use cqrs_es_example_domain::thread::events::ThreadEvent;
-
-use crate::thread_read_model_dao::ThreadReadModelDao;
-
-pub mod thread_read_model_dao;
 
 pub async fn update_read_model<D: ThreadReadModelDao>(
   thread_read_model_dao: &D,
@@ -45,7 +42,7 @@ pub async fn update_read_model<D: ThreadReadModelDao>(
 }
 
 fn get_type_string(payload_str: &String) -> String {
-  let parsed: Value = serde_json::from_str(&payload_str).unwrap();
+  let parsed: Value = serde_json::from_str(payload_str).unwrap();
   let type_value = &parsed["type"];
   let type_value_str = type_value.as_str().unwrap();
   type_value_str.to_string()
@@ -97,11 +94,9 @@ pub fn load_app_config() -> Result<AppSettings> {
 #[allow(deprecated)]
 mod test {
   use aws_lambda_events::dynamodb::Event;
+  use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_read_model_dao_impl::MockThreadReadModelDao;
   use http::{HeaderMap, HeaderValue};
   use lambda_runtime::Context;
-  use serde_json;
-
-  use crate::thread_read_model_dao::tests::MockThreadReadModelDao;
 
   use super::*;
 
@@ -126,6 +121,6 @@ mod test {
 
     let dao = MockThreadReadModelDao;
 
-    let _ = update_read_model(&dao, le).await.unwrap();
+    update_read_model(&dao, le).await.unwrap();
   }
 }

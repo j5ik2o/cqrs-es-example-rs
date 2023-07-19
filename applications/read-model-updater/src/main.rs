@@ -4,10 +4,10 @@ use anyhow::Result;
 use aws_lambda_events::dynamodb;
 use std::time::Duration;
 
+use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_read_model_dao_impl::ThreadReadModelDaoImpl;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use sqlx::mysql::{MySqlConnectOptions, MySqlPoolOptions, MySqlSslMode};
 
-use cqrs_es_example_read_model_updater::thread_read_model_dao::ThreadReadModelDaoImpl;
 use cqrs_es_example_read_model_updater::{load_app_config, update_read_model};
 
 async fn handler(event: LambdaEvent<dynamodb::Event>) -> Result<()> {
@@ -36,8 +36,8 @@ async fn main() -> Result<(), Error> {
   let op = op.ssl_mode(MySqlSslMode::Disabled);
   let pool = MySqlPoolOptions::new()
     .acquire_timeout(Duration::from_secs(60))
-    .max_connections(10)
-    .min_connections(5)
+    .max_connections(2)
+    .min_connections(1)
     .connect_with(op)
     .await?;
 

@@ -11,7 +11,7 @@ use axum::routing::get;
 use axum::{Extension, Router};
 use sqlx::MySqlPool;
 
-use cqrs_es_example_query_interface_adaptor::*;
+use cqrs_es_example_query_interface_adaptor_impl::*;
 use cqrs_es_example_read_api_server::load_app_config;
 
 type ApiSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
@@ -20,8 +20,12 @@ async fn graphql_handler(schema: Extension<ApiSchema>, req: GraphQLRequest) -> G
   schema.execute(req.into_inner()).await.into()
 }
 
-async fn graphiql() -> impl IntoResponse {
+async fn graphql() -> impl IntoResponse {
   response::Html(GraphiQLSource::build().endpoint("/").finish())
+}
+
+async fn hello_read_api() -> &'static str {
+    "Hello, Read API!"
 }
 
 #[tokio::main]
@@ -41,14 +45,15 @@ async fn main() -> Result<()> {
     .finish();
 
   let app = Router::new()
-    .route("/", get(graphiql).post(graphql_handler))
+    .route("/", get(hello_read_api))
     .route("/health/alive", get(alive))
     .route("/health/ready", get(ready))
+    .route("/graphql", get(graphql).post(graphql_handler))
     .layer(Extension(schema));
 
   let socket_addr = SocketAddr::new(IpAddr::from_str(&app_settings.api.host).unwrap(), app_settings.api.port);
   tracing::info!("Server listening on {}", socket_addr);
 
-  let _ = axum::Server::bind(&socket_addr).serve(app.into_make_service()).await?;
+  axum::Server::bind(&socket_addr).serve(app.into_make_service()).await?;
   Ok(())
 }

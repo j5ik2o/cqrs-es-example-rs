@@ -27,7 +27,7 @@ tower = "0.4.12"
 
 cqrs-es-example-domain = { version = "0.0.1", path = "../../modules/command/domain" }
 cqrs-es-example-command-processor = { version = "0.0.1", path = "../../modules/command/processor" }
-cqrs-es-example-command-interface-adaptor = { version = "0.0.1", path = "../../modules/command/interface-adaptor" }
+cqrs-es-example-command-interface-adaptor-impl = { version = "0.0.1", path = "../../modules/command/interface-adaptor-impl" }
 
 openssl = { version = "0.10.55", features = ["vendored"] }
 env_logger = "0.10.0"

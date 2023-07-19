@@ -5,11 +5,12 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use cqrs_es_example_command_interface_adaptor_if::ThreadRepository;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 use cqrs_es_example_command_processor::command_processor::ThreadCommandProcessor;
-use cqrs_es_example_domain::thread::{MemberRole, Message, MessageId, ThreadId, ThreadName, ThreadRepository};
+use cqrs_es_example_domain::thread::{MemberRole, Message, MessageId, ThreadId, ThreadName};
 use cqrs_es_example_domain::user_account::UserAccountId;
 
 #[derive(Debug, Serialize, Deserialize)]

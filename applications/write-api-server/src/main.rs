@@ -7,9 +7,9 @@ use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::config::{Credentials, Region};
 use aws_sdk_dynamodb::Client;
 use config::{Config, Environment};
-use cqrs_es_example_command_interface_adaptor::controllers::create_router;
-use cqrs_es_example_command_interface_adaptor::gateways::event_persistence_gateway::EventPersistenceGateway;
-use cqrs_es_example_command_interface_adaptor::gateways::thread_repository::ThreadRepositoryImpl;
+use cqrs_es_example_command_interface_adaptor_impl::controllers::create_router;
+use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway::EventPersistenceGateway;
+use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_repository::ThreadRepositoryImpl;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -67,12 +67,12 @@ async fn main() -> Result<()> {
     app_settings.persistence.journal_aid_index_name.clone(),
     app_settings.persistence.snapshot_table_name.clone(),
     app_settings.persistence.snapshot_aid_index_name.clone(),
-    app_settings.persistence.journal_shard_count.clone(),
+    app_settings.persistence.journal_shard_count,
   );
   let repository = ThreadRepositoryImpl::new(egg);
   let socket_addr = SocketAddr::new(IpAddr::from_str(&app_settings.api.host).unwrap(), app_settings.api.port);
   tracing::info!("Server listening on {}", socket_addr);
-  let _ = axum::Server::bind(&socket_addr)
+  axum::Server::bind(&socket_addr)
     .serve(create_router(repository).into_make_service())
     .await?;
   Ok(())

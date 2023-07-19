@@ -85,12 +85,12 @@ impl EventPersistenceGateway {
         let aggregate = serde_json::from_str::<T>(payload).unwrap();
         let seq_nr = item.get("seq_nr").unwrap().as_n().unwrap().parse::<usize>().unwrap();
         let version = item.get("version").unwrap().as_n().unwrap().parse::<usize>().unwrap();
-        return Ok((aggregate, seq_nr, version));
+        Ok((aggregate, seq_nr, version))
       } else {
-        return Err(anyhow::anyhow!("No snapshot found for aggregate id: {}", aid));
+        Err(anyhow::anyhow!("No snapshot found for aggregate id: {}", aid))
       }
     } else {
-      return Err(anyhow::anyhow!("No snapshot found for aggregate id: {}", aid));
+      Err(anyhow::anyhow!("No snapshot found for aggregate id: {}", aid))
     }
   }
 
