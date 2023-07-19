@@ -54,3 +54,5 @@ $AWS route53 change-resource-record-sets \
 }
 EOF
 )"
+
+echo "External DNS Name = ${HOST_NAME}"
