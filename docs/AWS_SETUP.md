@@ -12,6 +12,17 @@ aws_secret_access_key=xxxxx
 aws_session_token=xxxxx
 ```
 
+もしくは、AWS SSOの場合は、以下のように `~/.aws/config` 編集する
+
+```
+[profile ceer]
+sso_start_url = https://xxxxxx.awsapps.com/start
+sso_region = ap-northeast-1
+sso_account_id = 1234567890 
+sso_role_name = xxxxxx
+region = ap-northeast-1
+```
+
 ## `env.sh.default`を`env.sh`としてコピーし編集する
 
 ```shell
@@ -23,8 +34,8 @@ $ cp env.sh.default env.sh
 
 # terraform による AWS 環境の構築
 
-tools/terraform/${PREFIX}/${APPLICATION_NAME}-terraform.tfvars`を以下の内容で新規作成する。
-variables.tfで定義した変更は、このtfvarsファイルで上書きすることができる。
+`tools/terraform/${PREFIX}/${APPLICATION_NAME}-terraform.tfvars`を以下の内容で新規作成する。
+variables.tfで定義した変更は、この`tfvars`ファイルで上書きすることができる。
 必要なリソースだけを作成することができます。例えば、ecrだけが必要なら`ecr_enabled = true`と設定すればよい。
 
 ```
@@ -50,7 +61,7 @@ datadog-api-key = "xxxx"
 初回のみ、DynamoDBにterraform用のロックテーブルを作成する。
 
 ```shell
-tools/terraform $ ./create-lock-table.sh
+ceer-root $ makers terraform-create-lock-table
 ```
 
 ## tfstate用のs3バケットを作る
@@ -58,25 +69,25 @@ tools/terraform $ ./create-lock-table.sh
 初回のみ、tfstateを保存するs3バケットを作成する。
 
 ```shell
-tools/terraform $ ./create-tf-bucket.sh
+ceer-root $ makers terraform-create-tf-bucket
 ```
 
 ## terraform init
 
 ```shell
-tools/terraform $ ./terraform-init.sh
+ceer-root $ makers terraform-init
 ```
 
 ## terraform plan
 
 ```shell
-tools/terraform $ ./terraform-plan.sh
+ceer-root $ makers terraform-plan
 ```
 
 ## terraform apply
 
 ```shell
-tools/terraform $ ./terraform-apply.sh
+ceer-root $ makers terraform-apply
 ```
 
 ## Update kubeconfig
@@ -84,7 +95,7 @@ tools/terraform $ ./terraform-apply.sh
 以下のコマンドを実行してkubeconfig(`~/.kube/config`)を生成する。
 
 ```shell
-tools/terraform $ ./update-kubeconfig.sh
+ceer-root $ makers update-kubeconfig
 ```
 
 FYI: https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html

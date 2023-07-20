@@ -3,7 +3,7 @@
 ## ビルドイメージ
 
 ```shell
-$ ./tools/scripts/docker-build-all.sh
+ceer-root $ makers docker-build-local-all
 --- Using Environments -----------------
 AWS_PROFILE = ceer
 AWS_REGION = us-east-1
@@ -16,7 +16,7 @@ APPLICATION_NAME = ceer
 ## Docker Composeを実行する
 
 ```shell
-$ ./tools/scripts/docker-compose-up.sh
+ceer-root $ makers docker-compose-up
 ```
 
 ## 動作確認
@@ -26,15 +26,63 @@ $ ./tools/scripts/docker-compose-up.sh
 以下のコマンドで動作確認を行う。
 
 ```shell
-ceer-root $ ./tools/scripts/curl-get-root-write-api-server-on-local.sh
-Hello, Write API!%
+ceer-root $ makers curl-get-root
+[cargo-make] INFO - makers 0.36.11
+[cargo-make] INFO - Calling cargo metadata to extract project info
+[cargo-make] INFO - Cargo metadata done
+[cargo-make] INFO - Execute Command: "/bin/sh" "/var/folders/tn/ppwkg3_s603fs3702lmrsn_80000gn/T/fsio_P9UT4nidwY.sh"
+--- Using Environments -----------------
+AWS_PROFILE      = ceer
+AWS_REGION       = ap-northeast-1
+PREFIX           = aht9aa1e
+APPLICATION_NAME = ceer
+----------------------------------------
+[cargo-make] INFO - Build File: Makefile.toml
+[cargo-make] INFO - Task: curl-get-root
+[cargo-make] INFO - Profile: development
+[cargo-make] INFO - Running Task: legacy-migration
+[cargo-make] INFO - Running Task: curl-get-root-write-api-server
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:18080...
+* Connected to localhost (127.0.0.1) port 18080 (#0)
+> GET / HTTP/1.1
+> Host: localhost:18080
+> User-Agent: curl/7.88.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< content-type: text/plain; charset=utf-8
+< content-length: 17
+< date: Wed, 19 Jul 2023 06:07:57 GMT
+<
+* Connection #0 to host localhost left intact
+Hello, Write API!
+[cargo-make] INFO - Running Task: curl-get-root-read-api-server
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:18082...
+* Connected to localhost (127.0.0.1) port 18082 (#0)
+> GET / HTTP/1.1
+> Host: localhost:18082
+> User-Agent: curl/7.88.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< content-type: text/plain; charset=utf-8
+< content-length: 16
+< date: Wed, 19 Jul 2023 06:07:57 GMT
+<
+* Connection #0 to host localhost left intact
+Hello, Read API!
+[cargo-make] INFO - Build Done in 1.31 seconds.
 ```
 
-GraphiQL IDEのページが返ってくればOK。
+GraphiQL IDEを開く
 
-http://localhost:18082/
+```shell
+ceer-root $ makers open-graphiql-ide
+```
 
-APIを呼び出して動作を確認する。
+疎通確認方法は以下の通り。
 
 ```shell
 ceer-root $ ./tools/scripts/curl-post-write-api-server-on-local.sh

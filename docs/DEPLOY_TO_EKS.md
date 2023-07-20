@@ -3,7 +3,7 @@
 ## DockerイメージをECRにプッシュする
 
 ```shell
-ceer-root $ ./tools/scripts/docker-ecr-push-with-build.sh
+ceer-root $ makers docker-ecr-build-push-all
 ```
 
 ## Helmfile の設定ファイルを編集します。
@@ -26,13 +26,13 @@ yamlファイルの以下の項目を適切に設定してください。
 次にデプロイします。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-eks.sh
+ceer-root $ makers helmfile-apply
 ```
 
 クラスタが形成されるまでしばらく待ちます。ログにエラーがないことを確認してください。
 
 ```shell
-$ stern 'write-api-server-*' -n adceet
+$ stern 'write-api-server-*' -n ceer
 ```
 
 すべてのPodがReady状態になっていることを確認する。
@@ -40,13 +40,14 @@ $ stern 'write-api-server-*' -n adceet
 IngressのAddressにホスト名が付いていることを確認する。
 
 ```shell
-$ kubectl -n ceer get ingress write-api-server
+$ makers kubectl-get-ingress-write-api-server
+# snip
 NAME               CLASS   HOSTS                           ADDRESS                                                                    PORTS   AGE
 write-api-server   alb     write-ceer-j5ik2o.xxxxxx.info   k8s-ceer-writeapi-f8152916e6-1353305610.ap-northeast-1.elb.amazonaws.com   80      145m
 ```
 
 ```shell
-$ ./tools/scripts/aws-route53-upsert-external-dns-of-write-api-server.sh
+$ makers update-dns-write-api-server
 --- Using Environments -----------------
 AWS_PROFILE      = ceer
 AWS_REGION       = ap-northeast-1
@@ -67,13 +68,14 @@ HOSTED_ZONE_ID=Z14GRHDCWA56QT
 ```
 
 ```shell
-$ kubectl -n ceer get ingress read-api-server
+$ makers kubectl-get-ingress-read-api-server
+# snip
 NAME              CLASS   HOSTS                          ADDRESS                                                                   PORTS   AGE
 read-api-server   alb     read-ceer-j5ik2o.xxxxxx.info   k8s-ceer-readapis-818fc43feb-708519146.ap-northeast-1.elb.amazonaws.com   80      4h26m
 ```
 
 ```shell
-$ ./tools/scripts/aws-route53-upsert-external-dns-of-read-api-server.sh
+$ makers update-dns-read-api-server
 --- Using Environments -----------------
 AWS_PROFILE      = ceer
 AWS_REGION       = ap-northeast-1
@@ -93,19 +95,27 @@ HOSTED_ZONE_ID=Z14GRHDCWA56QT
 }
 ```
 
-## アプリケーションのチェック
+## アプリケーションの動作チェック
 
 フロントエンドが起動したら、以下のコマンドで動作を確認する。
 
 ```shell
-$ ./tools/scripts/curl-get-root-write-api-server-on-eks.sh
-Hello, Write API!%
+$ makers --profile production curl-get-root
+# snip
+Hello, Write API!
+# snip
+Hello, Read API!
+# snip
 ```
 
 APIを呼び出して動作を確認する。
 
 ```shell
-$ ./tools/scripts/curl-post-write-api-server-on-eks.sh
-{"Success":{"id":{"value":"01H5DAYAN4ENF16AMT6Z6EQ0PC"}}} 
+$ makers create-and-get-thread
+# snip
+create-thread: THREAD_ID=01H5Q476STTQ78D45ZR4EKXF0B
+get-thread: ACTUAL_THREAD_ID=01H5Q476STTQ78D45ZR4EKXF0B
+OK
+# snip
 ```
 

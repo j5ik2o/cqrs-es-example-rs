@@ -12,6 +12,7 @@ fi
 
 # shellcheck disable=SC2034
 OUTPUT_ENV=1
+OPTS=${OPTS:-}
 
 source ../../env.sh
 
@@ -19,6 +20,6 @@ export AWS_DEFAULT_REGION=$AWS_REGION
 
 pushd ../helmfile.d
 
-helmfile --namespace ceer --selector group=write-api-server -e "${PREFIX}-${APPLICATION_NAME}-eks" template
+helmfile --namespace ceer ${OPTS} -e "${PREFIX}-${APPLICATION_NAME}-eks" "$@"
 
 popd

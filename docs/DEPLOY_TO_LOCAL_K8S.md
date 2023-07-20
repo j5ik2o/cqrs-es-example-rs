@@ -25,13 +25,10 @@ yamlファイルの以下の項目を適切に設定してください。
 
 - writeApi.writeApiServer.image.repository
 - writeApi.writeApiServer.image.tag
-
-yamlファイルに以下の項目を適切に設定してください（Read API Serverを使用する場合）。
-
-- readModelUpdater.image.repository
-- readModelUpdater.image.tag
 - readApiServer.image.repository
 - readApiServer.image.tag
+- readModelUpdater.image.repository
+- readModelUpdater.image.tag
 
 ---
 
@@ -120,7 +117,7 @@ ceer-ルート $ ./tools/scripts/helmfile-apply-local-read-api.sh
 $ stern 'read-api-server-*' -n adceet
 ```
 
-## アプリケーションのチェック
+## アプリケーションの動作チェック
 
 フロントエンドが起動したら、以下のコマンドで動作を確認する。
 

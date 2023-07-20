@@ -21,7 +21,7 @@ async fn graphql_handler(schema: Extension<ApiSchema>, req: GraphQLRequest) -> G
 }
 
 async fn graphql() -> impl IntoResponse {
-  response::Html(GraphiQLSource::build().endpoint("/").finish())
+  response::Html(GraphiQLSource::build().endpoint("/graphql").finish())
 }
 
 async fn hello_read_api() -> &'static str {

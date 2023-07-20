@@ -16,6 +16,16 @@ echo "----------------------------------------"
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 RUST_BACKTRACE=1
 RUST_TEST_THREADS=1
+WRITE_API_SERVER_PORT = 18080
+READ_API_SERVER_PORT = 18082
+WRITE_API_SERVER_BASE_URL = "http://localhost:${WRITE_API_SERVER_PORT}"
+READ_API_SERVER_BASE_URL = "http://localhost:${READ_API_SERVER_PORT}"
+
+[env.production]
+WRITE_API_SERVER_PORT = 443
+READ_API_SERVER_PORT = 443
+WRITE_API_SERVER_BASE_URL = "https://write-ceer-j5ik2o.cwtest.info"
+READ_API_SERVER_BASE_URL = "https://read-ceer-j5ik2o.cwtest.info"
 
 #[env.TEST]
 #script = ['''
@@ -182,6 +192,158 @@ dependencies = ["docker-build-write-api-server", "aws-ecr-login", "docker-ecr-pu
 workspace = false
 dependencies = ["docker-build-read-api-server", "aws-ecr-login" , "docker-ecr-push-read-api-server"]
 
-[tasks.docker-ecr-build-push]
+[tasks.docker-ecr-build-push-all]
 workspace = false
 run_task = { name = ["docker-build-prod-all", "docker-ecr-push-write-api-server", "docker-ecr-push-read-api-server"] }
+
+# -------
+
+[tasks.helmfile-diff-write-api-server]
+workspace = false
+env = { "OPTS" = "--group=write-api-server" }
+command = "./tools/scripts/helmfile.sh"
+args = ["diff"]
+
+[tasks.helmfile-diff-read-api-server]
+workspace = false
+env = { "OPTS" = "--group=read-api-server" }
+command = "./tools/scripts/helmfile.sh"
+args = ["diff"]
+
+[tasks.helmfile-diff-refinery]
+workspace = false
+env = { "OPTS" = "--group=refinery" }
+command = "./tools/scripts/helmfile.sh"
+args = ["diff"]
+
+[tasks.helmfile-diff-all]
+workspace = false
+command = "./tools/scripts/helmfile.sh"
+args = ["diff"]
+
+# ---
+
+[tasks.helmfile-apply-write-api-server]
+workspace = false
+env = { "OPTS" = "--group=write-api-server" }
+command = "./tools/scripts/helmfile.sh"
+args = ["apply"]
+
+[tasks.helmfile-apply-read-api-server]
+workspace = false
+env = { "OPTS" = "--group=read-api-server" }
+command = "./tools/scripts/helmfile.sh"
+args = ["apply"]
+
+[tasks.helmfile-apply-refinery]
+workspace = false
+env = { "OPTS" = "--group=refinery" }
+command = "./tools/scripts/helmfile.sh"
+args = ["apply"]
+
+[tasks.helmfile-apply-all]
+workspace = false
+command = "./tools/scripts/helmfile.sh"
+args = ["apply"]
+
+# ---
+
+[tasks.helmfile-destroy-write-api-server]
+workspace = false
+env = { "OPTS" = "--group=write-api-server" }
+command = "./tools/scripts/helmfile.sh"
+args = ["destroy"]
+
+[tasks.helmfile-destroy-read-api-server]
+workspace = false
+env = { "OPTS" = "--group=read-api-server" }
+command = "./tools/scripts/helmfile.sh"
+args = ["destroy"]
+
+[tasks.helmfile-destroy-refinery]
+workspace = false
+env = { "OPTS" = "--group=refinery" }
+command = "./tools/scripts/helmfile.sh"
+args = ["destroy"]
+
+[tasks.helmfile-destroy-all]
+workspace = false
+command = "./tools/scripts/helmfile.sh"
+args = ["destroy"]
+
+# -------
+
+[tasks.kubectl-get-ingress-write-api-server]
+workspace = false
+script = '''
+kubectl -n ceer get ingress write-api-server
+'''
+
+[tasks.update-dns-write-api-server]
+workspace = false
+script = '''
+./tools/scripts/aws-route53-upsert-external-dns-of-write-api-server.sh
+'''
+
+[tasks.kubectl-get-ingress-read-api-server]
+workspace = false
+script = '''
+kubectl -n ceer get ingress read-api-server
+'''
+
+[tasks.update-dns-read-api-server]
+workspace = false
+script = '''
+./tools/scripts/aws-route53-upsert-external-dns-of-read-api-server.sh
+'''
+
+[tasks.update-dns-all]
+workspace = false
+run_task = { name = ["update-dns-write-api-server", "update-dns-read-api-server"] }
+
+# -------
+
+[tasks.curl-get-root-write-api-server]
+workspace = false
+script = '''
+curl -s -X GET ${WRITE_API_SERVER_BASE_URL}
+echo ""
+'''
+
+[tasks.curl-get-root-read-api-server]
+workspace = false
+script = '''
+curl -s -X GET ${READ_API_SERVER_BASE_URL}
+echo ""
+'''
+
+[tasks.curl-get-root]
+workspace = false
+dependencies = ["curl-get-root-write-api-server", "curl-get-root-read-api-server"]
+
+[tasks.open-graphql-ide]
+workspace = false
+script = '''
+open ${READ_API_SERVER_BASE_URL}/graphql
+'''
+
+[tasks.create-thread]
+workspace = false
+script = '''
+./tools/scripts/curl-post-create-thread.sh | jq .
+'''
+
+[tasks.create-and-get-thread]
+workspace = false
+script = '''
+export THREAD_ID=$(./tools/scripts/curl-post-create-thread.sh | jq -r .Success.id.value)
+echo "create-thread: THREAD_ID=${THREAD_ID}"
+sleep 1
+ACTUAL_ID=$(./tools/scripts/curl-post-get-thread.sh | jq -r .data.getThread.id)
+echo "get-thread: ACTUAL_THREAD_ID=${ACTUAL_ID}"
+if [ "${THREAD_ID}" = "${ACTUAL_ID}" ]; then
+  echo "OK"
+else
+  echo "NG"
+fi
+'''

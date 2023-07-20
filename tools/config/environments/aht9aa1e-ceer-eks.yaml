@@ -91,7 +91,7 @@ readApiServer:
   version: 0.0.1
   image:
     repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-read-api-server
-    tag: 7d4a16ef287e835c5cbd9bad1283d45e6e80653af6e4bb9e5c732734eee7a3be-amd64
+    tag: e1ffb9891defb29be6f77f7d63d1d451b3e01b7f31cb763dd60bb2f3a0295eaa-amd64
     pullPolicy: Always
   env:
     - name: "RUST_LOG"
