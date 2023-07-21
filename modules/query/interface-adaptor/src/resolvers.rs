@@ -1,10 +1,7 @@
-mod gateways;
-
 use anyhow::Result;
-use async_graphql::futures_util::{Stream, StreamExt};
-use async_graphql::{Context, Object, SimpleObject, Subscription};
-use axum::http::StatusCode;
-use axum::response::IntoResponse;
+use async_graphql::futures_util::Stream;
+use async_graphql::futures_util::StreamExt;
+use async_graphql::{Context, EmptyMutation, EmptySubscription, Object, Schema, SimpleObject, Subscription};
 use chrono::NaiveDateTime;
 use redis::Client;
 use sqlx::MySqlPool;
@@ -16,8 +13,6 @@ pub struct Thread {
   owner_id: String,
   created_at: NaiveDateTime,
 }
-
-impl Thread {}
 
 pub struct QueryRoot;
 
@@ -55,10 +50,10 @@ impl SubscriptionRoot {
   }
 }
 
-pub async fn alive() -> impl IntoResponse {
-  (StatusCode::OK, "OK")
-}
+pub type ApiSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
 
-pub async fn ready() -> impl IntoResponse {
-  (StatusCode::OK, "OK")
+pub fn create_schema(pool: MySqlPool) -> ApiSchema {
+  Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    .data(pool)
+    .finish()
 }

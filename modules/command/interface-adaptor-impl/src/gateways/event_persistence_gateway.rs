@@ -1,6 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 
 use anyhow::Result;
 use aws_sdk_dynamodb::types::{AttributeValue, Put, TransactWriteItem, Update};
@@ -11,6 +12,28 @@ use serde::{de, Serialize};
 use cqrs_es_example_domain::aggregate::{Aggregate, AggregateId};
 use cqrs_es_example_domain::Event;
 
+pub trait KeyResolver: Debug + Send + 'static {
+  fn resolve_pkey(&self, id_type_name: &str, value: &str, shard_count: u64) -> String;
+  fn resolve_skey(&self, id_type_name: &str, value: &str, seq_nr: usize) -> String;
+}
+
+#[derive(Debug, Clone)]
+pub struct DefaultPartitionKeyResolver;
+
+impl KeyResolver for DefaultPartitionKeyResolver {
+  fn resolve_pkey(&self, id_type_name: &str, value: &str, shard_count: u64) -> String {
+    let mut hasher = DefaultHasher::new();
+    value.hash(&mut hasher);
+    let hash_value = hasher.finish();
+    let remainder = hash_value % shard_count;
+    format!("{}-{}", id_type_name, remainder)
+  }
+
+  fn resolve_skey(&self, id_type_name: &str, value: &str, seq_nr: usize) -> String {
+    format!("{}-{}-{}", id_type_name, value, seq_nr)
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct EventPersistenceGateway {
   journal_table_name: String,
@@ -19,7 +42,12 @@ pub struct EventPersistenceGateway {
   snapshot_aid_index_name: String,
   client: Client,
   shard_count: u64,
+  key_resolver: Arc<dyn KeyResolver>,
 }
+
+unsafe impl Sync for EventPersistenceGateway {}
+
+unsafe impl Send for EventPersistenceGateway {}
 
 impl EventPersistenceGateway {
   pub fn new(
@@ -30,6 +58,26 @@ impl EventPersistenceGateway {
     snapshot_aid_index_name: String,
     shard_count: u64,
   ) -> Self {
+    Self::new_with_key_resolver(
+      client,
+      journal_table_name,
+      journal_aid_index_name,
+      snapshot_table_name,
+      snapshot_aid_index_name,
+      shard_count,
+      Arc::new(DefaultPartitionKeyResolver),
+    )
+  }
+
+  pub fn new_with_key_resolver(
+    client: Client,
+    journal_table_name: String,
+    journal_aid_index_name: String,
+    snapshot_table_name: String,
+    snapshot_aid_index_name: String,
+    shard_count: u64,
+    key_resolver: Arc<dyn KeyResolver>,
+  ) -> Self {
     Self {
       journal_table_name,
       journal_aid_index_name,
@@ -37,32 +85,13 @@ impl EventPersistenceGateway {
       snapshot_aid_index_name,
       client,
       shard_count,
+      key_resolver,
     }
-  }
-
-  pub async fn get_snapshot_by_id1<T>(&self, aid: String) -> Result<(T, usize, usize)>
-  where
-    T: for<'de> de::Deserialize<'de>,
-  {
-    let response = self
-      .client
-      .get_item()
-      .table_name(self.snapshot_table_name.clone())
-      .key("pkey", AttributeValue::S(aid))
-      .send()
-      .await?;
-    let item = response.item().unwrap();
-    let payload = item.get("payload").unwrap().as_s().unwrap();
-    let aggregate = serde_json::from_str::<T>(payload).unwrap();
-    let seq_nr = item.get("seq_nr").unwrap().as_n().unwrap().parse::<usize>().unwrap();
-    let version = item.get("version").unwrap().as_n().unwrap().parse::<usize>().unwrap();
-    Ok((aggregate, seq_nr, version))
   }
 
   pub async fn get_snapshot_by_id<T, AID: AggregateId>(&self, aid: &AID) -> Result<(T, usize, usize)>
   where
-    T: for<'de> de::Deserialize<'de>,
-  {
+    T: for<'de> de::Deserialize<'de>, {
     let response = self
       .client
       .query()
@@ -96,8 +125,7 @@ impl EventPersistenceGateway {
 
   pub async fn get_events_by_id_and_seq_nr<T, AID: AggregateId>(&self, aid: &AID, seq_nr: usize) -> Result<Vec<T>>
   where
-    T: Debug + for<'de> de::Deserialize<'de>,
-  {
+    T: Debug + for<'de> de::Deserialize<'de>, {
     let response = self
       .client
       .query()
@@ -131,8 +159,7 @@ impl EventPersistenceGateway {
   ) -> Result<()>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     // TODO: 最新のスナップショットを取得し別のskeyを付与して保存する
     // TODO: スナップショットの履歴が無限に増えないのように世代管理する
     match (event.is_created(), aggregate) {
@@ -168,8 +195,7 @@ impl EventPersistenceGateway {
   fn put_snapshot<E, A>(&mut self, event: &E, ar: &A) -> Result<Put>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     let put_snapshot = Put::builder()
       .table_name(self.snapshot_table_name.clone())
       .item(
@@ -190,8 +216,7 @@ impl EventPersistenceGateway {
   fn update_snapshot<E, A>(&mut self, event: &E, version: usize, ar_opt: Option<&A>) -> Result<Update>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     let mut update_snapshot = Update::builder()
       .table_name(self.snapshot_table_name.clone())
       .update_expression("SET #version=:after_version")
@@ -217,21 +242,18 @@ impl EventPersistenceGateway {
   }
 
   fn resolve_pkey<AID: AggregateId>(&self, id: &AID, shard_count: u64) -> String {
-    let mut hasher = DefaultHasher::new();
-    id.to_string().hash(&mut hasher);
-    let hash_value = hasher.finish();
-    let remainder = hash_value % shard_count;
-    format!("{}-{}", id.type_name(), remainder)
+    self
+      .key_resolver
+      .resolve_pkey(&id.type_name(), &id.value(), shard_count)
   }
 
   fn resolve_skey<AID: AggregateId>(&self, id: &AID, seq_nr: usize) -> String {
-    format!("{}-{}-{}", id.type_name(), id.value(), seq_nr)
+    self.key_resolver.resolve_skey(&id.type_name(), &id.value(), seq_nr)
   }
 
   fn put_journal<E>(&mut self, event: &E) -> Result<Put>
   where
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     let pkey = self.resolve_pkey(event.aggregate_id(), self.shard_count);
     let skey = self.resolve_skey(event.aggregate_id(), event.seq_nr());
     let aid = event.aggregate_id().to_string();

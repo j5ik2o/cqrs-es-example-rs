@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::sync::Once;
@@ -11,6 +12,7 @@ use cqrs_es_example_command_interface_adaptor_impl::controllers::create_router;
 use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway::EventPersistenceGateway;
 use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_repository::ThreadRepositoryImpl;
 use serde::Deserialize;
+use tracing_log::LogTracer;
 
 #[derive(Deserialize, Debug)]
 struct AppSettings {
@@ -31,7 +33,7 @@ struct PersistenceSettings {
   journal_aid_index_name: String,
   snapshot_table_name: String,
   snapshot_aid_index_name: String,
-  journal_shard_count: u64,
+  shard_count: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -42,22 +44,14 @@ struct AwsSettings {
   secret_access_key: Option<String>,
 }
 
-static INIT: Once = Once::new();
-
-fn setup_logger() {
-  INIT.call_once(|| {
-    tracing_subscriber::fmt()
-      .with_max_level(tracing::Level::DEBUG)
-      .with_target(false)
-      .with_ansi(false)
-      .without_time()
-      .init();
-  });
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
-  setup_logger();
+  tracing_subscriber::fmt()
+    .with_max_level(tracing::Level::DEBUG)
+    .with_target(false)
+    .with_ansi(false)
+    .without_time()
+    .init();
 
   let app_settings = load_app_config().unwrap();
   let aws_client = create_aws_client(&app_settings.aws).await;
@@ -67,7 +61,7 @@ async fn main() -> Result<()> {
     app_settings.persistence.journal_aid_index_name.clone(),
     app_settings.persistence.snapshot_table_name.clone(),
     app_settings.persistence.snapshot_aid_index_name.clone(),
-    app_settings.persistence.journal_shard_count,
+    app_settings.persistence.shard_count,
   );
   let repository = ThreadRepositoryImpl::new(egg);
   let socket_addr = SocketAddr::new(IpAddr::from_str(&app_settings.api.host).unwrap(), app_settings.api.port);

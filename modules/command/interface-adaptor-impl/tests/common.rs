@@ -1,4 +1,5 @@
 use std::future::Future;
+use std::sync::Arc;
 use std::time::Duration;
 use std::{env, thread};
 
@@ -10,7 +11,9 @@ use aws_sdk_dynamodb::types::{
   ProvisionedThroughput, ScalarAttributeType,
 };
 use aws_sdk_dynamodb::Client;
-use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway::EventPersistenceGateway;
+use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway::{
+  DefaultPartitionKeyResolver, EventPersistenceGateway, KeyResolver,
+};
 use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_repository::ThreadRepositoryImpl;
 use testcontainers::clients;
 use testcontainers::core::WaitFor;
@@ -190,8 +193,7 @@ async fn wait_table(client: &Client, target_table_name: &str) -> bool {
 pub async fn with_repository<F, Fut>(f: F)
 where
   F: Fn(ThreadRepositoryImpl) -> Fut,
-  Fut: Future<Output = ()>,
-{
+  Fut: Future<Output = ()>, {
   init_logger();
   let docker = clients::Cli::default();
   let wait_for = WaitFor::message_on_stdout("Port:");

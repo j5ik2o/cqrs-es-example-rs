@@ -4,12 +4,16 @@ use cqrs_es_example_command_interface_adaptor_if::ThreadRepository;
 use cqrs_es_example_domain::thread::events::ThreadEvent;
 use cqrs_es_example_domain::thread::{Thread, ThreadId};
 
-use crate::gateways::event_persistence_gateway::EventPersistenceGateway;
+use crate::gateways::event_persistence_gateway::{EventPersistenceGateway, KeyResolver};
 
 #[derive(Debug, Clone)]
 pub struct ThreadRepositoryImpl {
   event_persistence_gateway: EventPersistenceGateway,
 }
+
+unsafe impl Sync for ThreadRepositoryImpl {}
+
+unsafe impl Send for ThreadRepositoryImpl {}
 
 impl ThreadRepositoryImpl {
   pub fn new(event_persistence_gateway: EventPersistenceGateway) -> Self {

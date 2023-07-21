@@ -7,8 +7,7 @@ edition = "2021"
 anyhow = "1.0.71"
 chrono = "0.4.26"
 downcast-rs = "1.2.0"
-cqrs-es-example-query-processor = { version = "0.0.1", path = "../../modules/query/processor" }
-cqrs-es-example-query-interface-adaptor-impl = { version = "0.0.1", path = "../../modules/query/interface-adaptor-impl" }
+cqrs-es-example-query-interface-adaptor-impl = { version = "0.0.1", path = "../../modules/query/interface-adaptor" }
 axum = "0.6.18"
 
 tracing = "0.1.37"

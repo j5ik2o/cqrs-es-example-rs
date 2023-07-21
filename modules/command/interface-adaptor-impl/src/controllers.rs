@@ -210,6 +210,9 @@ async fn delete_message<TR: ThreadRepository>(
 }
 
 pub enum EndpointPaths {
+  Root,
+  HealthAlive,
+  HealthReady,
   CreateThread,
   DeleteThread,
   RenameThread,
@@ -222,6 +225,9 @@ pub enum EndpointPaths {
 impl EndpointPaths {
   pub fn as_str(&self) -> &'static str {
     match *self {
+      EndpointPaths::Root => "/",
+      EndpointPaths::HealthAlive => "/health/alive",
+      EndpointPaths::HealthReady => "/health/ready",
       EndpointPaths::CreateThread => "/threads/create",
       EndpointPaths::DeleteThread => "/threads/delete",
       EndpointPaths::RenameThread => "/threads/rename",
@@ -248,9 +254,9 @@ async fn ready<TR: ThreadRepository>(State(_state): State<AppDate<TR>>) -> impl 
 pub fn create_router<TR: ThreadRepository>(repository: TR) -> Router {
   let state = Arc::new(RwLock::new(AppState::new(repository)));
   let router = Router::new()
-    .route("/", get(hello_write_api))
-    .route("/health/alive", get(alive))
-    .route("/health/ready", get(ready))
+    .route(EndpointPaths::Root.as_str(), get(hello_write_api))
+    .route(EndpointPaths::HealthAlive.as_str(), get(alive))
+    .route(EndpointPaths::HealthReady.as_str(), get(ready))
     .route(EndpointPaths::CreateThread.as_str(), post(create_thread))
     .route(EndpointPaths::DeleteThread.as_str(), post(delete_thread))
     .route(EndpointPaths::RenameThread.as_str(), post(rename_thread))
