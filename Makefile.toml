@@ -42,6 +42,10 @@ READ_API_SERVER_BASE_URL = "https://read-ceer-j5ik2o.cwtest.info"
 #echo ${TEST}
 #''']
 
+[tasks.sphinx]
+workspace = false
+command = "cargo"
+args = ["sphinx"]
 
 [tasks.fmt]
 description = "ソースコードをフォーマットします"
@@ -150,7 +154,7 @@ run_task = { name = ["docker-build-write-api-server", "docker-build-read-api-ser
 workspace = false
 run_task = { name = ["docker-build-write-api-server", "docker-build-read-api-server", "docker-build-read-model-updater-local-amd64"], parallel = true }
 
-# docker-compose-up -d
+# docker-compose-up
 
 [tasks.docker-compose-up-db]
 workspace = false
