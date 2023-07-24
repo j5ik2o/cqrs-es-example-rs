@@ -23,6 +23,12 @@ sso_role_name = xxxxxx
 region = ap-northeast-1
 ```
 
+```shell
+$ aws sso login --profile ceer
+```
+
+としてSSOにてログインする。
+
 ## `env.sh.default`を`env.sh`としてコピーし編集する
 
 ```shell
@@ -61,7 +67,7 @@ datadog-api-key = "xxxx"
 初回のみ、DynamoDBにterraform用のロックテーブルを作成する。
 
 ```shell
-ceer-root $ makers terraform-create-lock-table
+$ makers terraform-create-lock-table
 ```
 
 ## tfstate用のs3バケットを作る
@@ -69,25 +75,25 @@ ceer-root $ makers terraform-create-lock-table
 初回のみ、tfstateを保存するs3バケットを作成する。
 
 ```shell
-ceer-root $ makers terraform-create-tf-bucket
+$ makers terraform-create-tf-bucket
 ```
 
 ## terraform init
 
 ```shell
-ceer-root $ makers terraform-init
+$ makers terraform-init
 ```
 
 ## terraform plan
 
 ```shell
-ceer-root $ makers terraform-plan
+$ makers terraform-plan
 ```
 
 ## terraform apply
 
 ```shell
-ceer-root $ makers terraform-apply
+$ makers terraform-apply
 ```
 
 ## Update kubeconfig
@@ -95,7 +101,7 @@ ceer-root $ makers terraform-apply
 以下のコマンドを実行してkubeconfig(`~/.kube/config`)を生成する。
 
 ```shell
-ceer-root $ makers update-kubeconfig
+$ makers update-kubeconfig
 ```
 
 FYI: https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html

@@ -5,7 +5,7 @@
 docker-composeとしてdynamodb-localとdynamodb-adminを起動します。
 
 ```shell
-./tools/scripts/docker-compose-up.sh -d
+$ makers docker-compose-up-db
 ```
 
 ## IntelliJ IDEAを使ってデバッグする。

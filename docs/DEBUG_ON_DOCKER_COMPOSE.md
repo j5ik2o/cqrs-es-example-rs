@@ -3,7 +3,7 @@
 ## ビルドイメージ
 
 ```shell
-ceer-root $ makers docker-build-local-all
+$ makers docker-build-local-all
 --- Using Environments -----------------
 AWS_PROFILE = ceer
 AWS_REGION = us-east-1
@@ -16,7 +16,7 @@ APPLICATION_NAME = ceer
 ## Docker Composeを実行する
 
 ```shell
-ceer-root $ makers docker-compose-up
+$ makers docker-compose-up
 ```
 
 ## 動作確認
@@ -26,7 +26,7 @@ ceer-root $ makers docker-compose-up
 以下のコマンドで動作確認を行う。
 
 ```shell
-ceer-root $ makers curl-get-root
+$ makers curl-get-root
 [cargo-make] INFO - makers 0.36.11
 [cargo-make] INFO - Calling cargo metadata to extract project info
 [cargo-make] INFO - Cargo metadata done
@@ -79,13 +79,13 @@ Hello, Read API!
 GraphiQL IDEを開く
 
 ```shell
-ceer-root $ makers open-graphiql-ide
+$ makers open-graphiql-ide
 ```
 
 疎通確認方法は以下の通り。
 
 ```shell
-ceer-root $ ./tools/scripts/curl-post-write-api-server-on-local.sh
+$ ./tools/scripts/curl-post-write-api-server-on-local.sh
 {"Success":{"id":{"value":"01H541BDRT2XP2QNH93MSPFAMH"}}}
 ```
 
@@ -120,6 +120,6 @@ GraphiQL IDEから以下のクエリを実行する。threadIdに上記コマン
 curlで実行する場合は以下のようになります。
 
 ```shell
-ceer-root $ curl -X POST -H "Content-Type: application/json" -d '{ "query": "{ getThread(threadId: \"01H541BDRT2XP2QNH93MSPFAMH\"){ id } }" }' http://localhost:18082
+$ curl -X POST -H "Content-Type: application/json" -d '{ "query": "{ getThread(threadId: \"01H541BDRT2XP2QNH93MSPFAMH\"){ id } }" }' http://localhost:18082
 {"data":{"getThread":{"id":"01H541BDRT2XP2QNH93MSPFAMH"}}}%
 ```

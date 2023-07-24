@@ -10,14 +10,14 @@ Docker for Macのリソース設定も確認してください。十分なリソ
 Dockerのローカルリポジトリにイメージをプッシュしてください。
 
 ```shell
-ceer-root $ ./tools/scripts/docker-build-all.sh
+$ makers docker-build-all
 ```
 
 ## Helmfile の設定ファイルを編集する。
 
 ```shell
-ceer-root $ vi ./tools/config/environments/${PREFIX}-${APPLICATION_NAME}-local.yaml
-ceer-root # tools/config/environments/${PREFIX}-${APPLICATION_NAME}-local.yaml
+$ vi ./tools/config/environments/${PREFIX}-${APPLICATION_NAME}-local.yaml
+# tools/config/environments/${PREFIX}-${APPLICATION_NAME}-local.yaml
 ```
 
 コンソールに表示されるタグの値に注目してください。
@@ -38,7 +38,7 @@ yamlファイルの以下の項目を適切に設定してください。
 を実行することを推奨する。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-local-all.sh
+$ ./tools/scripts/helmfile-apply-local-all.sh
 ```
 
 ---
@@ -48,13 +48,13 @@ ceer-root $ ./tools/scripts/helmfile-apply-local-all.sh
 次にdynamodb localをデプロイします。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-local-dynamodb.sh
+$ ./tools/scripts/helmfile-apply-local-dynamodb.sh
 ```
 
 必要なテーブルを作成する。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-local-dynamodb-setup.sh
+$ ./tools/scripts/helmfile-apply-local-dynamodb-setup.sh
 ```
 
 DynamoDB Adminを使用する場合は `http://127.0.0.1:31567/` を開く。
@@ -64,13 +64,13 @@ DynamoDB Adminを使用する場合は `http://127.0.0.1:31567/` を開く。
 次にmysqlをデプロイする。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-local-mysql.sh
+$ ./tools/scripts/helmfile-apply-local-mysql.sh
 ```
 
 必要なテーブルを作成する。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-local-flyway.sh
+$ ./tools/scripts/helmfile-apply-local-flyway.sh
 ```
 
 ## アプリケーションのデプロイ
@@ -78,7 +78,7 @@ ceer-root $ ./tools/scripts/helmfile-apply-local-flyway.sh
 次にバックエンドロールをデプロイします。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-local.sh
+$ ./tools/scripts/helmfile-apply-local.sh
 ```
 
 クラスタが形成されるまでしばらく待ちます。ログにエラーがないことを確認する。
@@ -94,7 +94,7 @@ $ stern 'write-api-server-*' -n adceet
 次に Read Model Updater をデプロイします。
 
 ```shell
-ceer-root $ ./tools/scripts/helmfile-apply-read-model-updater-local.sh
+$ ./tools/scripts/helmfile-apply-read-model-updater-local.sh
 ```
 
 しばらく待ちます。ログにエラーがないことを確認してください。

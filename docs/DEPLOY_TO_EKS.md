@@ -3,13 +3,13 @@
 ## DockerイメージをECRにプッシュする
 
 ```shell
-ceer-root $ makers docker-ecr-build-push-all
+$ makers docker-ecr-build-push-all
 ```
 
 ## Helmfile の設定ファイルを編集します。
 
 ```shell
-ceer-root $ vi ./tools/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml
+$ vi ./tools/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml
 ceer-root # tools/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml
 ```
 
@@ -26,7 +26,7 @@ yamlファイルの以下の項目を適切に設定してください。
 次にデプロイします。
 
 ```shell
-ceer-root $ makers helmfile-apply
+$ makers helmfile-apply
 ```
 
 クラスタが形成されるまでしばらく待ちます。ログにエラーがないことを確認してください。
