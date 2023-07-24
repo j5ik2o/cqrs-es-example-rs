@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AWSのためのセットアップ &mdash; j5ik2o/cqrs-example-rs 1.0a1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/my_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="EKSへのデプロイ" href="DEPLOY_TO_EKS.html" />
+    <link rel="prev" title="ツールのインストール" href="TOOLS_INSTALLATION.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            j5ik2o/cqrs-example-rs
+          </a>
+              <div class="version">
+                1.0a1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="TOOLS_INSTALLATION.html">ツールのインストール</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#asdf">asdf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#jq">jq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#awscli">awscli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#terraform">terraform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#terraformer">terraformer(オプション)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#kubernetes">Kubernetes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#kubectl">kubectl</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#stern">stern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#helm">helm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#helmfile">helmfile</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#minikube">minikube (オプション)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#cargo-make">cargo-make</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#sqlx-cli">sqlx-cli</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#docker-buildx">docker buildx</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">AWSのためのセットアップ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">AWSプロファイルを追加する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#env-sh-defaultenv-sh"><code class="docutils literal notranslate"><span class="pre">env.sh.default</span></code>を<code class="docutils literal notranslate"><span class="pre">env.sh</span></code>としてコピーし編集する</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#terraform-aws">terraform による AWS 環境の構築</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id2">ロックテーブルの作成</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tfstates3">tfstate用のs3バケットを作る</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terraform-init">terraform init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terraform-plan">terraform plan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terraform-apply">terraform apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#update-kubeconfig">Update kubeconfig</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#kubernetes-dashboard">kubernetes-dashboardの確認</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id3">kubernetes-dashboardへのポートフォワード</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#chrome">Chromeの設定変更</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">トークンを作成する</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DEPLOY_TO_EKS.html">EKSへのデプロイ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DEPLOY_TO_EKS.html#dockerecr">DockerイメージをECRにプッシュする</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DEPLOY_TO_EKS.html#helmfile">Helmfile の設定ファイルを編集します。</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DEPLOY_TO_EKS.html#id1">アプリケーションのデプロイ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DEPLOY_TO_EKS.html#id2">アプリケーションの動作チェック</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html">Docker Compose上でデバッグする</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html#id1">ビルドイメージ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html#id2">Docker Composeを実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html#id3">動作確認</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html#id4">アプリケーションの確認</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">j5ik2o/cqrs-example-rs</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">AWSのためのセットアップ</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/AWS_SETUP.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aws">
+<h1>AWSのためのセットアップ<a class="headerlink" href="#aws" title="Permalink to this heading">¶</a></h1>
+<section id="id1">
+<h2>AWSプロファイルを追加する<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h2>
+<p>以下のように <code class="docutils literal notranslate"><span class="pre">~/.aws/credentials</span></code> 編集する</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># ...</span>
+<span class="p">[</span><span class="n">ceer</span><span class="p">]</span>
+<span class="n">aws_access_key_id</span><span class="o">=</span><span class="n">xxxxx</span>
+<span class="n">aws_secret_access_key</span><span class="o">=</span><span class="n">xxxxx</span>
+<span class="n">aws_session_token</span><span class="o">=</span><span class="n">xxxxx</span>
+</pre></div>
+</div>
+<p>もしくは、AWS SSOの場合は、以下のように <code class="docutils literal notranslate"><span class="pre">~/.aws/config</span></code> 編集する</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">profile</span> <span class="n">ceer</span><span class="p">]</span>
+<span class="n">sso_start_url</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">xxxxxx</span><span class="o">.</span><span class="n">awsapps</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">start</span>
+<span class="n">sso_region</span> <span class="o">=</span> <span class="n">ap</span><span class="o">-</span><span class="n">northeast</span><span class="o">-</span><span class="mi">1</span>
+<span class="n">sso_account_id</span> <span class="o">=</span> <span class="mi">1234567890</span> 
+<span class="n">sso_role_name</span> <span class="o">=</span> <span class="n">xxxxxx</span>
+<span class="n">region</span> <span class="o">=</span> <span class="n">ap</span><span class="o">-</span><span class="n">northeast</span><span class="o">-</span><span class="mi">1</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>aws<span class="w"> </span>sso<span class="w"> </span>login<span class="w"> </span>--profile<span class="w"> </span>ceer
+</pre></div>
+</div>
+<p>としてSSOにてログインする。</p>
+</section>
+<section id="env-sh-defaultenv-sh">
+<h2><code class="docutils literal notranslate"><span class="pre">env.sh.default</span></code>を<code class="docutils literal notranslate"><span class="pre">env.sh</span></code>としてコピーし編集する<a class="headerlink" href="#env-sh-defaultenv-sh" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>cp<span class="w"> </span>env.sh.default<span class="w"> </span>env.sh
+</pre></div>
+</div>
+<p>環境変数のPREFIX、APPLICATION_NAMEを適宜変更する。
+個人的な環境を作りたい場合は、PREFIXを変更してください。</p>
+</section>
+</section>
+<section id="terraform-aws">
+<h1>terraform による AWS 環境の構築<a class="headerlink" href="#terraform-aws" title="Permalink to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">tools/terraform/${PREFIX}/${APPLICATION_NAME}-terraform.tfvars</span></code>を以下の内容で新規作成する。
+variables.tfで定義した変更は、この<code class="docutils literal notranslate"><span class="pre">tfvars</span></code>ファイルで上書きすることができる。
+必要なリソースだけを作成することができます。例えば、ecrだけが必要なら<code class="docutils literal notranslate"><span class="pre">ecr_enabled</span> <span class="pre">=</span> <span class="pre">true</span></code>と設定すればよい。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">event_sourcing_enabled</span> <span class="o">=</span> <span class="n">true</span>
+<span class="n">event_sourcing_journal_name</span>      <span class="o">=</span> <span class="s2">&quot;journal&quot;</span>
+<span class="n">event_sourcing_journal_gsi_name</span>  <span class="o">=</span> <span class="s2">&quot;jounral-aid-index&quot;</span>
+<span class="n">event_sourcing_snapshot_name</span>     <span class="o">=</span> <span class="s2">&quot;snapshot&quot;</span>
+<span class="n">event_sourcing_snapshot_gsi_name</span> <span class="o">=</span> <span class="s2">&quot;snapshot-aid-index&quot;</span>
+
+<span class="n">eks_enabled</span> <span class="o">=</span> <span class="n">true</span>
+<span class="n">eks_version</span> <span class="o">=</span> <span class="s2">&quot;1.71&quot;</span>
+<span class="n">eks_auth_roles</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">eks_auth_users</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">eks_auth_accounts</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">ecr_enabled</span> <span class="o">=</span> <span class="n">true</span>
+
+<span class="n">datadog</span><span class="o">-</span><span class="n">api</span><span class="o">-</span><span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;xxxx&quot;</span>
+</pre></div>
+</div>
+<section id="id2">
+<h2>ロックテーブルの作成<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h2>
+<p>初回のみ、DynamoDBにterraform用のロックテーブルを作成する。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>terraform-create-lock-table
+</pre></div>
+</div>
+</section>
+<section id="tfstates3">
+<h2>tfstate用のs3バケットを作る<a class="headerlink" href="#tfstates3" title="Permalink to this heading">¶</a></h2>
+<p>初回のみ、tfstateを保存するs3バケットを作成する。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>terraform-create-tf-bucket
+</pre></div>
+</div>
+</section>
+<section id="terraform-init">
+<h2>terraform init<a class="headerlink" href="#terraform-init" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>terraform-init
+</pre></div>
+</div>
+</section>
+<section id="terraform-plan">
+<h2>terraform plan<a class="headerlink" href="#terraform-plan" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>terraform-plan
+</pre></div>
+</div>
+</section>
+<section id="terraform-apply">
+<h2>terraform apply<a class="headerlink" href="#terraform-apply" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>terraform-apply
+</pre></div>
+</div>
+</section>
+<section id="update-kubeconfig">
+<h2>Update kubeconfig<a class="headerlink" href="#update-kubeconfig" title="Permalink to this heading">¶</a></h2>
+<p>以下のコマンドを実行してkubeconfig(<code class="docutils literal notranslate"><span class="pre">~/.kube/config</span></code>)を生成する。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>update-kubeconfig
+</pre></div>
+</div>
+<p>FYI: https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html</p>
+<p>コンテキストが切り替わったことを確認する。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tools/terraform<span class="w"> </span>$<span class="w"> </span>kubectl<span class="w"> </span>config<span class="w"> </span>get-contexts
+CURRENT<span class="w">   </span>NAME<span class="w">                                                             </span>CLUSTER<span class="w">                                                          </span>AUTHINFO<span class="w">                                                         </span>NAMESPACE
+*<span class="w">         </span>arn:aws:eks:us-east-1:XXXXXXXXXXXX:cluster/oce3noy9-eks-adceet<span class="w">   </span>arn:aws:eks:us-east-1:XXXXXXXXXXXX:cluster/oce3noy9-eks-adceet<span class="w">   </span>arn:aws:eks:us-east-1:XXXXXXXXXXXX:cluster/oce3noy9-eks-adceet
+<span class="w">          </span>docker-desktop<span class="w">                                                   </span>docker-desktop<span class="w">                                                   </span>docker-desktop
+</pre></div>
+</div>
+</section>
+</section>
+<section id="kubernetes-dashboard">
+<h1>kubernetes-dashboardの確認<a class="headerlink" href="#kubernetes-dashboard" title="Permalink to this heading">¶</a></h1>
+<section id="id3">
+<h2>kubernetes-dashboardへのポートフォワード<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nv">DASHBOARD_NS</span><span class="o">=</span>kubernetes-dashboard
+$<span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="nv">POD_NAME</span><span class="o">=</span><span class="k">$(</span>kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-n<span class="w"> </span><span class="nv">$DASHBOARD_NS</span><span class="w"> </span>-l<span class="w"> </span><span class="s2">&quot;app.kubernetes.io/name=kubernetes-dashboard,app.kubernetes.io/instance=kubernetes-dashboard&quot;</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&quot;{.items[0].metadata.name}&quot;</span><span class="k">)</span>
+$<span class="w"> </span>kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$DASHBOARD_NS</span><span class="w"> </span>port-forward<span class="w"> </span><span class="nv">$POD_NAME</span><span class="w"> </span><span class="m">8443</span>:8443
+</pre></div>
+</div>
+</section>
+<section id="chrome">
+<h2>Chromeの設定変更<a class="headerlink" href="#chrome" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">chrome://flags/#allow-insecure-localhost</span></code> を開く</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Allow</span> <span class="pre">invalid</span> <span class="pre">certificates</span> <span class="pre">for</span> <span class="pre">resources</span> <span class="pre">loaded</span> <span class="pre">from</span> <span class="pre">localhost.</span></code> を <code class="docutils literal notranslate"><span class="pre">Enable</span></code> にする</p></li>
+<li><p>Chromeを再起動する</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">https://localhost:8443</span></code> を開く</p></li>
+</ol>
+</section>
+<section id="id4">
+<h2>トークンを作成する<a class="headerlink" href="#id4" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>kubectl<span class="w"> </span>-n<span class="w"> </span>kubernetes-dashboard<span class="w"> </span>create<span class="w"> </span>token<span class="w"> </span>kubernetes-dashboard
+eyJXXXXXXXXXXXXXXXXXXXXXXXXXXxYTZmYzlkOGZkN2M5ZjMifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjIl0sImV4cCI6MTY4ODY5NzE0MSwiaWF0IjoxNjg4NjkzNTQxLCJpc3MiOiJodHRwczovL29pZGMuZWtzLmFwLW5vcnRoZWFzdC0xLmFtYXpvbmF3cy5jb20vaWQvQjcyNjkwQkY2NEUyQUM5RjA0RkIxRDQxMTZDNkMwMDQiLCJrdWJlcm5ldGVzLmlvIjp7Im5hbWVzcGFjZSI6Imt1YmVybmV0ZXMtZGFzaGJvYXJkIiwic2VydmljZWFjY291bnQiOnsibmFtZSI6Imt1YmVybmV0ZXMtZGFzaGJvYXJkIiwidWlkIjoiMWJlNjViMmYtYmZkMy00NmYwLWE0MjktODlkY2E4Yzk4MWU5In19LCJuYmYiOjE2ODg2OTM1NDEsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlcm5ldGVzLWRhc2hib2FyZDprdWJlcm5ldGVzLWRhc2hib2FyZCJ9.agCS7Zf7WlzFW32lRhNlNHzzvEoGUJALq0X_VaOW9WuWdjhY90tvDzCkul9YGygGwHKTuGMrkDJIfcJf92c3hUpXLu30HYRRBCpth-cC4YUd51Eccm5OJ6HJwuK-HaFO6ZtGfOl5uPO2qJzFyLEHAEePEiH6MVWMcx3BWvDDxFColFleasF1BtkB_64-k-fgaOBAnGM3paTQ8ug4taqsRaisSChLreYYs7zUI7YXnQMJ0LswWQyMOjVC52BfjwqNvP2A7bg8hqOPaO66lN4x89TAD_d0yjKQM3CuXlGKGPKqYtGj7KRvWNjvXN5VNEeQnhv9LYzs6n1SyKD7KsRCWA
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="TOOLS_INSTALLATION.html" class="btn btn-neutral float-left" title="ツールのインストール" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="DEPLOY_TO_EKS.html" class="btn btn-neutral float-right" title="EKSへのデプロイ" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Copyright [2023] Junichi Kato.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

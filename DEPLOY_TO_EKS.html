@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EKSへのデプロイ &mdash; j5ik2o/cqrs-example-rs 1.0a1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/my_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Docker Compose上でデバッグする" href="DEBUG_ON_DOCKER_COMPOSE.html" />
+    <link rel="prev" title="AWSのためのセットアップ" href="AWS_SETUP.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            j5ik2o/cqrs-example-rs
+          </a>
+              <div class="version">
+                1.0a1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="TOOLS_INSTALLATION.html">ツールのインストール</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#asdf">asdf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#jq">jq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#awscli">awscli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#terraform">terraform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#terraformer">terraformer(オプション)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TOOLS_INSTALLATION.html#kubernetes">Kubernetes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#kubectl">kubectl</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#stern">stern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#helm">helm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#helmfile">helmfile</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#minikube">minikube (オプション)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#cargo-make">cargo-make</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#sqlx-cli">sqlx-cli</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TOOLS_INSTALLATION.html#docker-buildx">docker buildx</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="AWS_SETUP.html">AWSのためのセットアップ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#id1">AWSプロファイルを追加する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#env-sh-defaultenv-sh"><code class="docutils literal notranslate"><span class="pre">env.sh.default</span></code>を<code class="docutils literal notranslate"><span class="pre">env.sh</span></code>としてコピーし編集する</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="AWS_SETUP.html#terraform-aws">terraform による AWS 環境の構築</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#id2">ロックテーブルの作成</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#tfstates3">tfstate用のs3バケットを作る</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#terraform-init">terraform init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#terraform-plan">terraform plan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#terraform-apply">terraform apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#update-kubeconfig">Update kubeconfig</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="AWS_SETUP.html#kubernetes-dashboard">kubernetes-dashboardの確認</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#id3">kubernetes-dashboardへのポートフォワード</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#chrome">Chromeの設定変更</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AWS_SETUP.html#id4">トークンを作成する</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">EKSへのデプロイ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dockerecr">DockerイメージをECRにプッシュする</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#helmfile">Helmfile の設定ファイルを編集します。</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">アプリケーションのデプロイ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">アプリケーションの動作チェック</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html">Docker Compose上でデバッグする</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html#id1">ビルドイメージ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html#id2">Docker Composeを実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html#id3">動作確認</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DEBUG_ON_DOCKER_COMPOSE.html#id4">アプリケーションの確認</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">j5ik2o/cqrs-example-rs</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">EKSへのデプロイ</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/DEPLOY_TO_EKS.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="eks">
+<h1>EKSへのデプロイ<a class="headerlink" href="#eks" title="Permalink to this heading">¶</a></h1>
+<section id="dockerecr">
+<h2>DockerイメージをECRにプッシュする<a class="headerlink" href="#dockerecr" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>docker-ecr-build-push-all
+</pre></div>
+</div>
+</section>
+<section id="helmfile">
+<h2>Helmfile の設定ファイルを編集します。<a class="headerlink" href="#helmfile" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>vi<span class="w"> </span>./tools/config/environments/<span class="si">${</span><span class="nv">PREFIX</span><span class="si">}</span>-<span class="si">${</span><span class="nv">APPLICATION_NAME</span><span class="si">}</span>-eks.yaml
+ceer-root<span class="w"> </span><span class="c1"># tools/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml</span>
+</pre></div>
+</div>
+<p>コンソールに表示されるタグの値に注目してください。
+yamlファイルの以下の項目を適切に設定してください。</p>
+<ul class="simple">
+<li><p>writeApiServer.image.repository</p></li>
+<li><p>writeApiServer.image.tag</p></li>
+<li><p>readApiServer.image.repository</p></li>
+<li><p>readApiServer.image.tag</p></li>
+</ul>
+</section>
+<section id="id1">
+<h2>アプリケーションのデプロイ<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h2>
+<p>次にデプロイします。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>helmfile-apply
+</pre></div>
+</div>
+<p>クラスタが形成されるまでしばらく待ちます。ログにエラーがないことを確認してください。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>stern<span class="w"> </span><span class="s1">&#39;write-api-server-*&#39;</span><span class="w"> </span>-n<span class="w"> </span>ceer
+</pre></div>
+</div>
+<p>すべてのPodがReady状態になっていることを確認する。</p>
+<p>IngressのAddressにホスト名が付いていることを確認する。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>kubectl-get-ingress-write-api-server
+<span class="c1"># snip</span>
+NAME<span class="w">               </span>CLASS<span class="w">   </span>HOSTS<span class="w">                           </span>ADDRESS<span class="w">                                                                    </span>PORTS<span class="w">   </span>AGE
+write-api-server<span class="w">   </span>alb<span class="w">     </span>write-ceer-j5ik2o.xxxxxx.info<span class="w">   </span>k8s-ceer-writeapi-f8152916e6-1353305610.ap-northeast-1.elb.amazonaws.com<span class="w">   </span><span class="m">80</span><span class="w">      </span>145m
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>update-dns-write-api-server
+---<span class="w"> </span>Using<span class="w"> </span>Environments<span class="w"> </span>-----------------
+<span class="nv">AWS_PROFILE</span><span class="w">      </span><span class="o">=</span><span class="w"> </span>ceer
+<span class="nv">AWS_REGION</span><span class="w">       </span><span class="o">=</span><span class="w"> </span>ap-northeast-1
+<span class="nv">PREFIX</span><span class="w">           </span><span class="o">=</span><span class="w"> </span>aht9aa1e
+<span class="nv">APPLICATION_NAME</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>ceer
+----------------------------------------
+<span class="nv">DNS_NAME</span><span class="o">=</span>k8s-ceer-writeapi-f8152916e6-1353305610.ap-northeast-1.elb.amazonaws.com
+<span class="nv">ALB_NAME</span><span class="o">=</span>k8s-ceer-writeapi-f8152916e6
+<span class="nv">ALB_ARN</span><span class="o">=</span>arn:aws:elasticloadbalancing:ap-northeast-1:738575627980:loadbalancer/app/k8s-ceer-writeapi-f8152916e6/1bc1fd361b50b9ef
+<span class="nv">HOSTED_ZONE_ID</span><span class="o">=</span>Z14GRHDCWA56QT
+<span class="o">{</span>
+<span class="w">    </span><span class="s2">&quot;ChangeInfo&quot;</span>:<span class="w"> </span><span class="o">{</span>
+<span class="w">        </span><span class="s2">&quot;Id&quot;</span>:<span class="w"> </span><span class="s2">&quot;/change/C0690022GGDQ5KIQBOP3&quot;</span>,
+<span class="w">        </span><span class="s2">&quot;Status&quot;</span>:<span class="w"> </span><span class="s2">&quot;PENDING&quot;</span>,
+<span class="w">        </span><span class="s2">&quot;SubmittedAt&quot;</span>:<span class="w"> </span><span class="s2">&quot;2023-07-15T18:09:49.123000+00:00&quot;</span>
+<span class="w">    </span><span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>kubectl-get-ingress-read-api-server
+<span class="c1"># snip</span>
+NAME<span class="w">              </span>CLASS<span class="w">   </span>HOSTS<span class="w">                          </span>ADDRESS<span class="w">                                                                   </span>PORTS<span class="w">   </span>AGE
+read-api-server<span class="w">   </span>alb<span class="w">     </span>read-ceer-j5ik2o.xxxxxx.info<span class="w">   </span>k8s-ceer-readapis-818fc43feb-708519146.ap-northeast-1.elb.amazonaws.com<span class="w">   </span><span class="m">80</span><span class="w">      </span>4h26m
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>update-dns-read-api-server
+---<span class="w"> </span>Using<span class="w"> </span>Environments<span class="w"> </span>-----------------
+<span class="nv">AWS_PROFILE</span><span class="w">      </span><span class="o">=</span><span class="w"> </span>ceer
+<span class="nv">AWS_REGION</span><span class="w">       </span><span class="o">=</span><span class="w"> </span>ap-northeast-1
+<span class="nv">PREFIX</span><span class="w">           </span><span class="o">=</span><span class="w"> </span>aht9aa1e
+<span class="nv">APPLICATION_NAME</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>ceer
+----------------------------------------
+<span class="nv">DNS_NAME</span><span class="o">=</span>k8s-ceer-readapis-818fc43feb-708519146.ap-northeast-1.elb.amazonaws.com
+<span class="nv">ALB_NAME</span><span class="o">=</span>k8s-ceer-readapis-818fc43feb
+<span class="nv">ALB_ARN</span><span class="o">=</span>arn:aws:elasticloadbalancing:ap-northeast-1:738575627980:loadbalancer/app/k8s-ceer-readapis-818fc43feb/20c6df4385875307
+<span class="nv">HOSTED_ZONE_ID</span><span class="o">=</span>Z14GRHDCWA56QT
+<span class="o">{</span>
+<span class="w">    </span><span class="s2">&quot;ChangeInfo&quot;</span>:<span class="w"> </span><span class="o">{</span>
+<span class="w">        </span><span class="s2">&quot;Id&quot;</span>:<span class="w"> </span><span class="s2">&quot;/change/C08808643UWPIGM7L0DA9&quot;</span>,
+<span class="w">        </span><span class="s2">&quot;Status&quot;</span>:<span class="w"> </span><span class="s2">&quot;PENDING&quot;</span>,
+<span class="w">        </span><span class="s2">&quot;SubmittedAt&quot;</span>:<span class="w"> </span><span class="s2">&quot;2023-07-15T18:09:27.854000+00:00&quot;</span>
+<span class="w">    </span><span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h2>アプリケーションの動作チェック<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h2>
+<p>フロントエンドが起動したら、以下のコマンドで動作を確認する。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>--profile<span class="w"> </span>production<span class="w"> </span>curl-get-root
+<span class="c1"># snip</span>
+Hello,<span class="w"> </span>Write<span class="w"> </span>API!
+<span class="c1"># snip</span>
+Hello,<span class="w"> </span>Read<span class="w"> </span>API!
+<span class="c1"># snip</span>
+</pre></div>
+</div>
+<p>APIを呼び出して動作を確認する。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>makers<span class="w"> </span>create-and-get-thread
+<span class="c1"># snip</span>
+create-thread:<span class="w"> </span><span class="nv">THREAD_ID</span><span class="o">=</span>01H5Q476STTQ78D45ZR4EKXF0B
+get-thread:<span class="w"> </span><span class="nv">ACTUAL_THREAD_ID</span><span class="o">=</span>01H5Q476STTQ78D45ZR4EKXF0B
+OK
+<span class="c1"># snip</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="AWS_SETUP.html" class="btn btn-neutral float-left" title="AWSのためのセットアップ" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="DEBUG_ON_DOCKER_COMPOSE.html" class="btn btn-neutral float-right" title="Docker Compose上でデバッグする" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Copyright [2023] Junichi Kato.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
