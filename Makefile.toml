@@ -49,8 +49,11 @@ args = ["sphinx"]
 
 [tasks.sphinx-push]
 workspace = false
-command = "cargo"
-args = ["sphinx", "--push"]
+dependencies = ["sphinx"]
+script = '''
+cd docs/_build/html
+git push -f git@github.com:j5ik2o/cqrs-es-example-rs.git main:gh-pages
+'''
 
 [tasks.fmt]
 description = "ソースコードをフォーマットします"
