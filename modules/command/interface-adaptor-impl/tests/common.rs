@@ -193,7 +193,8 @@ async fn wait_table(client: &Client, target_table_name: &str) -> bool {
 pub async fn with_repository<F, Fut>(f: F)
 where
   F: Fn(ThreadRepositoryImpl) -> Fut,
-  Fut: Future<Output = ()>, {
+  Fut: Future<Output = ()>,
+{
   init_logger();
   let docker = clients::Cli::default();
   let wait_for = WaitFor::message_on_stdout("Port:");

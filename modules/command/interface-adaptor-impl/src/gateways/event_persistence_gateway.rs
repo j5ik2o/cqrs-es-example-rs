@@ -91,7 +91,8 @@ impl EventPersistenceGateway {
 
   pub async fn get_snapshot_by_id<T, AID: AggregateId>(&self, aid: &AID) -> Result<(T, usize, usize)>
   where
-    T: for<'de> de::Deserialize<'de>, {
+    T: for<'de> de::Deserialize<'de>,
+  {
     let response = self
       .client
       .query()
@@ -125,7 +126,8 @@ impl EventPersistenceGateway {
 
   pub async fn get_events_by_id_and_seq_nr<T, AID: AggregateId>(&self, aid: &AID, seq_nr: usize) -> Result<Vec<T>>
   where
-    T: Debug + for<'de> de::Deserialize<'de>, {
+    T: Debug + for<'de> de::Deserialize<'de>,
+  {
     let response = self
       .client
       .query()
@@ -159,7 +161,8 @@ impl EventPersistenceGateway {
   ) -> Result<()>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event, {
+    E: ?Sized + Serialize + Event,
+  {
     // TODO: 最新のスナップショットを取得し別のskeyを付与して保存する
     // TODO: スナップショットの履歴が無限に増えないのように世代管理する
     match (event.is_created(), aggregate) {
@@ -195,7 +198,8 @@ impl EventPersistenceGateway {
   fn put_snapshot<E, A>(&mut self, event: &E, ar: &A) -> Result<Put>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event, {
+    E: ?Sized + Serialize + Event,
+  {
     let put_snapshot = Put::builder()
       .table_name(self.snapshot_table_name.clone())
       .item(
@@ -216,7 +220,8 @@ impl EventPersistenceGateway {
   fn update_snapshot<E, A>(&mut self, event: &E, version: usize, ar_opt: Option<&A>) -> Result<Update>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event, {
+    E: ?Sized + Serialize + Event,
+  {
     let mut update_snapshot = Update::builder()
       .table_name(self.snapshot_table_name.clone())
       .update_expression("SET #version=:after_version")
@@ -253,7 +258,8 @@ impl EventPersistenceGateway {
 
   fn put_journal<E>(&mut self, event: &E) -> Result<Put>
   where
-    E: ?Sized + Serialize + Event, {
+    E: ?Sized + Serialize + Event,
+  {
     let pkey = self.resolve_pkey(event.aggregate_id(), self.shard_count);
     let skey = self.resolve_skey(event.aggregate_id(), event.seq_nr());
     let aid = event.aggregate_id().to_string();
