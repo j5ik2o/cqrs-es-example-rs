@@ -47,6 +47,11 @@ workspace = false
 command = "cargo"
 args = ["sphinx"]
 
+[tasks.sphinx-push]
+workspace = false
+command = "cargo"
+args = ["sphinx", "--push"]
+
 [tasks.fmt]
 description = "ソースコードをフォーマットします"
 workspace = false
