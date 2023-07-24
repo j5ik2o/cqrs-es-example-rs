@@ -32,5 +32,6 @@ env.sh
 *.lock.hcl
 
 *.env
+common.env
 
 _build/
