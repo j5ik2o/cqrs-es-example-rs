@@ -21,7 +21,7 @@ services:
       RUST_BACKTRACE: 1
       DATABASE_URL: mysql://ceer:ceer@mysql-local:3306/ceer
     volumes:
-      - ../rdb-migration/migrations:/app/migrations
+      - ../refinery/migrations:/app/migrations
     depends_on:
       mysql:
         condition: service_healthy

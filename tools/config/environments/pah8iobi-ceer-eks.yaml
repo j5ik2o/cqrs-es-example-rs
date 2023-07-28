@@ -10,7 +10,7 @@ localstack:
 refinery:
   enabled: true
   image:
-    repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-refinery
+    repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/pah8iobi-ecr-ceer-refinery
     tag: b7e2d69a5004e03710d96921d2fe64e9
     pullPolicy: Always
   resources:
@@ -33,7 +33,7 @@ writeApiServer:
   enabled: true
   version: 0.0.1
   image:
-    repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-write-api-server
+    repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/pah8iobi-ecr-ceer-write-api-server
     tag: 2dc945054dd927c82220541455add4ab30e248ae6ed09b2e52bd9569b2d519ee-amd64
     pullPolicy: Always
   env:
@@ -78,8 +78,6 @@ writeApiServer:
     enabled: false
   processTimeoutInSec: 10
   hostname: write-ceer-j5ik2o.cwtest.info
-  externalDNS:
-    awsWeight: 100
   serviceAccount:
     create: false
     name: ceer
@@ -90,7 +88,7 @@ readApiServer:
   enabled: true
   version: 0.0.1
   image:
-    repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/aht9aa1e-ecr-ceer-read-api-server
+    repository: 738575627980.dkr.ecr.ap-northeast-1.amazonaws.com/pah8iobi-ecr-ceer-read-api-server
     tag: e1ffb9891defb29be6f77f7d63d1d451b3e01b7f31cb763dd60bb2f3a0295eaa-amd64
     pullPolicy: Always
   env:
@@ -125,8 +123,6 @@ readApiServer:
     enabled: false
   processTimeoutInSec: 10
   hostname: read-ceer-j5ik2o.cwtest.info
-  externalDNS:
-    awsWeight: 100
   serviceAccount:
     create: false
     name: ceer

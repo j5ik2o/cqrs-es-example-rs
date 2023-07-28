@@ -83,6 +83,10 @@ output "ecr_read_api_server_repository_url" {
   value = module.ceer-ecr-read-api-server.aws_ecr_repository_url
 }
 
+output "ecr_refinery_repository_url" {
+  value = module.ceer-ecr-refinery.aws_ecr_repository_url
+}
+
 output "aurora_cluster_endpoint" {
   description = "Writer endpoint for the cluster"
   value       = module.aurora.cluster_endpoint

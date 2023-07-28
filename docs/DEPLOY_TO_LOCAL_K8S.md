@@ -10,14 +10,14 @@ Docker for Macのリソース設定も確認してください。十分なリソ
 Dockerのローカルリポジトリにイメージをプッシュしてください。
 
 ```shell
-$ makers docker-build-all
+$ ./tools/scripts/docker-build-all.sh
 ```
 
 ## Helmfile の設定ファイルを編集する。
 
 ```shell
 $ vi ./tools/config/environments/${PREFIX}-${APPLICATION_NAME}-local.yaml
-# tools/config/environments/${PREFIX}-${APPLICATION_NAME}-local.yaml
+ceer-root # tools/config/environments/${PREFIX}-${APPLICATION_NAME}-local.yaml
 ```
 
 コンソールに表示されるタグの値に注目してください。

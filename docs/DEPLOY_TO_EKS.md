@@ -23,10 +23,10 @@ yamlファイルの以下の項目を適切に設定してください。
 
 ## アプリケーションのデプロイ
 
-次にデプロイします。
+次にアプリケーション(write-api-server/read-api-server)デプロイします。
 
 ```shell
-$ makers helmfile-apply
+$ makers helmfile-apply-all
 ```
 
 クラスタが形成されるまでしばらく待ちます。ログにエラーがないことを確認してください。

@@ -6,7 +6,7 @@
 $ makers docker-build-local-all
 --- Using Environments -----------------
 AWS_PROFILE = ceer
-AWS_REGION = us-east-1
+AWS_REGION = ap-northeast-1
 PREFIX = om2eep1k
 APPLICATION_NAME = ceer
 ----------------------------------------

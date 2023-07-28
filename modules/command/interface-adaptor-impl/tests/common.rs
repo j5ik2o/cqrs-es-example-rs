@@ -7,37 +7,39 @@ use anyhow::Result;
 use aws_sdk_dynamodb::config::{Credentials, Region};
 use aws_sdk_dynamodb::operation::create_table::CreateTableOutput;
 use aws_sdk_dynamodb::types::{
-  AttributeDefinition, GlobalSecondaryIndex, KeySchemaElement, KeyType, Projection, ProjectionType,
-  ProvisionedThroughput, ScalarAttributeType,
+    AttributeDefinition, GlobalSecondaryIndex, KeySchemaElement, KeyType, Projection, ProjectionType,
+    ProvisionedThroughput, ScalarAttributeType,
 };
 use aws_sdk_dynamodb::Client;
-use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway::{
-  DefaultPartitionKeyResolver, EventPersistenceGateway, KeyResolver,
+use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway_with_transaction::{
+    DefaultPartitionKeyResolver, EventPersistenceGatewayWithTransaction, KeyResolver,
 };
+use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway_without_transaction::EventPersistenceGatewayWithoutTransaction;
 use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_repository::ThreadRepositoryImpl;
+use cqrs_es_example_command_interface_adaptor_impl::gateways::EventPersistenceGateway;
 use testcontainers::clients;
 use testcontainers::core::WaitFor;
 use testcontainers::images::generic::GenericImage;
 
 pub fn init_logger() {
-  env::set_var("RUST_LOG", "debug");
-  let _ = env_logger::builder().is_test(true).try_init();
+    env::set_var("RUST_LOG", "debug");
+    let _ = env_logger::builder().is_test(true).try_init();
 }
 
 pub async fn create_journal_table(client: &Client, table_name: &str, gsi_name: &str) -> Result<CreateTableOutput> {
-  let pkey_attribute_definition = AttributeDefinition::builder()
-    .attribute_name("pkey")
-    .attribute_type(ScalarAttributeType::S)
-    .build();
+    let pkey_attribute_definition = AttributeDefinition::builder()
+        .attribute_name("pkey")
+        .attribute_type(ScalarAttributeType::S)
+        .build();
 
-  let skey_attribute_definition = AttributeDefinition::builder()
-    .attribute_name("skey")
-    .attribute_type(ScalarAttributeType::S)
-    .build();
+    let skey_attribute_definition = AttributeDefinition::builder()
+        .attribute_name("skey")
+        .attribute_type(ScalarAttributeType::S)
+        .build();
 
-  let pkey_schema = KeySchemaElement::builder()
-    .attribute_name("pkey")
-    .key_type(KeyType::Hash)
+    let pkey_schema = KeySchemaElement::builder()
+        .attribute_name("pkey")
+        .key_type(KeyType::Hash)
     .build();
 
   let skey_schema = KeySchemaElement::builder()
@@ -191,43 +193,43 @@ async fn wait_table(client: &Client, target_table_name: &str) -> bool {
 }
 
 pub async fn with_repository<F, Fut>(f: F)
-where
-  F: Fn(ThreadRepositoryImpl) -> Fut,
-  Fut: Future<Output = ()>,
+    where
+        F: Fn(ThreadRepositoryImpl<EventPersistenceGatewayWithoutTransaction>) -> Fut,
+        Fut: Future<Output=()>,
 {
-  init_logger();
-  let docker = clients::Cli::default();
-  let wait_for = WaitFor::message_on_stdout("Port:");
-  let image = GenericImage::new("amazon/dynamodb-local", "1.18.0").with_wait_for(wait_for);
-  let dynamodb_node = docker.run::<GenericImage>(image);
-  let port = dynamodb_node.get_host_port_ipv4(8000);
-  log::debug!("DynamoDB port: {}", port);
-  let client = create_client(port);
+    init_logger();
+    let docker = clients::Cli::default();
+    let wait_for = WaitFor::message_on_stdout("Port:");
+    let image = GenericImage::new("amazon/dynamodb-local", "1.18.0").with_wait_for(wait_for);
+    let dynamodb_node = docker.run::<GenericImage>(image);
+    let port = dynamodb_node.get_host_port_ipv4(8000);
+    log::debug!("DynamoDB port: {}", port);
+    let client = create_client(port);
 
-  let journal_table_name = "journal";
+    let journal_table_name = "journal";
   let journal_aid_index_name = "journal-aid-index";
   let _ = create_journal_table(&client, journal_table_name, journal_aid_index_name).await;
 
   let snapshot_table_name = "snapshot";
   let snapshot_aid_index_name = "snapshot-aid-index";
-  let _ = create_snapshot_table(&client, snapshot_table_name, snapshot_aid_index_name).await;
+    let _ = create_snapshot_table(&client, snapshot_table_name, snapshot_aid_index_name).await;
 
-  while !(wait_table(&client, journal_table_name).await) {
-    thread::sleep(Duration::from_millis(1000));
-  }
+    while !(wait_table(&client, journal_table_name).await) {
+        thread::sleep(Duration::from_millis(1000));
+    }
 
-  while !(wait_table(&client, snapshot_table_name).await) {
-    thread::sleep(Duration::from_millis(1000));
-  }
+    while !(wait_table(&client, snapshot_table_name).await) {
+        thread::sleep(Duration::from_millis(1000));
+    }
 
-  let epg = EventPersistenceGateway::new(
-    client,
-    journal_table_name.to_string(),
-    journal_aid_index_name.to_string(),
-    snapshot_table_name.to_string(),
-    snapshot_aid_index_name.to_string(),
-    64,
-  );
-  let repository = ThreadRepositoryImpl::new(epg);
-  f(repository).await;
+    let epg = EventPersistenceGatewayWithoutTransaction::new(
+        client,
+        journal_table_name.to_string(),
+        journal_aid_index_name.to_string(),
+        snapshot_table_name.to_string(),
+        snapshot_aid_index_name.to_string(),
+        64,
+    );
+    let repository = ThreadRepositoryImpl::new(epg);
+    f(repository).await;
 }

@@ -18,7 +18,7 @@ source ../../env.sh
 IMAGE=ghcr.io/rust-db/refinery:main
 # IMAGE=refinery_ceer:latest
 
-docker run -v $(pwd)/../rdb-migration:/app \
+docker run -v $(pwd)/../refinery:/app \
   -e RUST_LOG=debug \
   -e RUST_BACKTRACE=1 \
   -e DATABASE_URL=mysql://ceer:ceer@host.docker.internal:3306/ceer \

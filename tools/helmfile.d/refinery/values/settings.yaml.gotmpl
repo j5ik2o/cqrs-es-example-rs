@@ -6,4 +6,4 @@ resources:
   {{- toYaml .Values.refinery.resources | nindent 2 }}
 env:
   - name: "DATABASE_URL"
-    value: "mysql://root:{{ requiredEnv "MYSQL_USER_PASSWORD" }}@aht9aa1e-ceer-mysql.cluster-ctywrcabnmgr.ap-northeast-1.rds.amazonaws.com/ceer"
+    value: "mysql://{{ requiredEnv "MYSQL_USER_NAME" }}:{{ requiredEnv "MYSQL_USER_PASSWORD" }}@{{ requiredEnv "MYSQL_ENDPOINT" }}:{{ requiredEnv "MYSQL_PORT" }}/{{ requiredEnv "MYSQL_DATABASE" }}"

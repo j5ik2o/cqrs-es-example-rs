@@ -1,4 +1,4 @@
-# ツールのインストール
+# ツールのインストール 
 
 ## asdf
 
@@ -131,11 +131,11 @@ $ cargo install cargo-make
 ### sqlx-cli
 
 ```shell
-$ cargo install sqlx-cli
+ceer-root $ cargo install sqlx-cli
 ```
 
 ### docker buildx
 
 ```shell
-$ ./docker-buildx-create.sh
+ceer-root $ ./docker-buildx-create.sh
 ```
