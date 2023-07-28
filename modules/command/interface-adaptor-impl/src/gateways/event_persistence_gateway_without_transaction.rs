@@ -13,6 +13,9 @@ use serde::{de, Serialize};
 use crate::gateways::event_persistence_gateway_with_transaction::{DefaultPartitionKeyResolver, KeyResolver};
 use crate::gateways::EventPersistenceGateway;
 
+// 以下に基づいて実装した例。結局無駄な書き込みが防げないので、この実装は再採用。
+// https://aws.amazon.com/jp/blogs/news/build-a-cqrs-event-store-with-amazon-dynamodb/
+
 #[async_trait::async_trait]
 impl EventPersistenceGateway for EventPersistenceGatewayWithoutTransaction {
     async fn get_snapshot_by_id<E, T, AID: AggregateId>(&self, aid: &AID) -> Result<(T, usize, usize)>
@@ -49,12 +52,12 @@ impl EventPersistenceGateway for EventPersistenceGatewayWithoutTransaction {
                 self.put_journal(&event).await?;
 
                 // NOTE: 厳密に対策するには以下のようなトランザクションが結局必要ではないか？
-                // tx.begin()
                 // if snapshot.last_event.exists() then
+                //    tx.begin()
                 //    move snapshot.last_event to journal
                 //    delete snapshot.last_event
+                //    tx.commit()
                 // end
-                // tx.commit()
 
                 Ok((aggregate, seq_nr, version))
             } else {

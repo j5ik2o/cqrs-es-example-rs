@@ -194,7 +194,7 @@ async fn wait_table(client: &Client, target_table_name: &str) -> bool {
 
 pub async fn with_repository<F, Fut>(f: F)
     where
-        F: Fn(ThreadRepositoryImpl<EventPersistenceGatewayWithoutTransaction>) -> Fut,
+        F: Fn(ThreadRepositoryImpl<EventPersistenceGatewayWithTransaction>) -> Fut,
         Fut: Future<Output=()>,
 {
     init_logger();
@@ -222,7 +222,7 @@ pub async fn with_repository<F, Fut>(f: F)
         thread::sleep(Duration::from_millis(1000));
     }
 
-    let epg = EventPersistenceGatewayWithoutTransaction::new(
+    let epg = EventPersistenceGatewayWithTransaction::new(
         client,
         journal_table_name.to_string(),
         journal_aid_index_name.to_string(),
