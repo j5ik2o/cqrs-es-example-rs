@@ -149,7 +149,7 @@ async fn test_thread_post_message() {
     assert!(result.is_ok());
     let thread = repository.find_by_id(&id).await.unwrap();
     assert_eq!(thread.messages().len(), 1);
-    assert_eq!(thread.messages().get(0).unwrap().text, text);
+    assert_eq!(thread.messages().get_at(0).unwrap().text, text);
   })
   .await;
 }

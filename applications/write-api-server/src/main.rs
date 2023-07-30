@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
-use std::sync::Once;
+
 
 use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
@@ -12,7 +12,7 @@ use cqrs_es_example_command_interface_adaptor_impl::controllers::create_router;
 use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway_with_transaction::EventPersistenceGatewayWithTransaction;
 use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_repository::ThreadRepositoryImpl;
 use serde::Deserialize;
-use tracing_log::LogTracer;
+
 
 #[derive(Deserialize, Debug)]
 struct AppSettings {
@@ -46,30 +46,30 @@ struct AwsSettings {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .with_ansi(false)
-        .without_time()
-        .init();
+  tracing_subscriber::fmt()
+    .with_max_level(tracing::Level::DEBUG)
+    .with_target(false)
+    .with_ansi(false)
+    .without_time()
+    .init();
 
-    let app_settings = load_app_config().unwrap();
-    let aws_client = create_aws_client(&app_settings.aws).await;
-    let egg = EventPersistenceGatewayWithTransaction::new(
-        aws_client,
-        app_settings.persistence.journal_table_name.clone(),
-        app_settings.persistence.journal_aid_index_name.clone(),
-        app_settings.persistence.snapshot_table_name.clone(),
-        app_settings.persistence.snapshot_aid_index_name.clone(),
-        app_settings.persistence.shard_count,
-    );
-    let repository = ThreadRepositoryImpl::new(egg);
-    let socket_addr = SocketAddr::new(IpAddr::from_str(&app_settings.api.host).unwrap(), app_settings.api.port);
-    tracing::info!("Server listening on {}", socket_addr);
-    axum::Server::bind(&socket_addr)
-        .serve(create_router(repository).into_make_service())
-        .await?;
-    Ok(())
+  let app_settings = load_app_config().unwrap();
+  let aws_client = create_aws_client(&app_settings.aws).await;
+  let egg = EventPersistenceGatewayWithTransaction::new(
+    aws_client,
+    app_settings.persistence.journal_table_name.clone(),
+    app_settings.persistence.journal_aid_index_name.clone(),
+    app_settings.persistence.snapshot_table_name.clone(),
+    app_settings.persistence.snapshot_aid_index_name.clone(),
+    app_settings.persistence.shard_count,
+  );
+  let repository = ThreadRepositoryImpl::new(egg);
+  let socket_addr = SocketAddr::new(IpAddr::from_str(&app_settings.api.host).unwrap(), app_settings.api.port);
+  tracing::info!("Server listening on {}", socket_addr);
+  axum::Server::bind(&socket_addr)
+    .serve(create_router(repository).into_make_service())
+    .await?;
+  Ok(())
 }
 
 fn load_app_config() -> Result<AppSettings> {

@@ -98,6 +98,49 @@ impl Message {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Messages(Vec<Message>);
+
+impl Messages {
+  pub fn new() -> Self {
+    Self(vec![])
+  }
+
+    pub fn len(&self) -> usize {
+    self.0.len()
+    }
+
+    pub fn get_at(&self, index: usize) -> Option<&Message> {
+    self.0.get(index)
+    }
+
+  pub fn values(&self) -> &Vec<Message> {
+    &self.0
+  }
+
+  pub fn contains(&self, message_id: &MessageId) -> bool {
+    self.0.iter().any(|message| message.id == *message_id)
+  }
+
+  pub fn get(&self, message_id: &MessageId) -> Option<&Message> {
+    self.0.iter().find(|message| message.id == *message_id)
+  }
+
+  pub fn add(&mut self, message: Message) {
+    self.0.push(message);
+  }
+
+  pub fn remove(&mut self, message_id: &MessageId) -> Result<()> {
+    let index = self
+      .0
+      .iter()
+      .position(|message| message.id == *message_id)
+      .ok_or(anyhow!("Message not found"))?;
+    self.0.remove(index);
+    Ok(())
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum MemberRole {
   Admin,
   Member,
@@ -108,7 +151,7 @@ pub struct Thread {
   id: ThreadId,
   name: ThreadName,
   members: Members,
-  messages: Vec<Message>,
+  messages: Messages,
   pub seq_nr_counter: usize,
   version: usize,
 }
@@ -156,7 +199,7 @@ impl Thread {
       id: id.clone(),
       name: name.clone(),
       members: members.clone(),
-      messages: vec![],
+      messages: Messages::new(),
       seq_nr_counter,
       version,
     };
@@ -232,7 +275,7 @@ impl Thread {
     &self.members
   }
 
-  pub fn messages(&self) -> &Vec<Message> {
+  pub fn messages(&self) -> &Messages {
     &self.messages
   }
 
@@ -301,10 +344,10 @@ impl Thread {
     if !self.members.is_member(&executor_id) {
       return Err(anyhow!("User is not a member of the thread"));
     }
-    if self.messages.contains(&message) {
+    if self.messages.contains(&message.id) {
       return Err(anyhow!("Message already exists"));
     }
-    self.messages.push(message.clone());
+    self.messages.add(message.clone());
     self.seq_nr_counter += 1;
     Ok(ThreadEvent::ThreadMessagePosted(ThreadMessagePosted::new(
       self.id.clone(),
@@ -318,16 +361,15 @@ impl Thread {
     if !self.members.is_member(&executor_id) {
       return Err(anyhow!("User is not a member of the thread"));
     }
-    let result = self.messages.iter().position(|message| message.id == message_id);
+    let result = self.messages.get(&message_id);
     match result {
       None => Err(anyhow!("Message not found")),
-      Some(index) => {
-        let message = &self.messages[index];
+      Some(message) => {
         let member = self.members.find_by_user_account_id(&message.sender_id).unwrap();
         if member.user_account_id != executor_id {
           return Err(anyhow!("User is not the sender of the message"));
         }
-        self.messages.remove(index);
+        self.messages.remove(&message_id).unwrap();
         self.seq_nr_counter += 1;
         Ok(ThreadEvent::ThreadMessageDeleted(ThreadMessageDeleted::new(
           self.id.clone(),
