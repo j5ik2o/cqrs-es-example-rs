@@ -15,8 +15,6 @@ Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
 
-/Cargo.lock
-
 /modules/infrastructure/Cargo.lock
 /modules/command/domain/Cargo.lock
 /modules/command/interface-adaptor/Cargo.lock
