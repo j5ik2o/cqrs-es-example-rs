@@ -34,7 +34,7 @@ http = "0.2.4"
 hyper = "0.14.27"
 itertools = "0.11.0"
 lambda_runtime = "0.8.1"
-log = "0.4.19"
+log = "0.4.20"
 num = "0.4.1"
 once_cell = "1.18.0"
 openssl = { version = "0.10.55", features = ["vendored"] }
