@@ -1,6 +1,5 @@
 use anyhow::Result;
-
-use command_domain::aggregate::Aggregate;
+use event_store_adapter_rs::types::Aggregate;
 use command_domain::group_chat::*;
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::{GroupChatPresenter, GroupChatRepository};

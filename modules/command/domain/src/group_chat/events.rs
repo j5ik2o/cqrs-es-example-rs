@@ -1,11 +1,12 @@
 use chrono::{DateTime, Utc};
+use event_store_adapter_rs::types::Event;
 use serde::{Deserialize, Serialize};
 use ulid_generator_rs::{ULIDGenerator, ULID};
 
 use crate::group_chat::member::Member;
 use crate::group_chat::{GroupChatId, GroupChatName, Members, Message, MessageId};
 use crate::user_account::UserAccountId;
-use crate::{id_generate, Event};
+use crate::{id_generate};
 
 pub type GroupChatEventId = ULID;
 
@@ -270,10 +271,10 @@ impl GroupChatEventMemberRemovedBody {
 
 #[cfg(test)]
 mod tests {
-  use crate::group_chat::events::{GroupChatEvent, GroupChatEventCreatedBody};
+    use event_store_adapter_rs::types::Event;
+    use crate::group_chat::events::{GroupChatEvent, GroupChatEventCreatedBody};
   use crate::group_chat::{GroupChatId, GroupChatName, Members};
   use crate::user_account::UserAccountId;
-  use crate::Event;
 
   #[test]
   fn test_to_json() {

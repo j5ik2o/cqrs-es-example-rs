@@ -6,6 +6,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use event_store_adapter_rs::types::Event;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use utoipa::ToSchema;
@@ -13,7 +14,6 @@ use utoipa::ToSchema;
 use command_domain::group_chat::GroupChatEvent;
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, MessageId};
 use command_domain::user_account::UserAccountId;
-use command_domain::Event;
 use command_interface_adaptor_if::{GroupChatPresenter, GroupChatRepository};
 use command_processor::command_processor::GroupChatCommandProcessor;
 

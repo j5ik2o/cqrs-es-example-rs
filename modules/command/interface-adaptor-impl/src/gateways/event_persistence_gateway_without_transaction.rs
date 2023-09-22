@@ -6,10 +6,9 @@ use aws_sdk_dynamodb::operation::put_item::PutItemOutput;
 use aws_sdk_dynamodb::operation::update_item::UpdateItemOutput;
 use aws_sdk_dynamodb::types::AttributeValue;
 use aws_sdk_dynamodb::Client;
+use event_store_adapter_rs::types::{Aggregate, AggregateId, Event};
 use serde::{de, Serialize};
 
-use command_domain::aggregate::{Aggregate, AggregateId};
-use command_domain::Event;
 
 use crate::gateways::*;
 

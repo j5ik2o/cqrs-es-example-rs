@@ -1,10 +1,7 @@
 use std::sync::Mutex;
 
-use chrono::{DateTime, Utc};
 use once_cell::sync::Lazy;
 use ulid_generator_rs::{ULIDGenerator, ULID};
-
-use crate::aggregate::AggregateId;
 
 pub mod aggregate;
 pub mod group_chat;
@@ -43,13 +40,3 @@ pub fn id_generate() -> ULID {
   }
 }
 
-/// イベントを表すトレイト。
-pub trait Event: std::fmt::Debug + Send + Sync {
-  type ID: std::fmt::Display;
-  type AggregateID: AggregateId;
-  fn id(&self) -> &Self::ID;
-  fn aggregate_id(&self) -> &Self::AggregateID;
-  fn seq_nr(&self) -> usize;
-  fn occurred_at(&self) -> &DateTime<Utc>;
-  fn is_created(&self) -> bool;
-}

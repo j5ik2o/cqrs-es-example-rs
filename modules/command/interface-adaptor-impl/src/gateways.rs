@@ -1,4 +1,3 @@
-use command_domain::aggregate::{Aggregate, AggregateId};
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
@@ -9,7 +8,7 @@ pub mod group_chat_read_model_dao_impl;
 pub mod group_chat_repository;
 
 use anyhow::Result;
-use command_domain::Event;
+use event_store_adapter_rs::types::{Aggregate, AggregateId, Event};
 use serde::{de, Serialize};
 
 pub trait KeyResolver: Debug + Send + 'static {

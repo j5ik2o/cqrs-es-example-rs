@@ -229,7 +229,6 @@ mod tests {
   use command_domain::user_account::UserAccountId;
   use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
   use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
-  use once_cell::sync::Lazy;
   use sqlx::MySqlPool;
   use testcontainers::clients::Cli;
   use testcontainers::core::WaitFor;

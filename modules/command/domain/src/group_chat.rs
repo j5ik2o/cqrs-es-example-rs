@@ -1,7 +1,8 @@
 use anyhow::{anyhow, Result};
+use chrono::{DateTime, Utc};
+use event_store_adapter_rs::types::Aggregate;
 use serde::{Deserialize, Serialize};
 
-use crate::aggregate::Aggregate;
 pub use crate::group_chat::events::{
   GroupChatEvent, GroupChatEventCreatedBody, GroupChatEventDeletedBody, GroupChatEventMemberAddedBody,
   GroupChatEventMemberRemovedBody, GroupChatEventMessagePostedBody, GroupChatEventRenamedBody,
@@ -46,6 +47,7 @@ pub struct GroupChat {
   messages: Messages,
   seq_nr_counter: usize,
   version: usize,
+    last_updated_at: DateTime<Utc>,
 }
 
 impl PartialEq for GroupChat {
@@ -72,6 +74,10 @@ impl Aggregate for GroupChat {
   fn set_version(&mut self, version: usize) {
     self.version = version;
   }
+
+    fn last_updated_at(&self) -> &DateTime<Utc> {
+        &self.last_updated_at
+    }
 }
 
 impl GroupChat {
@@ -124,6 +130,7 @@ impl GroupChat {
       messages: Messages::new([]),
       seq_nr_counter,
       version,
+        last_updated_at: Utc::now(),
     };
     my_self.seq_nr_counter += 1;
     let event = GroupChatEvent::GroupChatCreated(GroupChatEventCreatedBody::new(

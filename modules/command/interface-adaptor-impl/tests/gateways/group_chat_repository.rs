@@ -1,8 +1,8 @@
 /// [GroupChatRepository]のテスト
 #[cfg(test)]
 mod tests {
-  use super::super::super::common::*;
-  use command_domain::aggregate::Aggregate;
+    use event_store_adapter_rs::types::Aggregate;
+    use super::super::super::common::*;
   use command_domain::group_chat::{GroupChat, GroupChatName, MemberRole};
   use command_domain::group_chat::{MemberId, Members};
   use command_domain::user_account::UserAccountId;
