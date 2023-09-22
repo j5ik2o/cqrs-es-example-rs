@@ -1,4 +1,4 @@
-python 3.11.4
+python 3.11.5
 terraform 1.5.2
 helm 3.12.3
 kubectl 1.27.3
