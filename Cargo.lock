@@ -3616,9 +3616,9 @@ dependencies = [
 
 [[package]]
 name = "serde_dynamo"
-version = "4.2.3"
+version = "4.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc10b1304ff6f4f67cffe311f23f5e3abd36f00b2f33813c8fac1a571bd821e3"
+checksum = "b93775e2f69f89cecc813eee64ed948ca803e7a517be4103b67eed98facbfebd"
 dependencies = [
  "base64 0.21.2",
  "serde",
