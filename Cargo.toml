@@ -24,7 +24,7 @@ aws_lambda_events = { vesrion = "0.10.0", default-features = false }
 aws-sdk-dynamodb = "0.28.0"
 aws-sdk-dynamodbstreams = "0.28.0"
 axum = "0.6.18"
-backtrace = "0.3.67"
+backtrace = "0.3.69"
 chrono = "0.4.*"
 config = "0.13.1"
 derive-new = "0.5.9"
