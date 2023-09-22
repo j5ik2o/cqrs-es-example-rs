@@ -47,7 +47,7 @@ pub struct GroupChat {
   messages: Messages,
   seq_nr_counter: usize,
   version: usize,
-    last_updated_at: DateTime<Utc>,
+  last_updated_at: DateTime<Utc>,
 }
 
 impl PartialEq for GroupChat {
@@ -75,9 +75,9 @@ impl Aggregate for GroupChat {
     self.version = version;
   }
 
-    fn last_updated_at(&self) -> &DateTime<Utc> {
-        &self.last_updated_at
-    }
+  fn last_updated_at(&self) -> &DateTime<Utc> {
+    &self.last_updated_at
+  }
 }
 
 impl GroupChat {
@@ -130,7 +130,7 @@ impl GroupChat {
       messages: Messages::new([]),
       seq_nr_counter,
       version,
-        last_updated_at: Utc::now(),
+      last_updated_at: Utc::now(),
     };
     my_self.seq_nr_counter += 1;
     let event = GroupChatEvent::GroupChatCreated(GroupChatEventCreatedBody::new(

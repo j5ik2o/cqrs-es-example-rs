@@ -1,8 +1,8 @@
 use anyhow::Result;
-use event_store_adapter_rs::types::Aggregate;
 use command_domain::group_chat::*;
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::{GroupChatPresenter, GroupChatRepository};
+use event_store_adapter_rs::types::Aggregate;
 
 /// グループチャットへのコマンドを処理するユースケース実装。
 ///

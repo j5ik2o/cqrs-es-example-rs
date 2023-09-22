@@ -13,7 +13,7 @@ use aws_sdk_dynamodb::Client;
 use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
 use testcontainers::images::generic::GenericImage;
-use testcontainers::{Container};
+use testcontainers::Container;
 
 use command_interface_adaptor_impl::gateways::event_persistence_gateway_with_transaction::EventPersistenceGatewayWithTransaction;
 use command_interface_adaptor_impl::gateways::group_chat_repository::GroupChatRepositoryImpl;

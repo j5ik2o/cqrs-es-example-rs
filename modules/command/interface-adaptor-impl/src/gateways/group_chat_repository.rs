@@ -1,6 +1,6 @@
 use anyhow::Result;
-use std::collections::{HashMap, VecDeque};
 use event_store_adapter_rs::types::{Aggregate, Event};
+use std::collections::{HashMap, VecDeque};
 
 use command_domain::group_chat::GroupChatEvent;
 use command_domain::group_chat::{GroupChat, GroupChatId};

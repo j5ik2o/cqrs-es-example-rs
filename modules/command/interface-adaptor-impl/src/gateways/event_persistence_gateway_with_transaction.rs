@@ -7,7 +7,6 @@ use aws_sdk_dynamodb::Client;
 use event_store_adapter_rs::types::{Aggregate, AggregateId, Event};
 use serde::{de, Serialize};
 
-
 use crate::gateways::*;
 
 #[derive(Debug, Clone)]
