@@ -19,5 +19,5 @@ tower = { workspace = true }
 
 [dev-dependencies]
 env_logger = "0.10.0"
-mime = "0.3.16"
+mime = "0.3.17"
 testcontainers = "0.14.0"
