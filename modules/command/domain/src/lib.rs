@@ -39,4 +39,3 @@ pub fn id_generate() -> ULID {
     }
   }
 }
-

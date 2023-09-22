@@ -9,7 +9,6 @@ use aws_sdk_dynamodb::Client;
 use event_store_adapter_rs::types::{Aggregate, AggregateId, Event};
 use serde::{de, Serialize};
 
-
 use crate::gateways::*;
 
 // 以下に基づいて実装した例。結局無駄な書き込みが防げないので、この実装は不採用。利用していない実装なので完全に無視してください。
