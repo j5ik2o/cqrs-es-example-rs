@@ -1,9 +1,9 @@
-use crate::aggregate::AggregateId;
 use crate::id_generate;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use event_store_adapter_rs::types::AggregateId;
 use ulid_generator_rs::ULID;
 
 /// [GroupChat]のIDを表す値オブジェクト。

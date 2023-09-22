@@ -4,10 +4,9 @@ use std::sync::Arc;
 use anyhow::Result;
 use aws_sdk_dynamodb::types::{AttributeValue, Put, TransactWriteItem, Update};
 use aws_sdk_dynamodb::Client;
+use event_store_adapter_rs::types::{Aggregate, AggregateId, Event};
 use serde::{de, Serialize};
 
-use command_domain::aggregate::{Aggregate, AggregateId};
-use command_domain::Event;
 
 use crate::gateways::*;
 

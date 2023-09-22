@@ -1,10 +1,9 @@
 use anyhow::Result;
-use command_domain::aggregate::Aggregate;
 use std::collections::{HashMap, VecDeque};
+use event_store_adapter_rs::types::{Aggregate, Event};
 
 use command_domain::group_chat::GroupChatEvent;
 use command_domain::group_chat::{GroupChat, GroupChatId};
-use command_domain::Event;
 use command_interface_adaptor_if::GroupChatRepository;
 
 use crate::gateways::EventPersistenceGateway;
