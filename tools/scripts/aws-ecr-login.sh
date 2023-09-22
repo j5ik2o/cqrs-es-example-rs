@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -eu
 
@@ -7,7 +7,7 @@ cd $(dirname "$0") || exit
 
 pushd ../../
 
-ECR_BASE_URL=$(./tools/terraform/terraform-output.sh -raw ecr_read_api_server_repository_url)
+ECR_BASE_URL=$(./tools/deploy/terraform/terraform-output.sh -raw ecr_read_api_server_repository_url)
 
 popd
 

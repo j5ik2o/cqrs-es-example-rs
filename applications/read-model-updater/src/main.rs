@@ -1,19 +1,13 @@
 extern crate log;
 
 use anyhow::Result;
-use aws_lambda_events::dynamodb;
 use std::time::Duration;
 
-use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_read_model_dao_impl::ThreadReadModelDaoImpl;
-use lambda_runtime::{service_fn, Error, LambdaEvent};
+use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
+use lambda_runtime::{service_fn, Error};
 use sqlx::mysql::{MySqlConnectOptions, MySqlPoolOptions, MySqlSslMode};
 
-use cqrs_es_example_read_model_updater::{load_app_config, update_read_model};
-
-async fn handler(event: LambdaEvent<dynamodb::Event>) -> Result<()> {
-  tracing::info!("event = {:?}", event);
-  Ok(())
-}
+use read_model_updater::{load_app_config, update_read_model};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -42,7 +36,7 @@ async fn main() -> Result<(), Error> {
     .await?;
 
   tracing::info!("main: connect");
-  let dao = ThreadReadModelDaoImpl::new(pool);
+  let dao = GroupChatReadModelUpdateDaoImpl::new(pool);
 
   tracing::info!("main: start");
   lambda_runtime::run(service_fn(|event| async {

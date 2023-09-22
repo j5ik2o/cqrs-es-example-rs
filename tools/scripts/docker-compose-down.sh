@@ -5,6 +5,17 @@ set -eu
 # shellcheck disable=SC2046
 cd $(dirname "$0") || exit
 
+export ARCH=$(uname -m)
+echo "ARCH=${ARCH}"
+
+if [ "$ARCH" == "x86_64" ]; then
+  ARCH="amd64"
+fi
+
+if [ "$ARCH" == "aarch64" ]; then
+  ARCH="arm64"
+fi
+
 F_OPTION="-f ../docker-compose/docker-compose-applications.yml"
 
 while getopts d OPT; do
@@ -14,14 +25,4 @@ while getopts d OPT; do
   esac
 done
 
-if [[ ! -e ../../env.sh ]]; then
-    echo "env.sh is not found."
-    exit 1
-fi
-
-# shellcheck disable=SC2034
-OUTPUT_ENV=1
-
-source ../../env.sh
-
-docker-compose -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} down -v --remove-orphans
+docker compose -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} down -v --remove-orphans

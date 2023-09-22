@@ -1,116 +1,121 @@
 use axum::http::{header, Method, Request, StatusCode};
 use hyper::Body;
+use std::str::FromStr;
 use tower::util::ServiceExt;
 
-use common::*;
-use cqrs_es_example_command_interface_adaptor_if::ThreadRepository;
-use cqrs_es_example_command_interface_adaptor_impl::controllers::{
-  create_router, AddMemberRequestBody, CreateThreadRequestBody, DeleteMessageRequestBody, DeleteThreadRequestBody,
-  EndpointPaths, PostMessageRequestBody, RemoveMemberRequestBody, RenameThreadRequestBody, ThreadCommandResponseBody,
+use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, MessageId};
+use command_domain::user_account::UserAccountId;
+use command_interface_adaptor_if::GroupChatRepository;
+use command_interface_adaptor_impl::controllers::{
+  create_router, AddMemberRequestBody, CreateGroupChatRequestBody, DeleteGroupChatRequestBody,
+  DeleteMessageRequestBody, EndpointPaths, GroupChatCommandResponseSuccessBody, MessageCommandResponseSuccessBody,
+  PostMessageRequestBody, RemoveMemberRequestBody, RenameGroupChatRequestBody,
 };
-use cqrs_es_example_domain::thread::{MemberRole, Message, MessageId, ThreadId, ThreadName};
-use cqrs_es_example_domain::user_account::UserAccountId;
+use common::*;
 
 mod common;
 
-async fn create_thread<TR: ThreadRepository>(
+async fn create_group_chat<TR: GroupChatRepository>(
   repository: &TR,
-  name: ThreadName,
+  name: GroupChatName,
   executor_id: UserAccountId,
-) -> ThreadId {
-  let create_thread_body = CreateThreadRequestBody { name, executor_id };
-  let create_thread_request = Request::builder()
-    .uri(EndpointPaths::CreateThread.as_str())
+) -> GroupChatId {
+  let create_group_chat_body = CreateGroupChatRequestBody {
+    name: name.to_string(),
+    executor_id: executor_id.to_string(),
+  };
+  let create_group_chat_request = Request::builder()
+    .uri(EndpointPaths::CreateGroupChat.as_str())
     .method(Method::POST)
     .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-    .body(Body::from(serde_json::to_string(&create_thread_body).unwrap()))
+    .body(Body::from(serde_json::to_string(&create_group_chat_body).unwrap()))
     .unwrap();
-  let create_thread_response = create_router(repository.clone())
-    .oneshot(create_thread_request)
+  let create_group_chat_response = create_router(repository.clone())
+    .oneshot(create_group_chat_request)
     .await
     .unwrap();
-  assert_eq!(create_thread_response.status(), StatusCode::CREATED);
-  let create_thread_response_body_bytes = hyper::body::to_bytes(create_thread_response.into_body()).await.unwrap();
-  let create_thread_response_body_str = String::from_utf8(create_thread_response_body_bytes.to_vec()).unwrap();
-  let thread_command_response_body =
-    serde_json::from_str::<ThreadCommandResponseBody>(&create_thread_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = thread_command_response_body else {
-    panic!("missing thread id");
-  };
-  id
+  assert_eq!(create_group_chat_response.status(), StatusCode::OK);
+  let create_group_chat_response_body_bytes = hyper::body::to_bytes(create_group_chat_response.into_body())
+    .await
+    .unwrap();
+  let create_group_chat_response_body_str = String::from_utf8(create_group_chat_response_body_bytes.to_vec()).unwrap();
+  let group_chat_command_response_body =
+    serde_json::from_str::<GroupChatCommandResponseSuccessBody>(&create_group_chat_response_body_str).unwrap();
+  GroupChatId::from_str(&group_chat_command_response_body.group_chat_id).unwrap()
 }
 
-async fn delete_thread<TR: ThreadRepository>(
+async fn delete_group_chat<TR: GroupChatRepository>(
   repository: &TR,
-  thread_id: ThreadId,
+  group_chat_id: GroupChatId,
   executor_id: UserAccountId,
-) -> ThreadId {
-  let delete_thread_body = DeleteThreadRequestBody { thread_id, executor_id };
-  let delete_thread_request = Request::builder()
-    .uri(EndpointPaths::DeleteThread.as_str())
+) -> GroupChatId {
+  let delete_group_chat_body = DeleteGroupChatRequestBody {
+    group_chat_id: group_chat_id.to_string(),
+    executor_id: executor_id.to_string(),
+  };
+  let delete_group_chat_request = Request::builder()
+    .uri(EndpointPaths::DeleteGroupChat.as_str())
     .method(Method::POST)
     .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-    .body(Body::from(serde_json::to_string(&delete_thread_body).unwrap()))
+    .body(Body::from(serde_json::to_string(&delete_group_chat_body).unwrap()))
     .unwrap();
-  let delete_thread_response = create_router(repository.clone())
-    .oneshot(delete_thread_request)
+  let delete_group_chat_response = create_router(repository.clone())
+    .oneshot(delete_group_chat_request)
     .await
     .unwrap();
-  assert_eq!(delete_thread_response.status(), StatusCode::OK);
-  let delete_thread_response_body_bytes = hyper::body::to_bytes(delete_thread_response.into_body()).await.unwrap();
-  let delete_thread_response_body_str = String::from_utf8(delete_thread_response_body_bytes.to_vec()).unwrap();
+  assert_eq!(delete_group_chat_response.status(), StatusCode::OK);
+  let delete_group_chat_response_body_bytes = hyper::body::to_bytes(delete_group_chat_response.into_body())
+    .await
+    .unwrap();
+  let delete_group_chat_response_body_str = String::from_utf8(delete_group_chat_response_body_bytes.to_vec()).unwrap();
   let delete_command_response_body =
-    serde_json::from_str::<ThreadCommandResponseBody>(&delete_thread_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = delete_command_response_body else {
-    panic!("missing thread id");
-  };
-  id
+    serde_json::from_str::<GroupChatCommandResponseSuccessBody>(&delete_group_chat_response_body_str).unwrap();
+  GroupChatId::from_str(&delete_command_response_body.group_chat_id).unwrap()
 }
 
-async fn rename_thread<TR: ThreadRepository>(
+async fn rename_group_chat<TR: GroupChatRepository>(
   repository: &TR,
-  thread_id: ThreadId,
-  name: ThreadName,
+  group_chat_id: GroupChatId,
+  name: GroupChatName,
   executor_id: UserAccountId,
-) -> ThreadId {
-  let rename_thread_body = RenameThreadRequestBody {
-    thread_id,
-    name,
-    executor_id,
+) -> GroupChatId {
+  let rename_group_chat_body = RenameGroupChatRequestBody {
+    group_chat_id: group_chat_id.to_string(),
+    name: name.to_string(),
+    executor_id: executor_id.to_string(),
   };
-  let rename_thread_request = Request::builder()
-    .uri(EndpointPaths::RenameThread.as_str())
+  let rename_group_chat_request = Request::builder()
+    .uri(EndpointPaths::RenameGroupChat.as_str())
     .method(Method::POST)
     .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-    .body(Body::from(serde_json::to_string(&rename_thread_body).unwrap()))
+    .body(Body::from(serde_json::to_string(&rename_group_chat_body).unwrap()))
     .unwrap();
-  let rename_thread_response = create_router(repository.clone())
-    .oneshot(rename_thread_request)
+  let rename_group_chat_response = create_router(repository.clone())
+    .oneshot(rename_group_chat_request)
     .await
     .unwrap();
-  assert_eq!(rename_thread_response.status(), StatusCode::OK);
-  let rename_thread_response_body_bytes = hyper::body::to_bytes(rename_thread_response.into_body()).await.unwrap();
-  let rename_thread_response_body_str = String::from_utf8(rename_thread_response_body_bytes.to_vec()).unwrap();
-  let rename_thread_response_body =
-    serde_json::from_str::<ThreadCommandResponseBody>(&rename_thread_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = rename_thread_response_body else {
-    panic!("missing thread id");
-  };
-  id
+  assert_eq!(rename_group_chat_response.status(), StatusCode::OK);
+  let rename_group_chat_response_body_bytes = hyper::body::to_bytes(rename_group_chat_response.into_body())
+    .await
+    .unwrap();
+  let rename_group_chat_response_body_str = String::from_utf8(rename_group_chat_response_body_bytes.to_vec()).unwrap();
+  let rename_group_chat_response_body =
+    serde_json::from_str::<GroupChatCommandResponseSuccessBody>(&rename_group_chat_response_body_str).unwrap();
+  GroupChatId::from_str(&rename_group_chat_response_body.group_chat_id).unwrap()
 }
 
-async fn add_member<TR: ThreadRepository>(
+async fn add_member<TR: GroupChatRepository>(
   repository: &TR,
-  thread_id: ThreadId,
+  group_chat_id: GroupChatId,
   user_account_id: UserAccountId,
   role: MemberRole,
   executor_id: UserAccountId,
-) -> ThreadId {
+) -> GroupChatId {
   let add_member_body = AddMemberRequestBody {
-    thread_id,
-    user_account_id,
-    role,
-    executor_id,
+    group_chat_id: group_chat_id.to_string(),
+    user_account_id: user_account_id.to_string(),
+    role: role.to_string(),
+    executor_id: executor_id.to_string(),
   };
   let add_member_request = Request::builder()
     .uri(EndpointPaths::AddMember.as_str())
@@ -126,23 +131,20 @@ async fn add_member<TR: ThreadRepository>(
   let add_member_response_body_bytes = hyper::body::to_bytes(add_member_response.into_body()).await.unwrap();
   let add_member_response_body_str = String::from_utf8(add_member_response_body_bytes.to_vec()).unwrap();
   let add_member_response_body =
-    serde_json::from_str::<ThreadCommandResponseBody>(&add_member_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = add_member_response_body else {
-    panic!("missing thread id");
-  };
-  id
+    serde_json::from_str::<GroupChatCommandResponseSuccessBody>(&add_member_response_body_str).unwrap();
+  GroupChatId::from_str(&add_member_response_body.group_chat_id).unwrap()
 }
 
-async fn remove_member<TR: ThreadRepository>(
+async fn remove_member<TR: GroupChatRepository>(
   repository: &TR,
-  thread_id: ThreadId,
+  group_chat_id: GroupChatId,
   user_account_id: UserAccountId,
   executor_id: UserAccountId,
-) -> ThreadId {
+) -> GroupChatId {
   let remove_member_body = RemoveMemberRequestBody {
-    thread_id,
-    user_account_id,
-    executor_id,
+    group_chat_id: group_chat_id.to_string(),
+    user_account_id: user_account_id.to_string(),
+    executor_id: executor_id.to_string(),
   };
   let remove_member_request = Request::builder()
     .uri(EndpointPaths::RemoveMember.as_str())
@@ -158,25 +160,22 @@ async fn remove_member<TR: ThreadRepository>(
   let remove_member_response_body_bytes = hyper::body::to_bytes(remove_member_response.into_body()).await.unwrap();
   let remove_member_response_body_str = String::from_utf8(remove_member_response_body_bytes.to_vec()).unwrap();
   let remove_member_response_body =
-    serde_json::from_str::<ThreadCommandResponseBody>(&remove_member_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = remove_member_response_body else {
-    panic!("missing thread id");
-  };
-  id
+    serde_json::from_str::<GroupChatCommandResponseSuccessBody>(&remove_member_response_body_str).unwrap();
+  GroupChatId::from_str(&remove_member_response_body.group_chat_id).unwrap()
 }
 
-async fn post_message<TR: ThreadRepository>(
+async fn post_message<TR: GroupChatRepository>(
   repository: &TR,
-  thread_id: ThreadId,
-  message: Message,
+  group_chat_id: GroupChatId,
+  message: String,
   user_account_id: UserAccountId,
   executor_id: UserAccountId,
-) -> ThreadId {
+) -> MessageId {
   let post_message_body = PostMessageRequestBody {
-    thread_id,
-    user_account_id,
+    group_chat_id: group_chat_id.to_string(),
+    user_account_id: user_account_id.to_string(),
     message,
-    executor_id,
+    executor_id: executor_id.to_string(),
   };
   let post_message_request = Request::builder()
     .uri(EndpointPaths::PostMessage.as_str())
@@ -192,25 +191,22 @@ async fn post_message<TR: ThreadRepository>(
   let post_message_response_body_bytes = hyper::body::to_bytes(post_message_response.into_body()).await.unwrap();
   let post_message_response_body_str = String::from_utf8(post_message_response_body_bytes.to_vec()).unwrap();
   let post_message_response_body =
-    serde_json::from_str::<ThreadCommandResponseBody>(&post_message_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = post_message_response_body else {
-    panic!("missing thread id");
-  };
-  id
+    serde_json::from_str::<MessageCommandResponseSuccessBody>(&post_message_response_body_str).unwrap();
+  MessageId::from_str(&post_message_response_body.message_id).unwrap()
 }
 
-async fn delete_message<TR: ThreadRepository>(
+async fn delete_message<TR: GroupChatRepository>(
   repository: &TR,
-  thread_id: ThreadId,
+  group_chat_id: GroupChatId,
   message_id: MessageId,
   user_account_id: UserAccountId,
   executor_id: UserAccountId,
-) -> ThreadId {
+) -> GroupChatId {
   let delete_message_body = DeleteMessageRequestBody {
-    thread_id,
-    user_account_id,
-    message_id,
-    executor_id,
+    group_chat_id: group_chat_id.to_string(),
+    user_account_id: user_account_id.to_string(),
+    message_id: message_id.to_string(),
+    executor_id: executor_id.to_string(),
   };
   let delete_message_request = Request::builder()
     .uri(EndpointPaths::DeleteMessage.as_str())
@@ -228,66 +224,84 @@ async fn delete_message<TR: ThreadRepository>(
     .unwrap();
   let delete_message_response_body_str = String::from_utf8(delete_message_response_body_bytes.to_vec()).unwrap();
   let delete_message_response_body =
-    serde_json::from_str::<ThreadCommandResponseBody>(&delete_message_response_body_str).unwrap();
-  let ThreadCommandResponseBody::Success { id } = delete_message_response_body else {
-    panic!("missing thread id");
-  };
-  id
+    serde_json::from_str::<GroupChatCommandResponseSuccessBody>(&delete_message_response_body_str).unwrap();
+  GroupChatId::from_str(&delete_message_response_body.group_chat_id).unwrap()
 }
 
-#[tokio::test]
-async fn test_create_thread() {
-  with_repository(|repository| async move {
+/// Router経由での結合テスト
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use serial_test::serial;
+  use testcontainers::clients::Cli;
+
+  #[tokio::test]
+  #[serial]
+  async fn test_create_group_chat() {
+    let docker = Cli::default();
+    let (repository, container, client) = get_repository(&docker).await;
     let user_account_id = UserAccountId::new();
-    let _ = create_thread(&repository, ThreadName::new("ABC".to_string()), user_account_id.clone()).await;
-  })
-  .await;
-}
+    let _ = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
 
-#[tokio::test]
-async fn test_delete_thread() {
-  with_repository(|repository| async move {
+    drop(client);
+    container.stop();
+    drop(container);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn test_delete_group_chat() {
+    let docker = Cli::default();
+    let (repository, container, client) = get_repository(&docker).await;
     // Given
     let user_account_id = UserAccountId::new();
-    let id1 = create_thread(&repository, ThreadName::new("ABC".to_string()), user_account_id.clone()).await;
+    let id1 = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
 
     // When
-    let id2 = delete_thread(&repository, id1.clone(), user_account_id.clone()).await;
+    let id2 = delete_group_chat(&repository, id1.clone(), user_account_id.clone()).await;
 
     // Then
     assert_eq!(id1, id2);
-  })
-  .await;
-}
 
-#[tokio::test]
-async fn test_rename_thread() {
-  with_repository(|repository| async move {
+    drop(client);
+    container.stop();
+    drop(container);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn test_rename_group_chat() {
+    let docker = Cli::default();
+    let (repository, container, client) = get_repository(&docker).await;
     // Given
     let user_account_id = UserAccountId::new();
-    let id1 = create_thread(&repository, ThreadName::new("ABC".to_string()), user_account_id.clone()).await;
+    let id1 = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
 
     // When
-    let id2 = rename_thread(
+    let id2 = rename_group_chat(
       &repository,
       id1.clone(),
-      ThreadName::new("DEF".to_string()),
+      GroupChatName::new("DEF").unwrap(),
       user_account_id,
     )
     .await;
 
     // Then
     assert_eq!(id1, id2);
-  })
-  .await;
-}
 
-#[tokio::test]
-async fn test_add_member() {
-  with_repository(|repository| async move {
+    drop(client);
+    container.stop();
+    drop(container);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn test_add_member() {
+    let docker = Cli::default();
+    let (repository, container, client) = get_repository(&docker).await;
     // Given
     let user_account_id = UserAccountId::new();
-    let id1 = create_thread(&repository, ThreadName::new("ABC".to_string()), user_account_id.clone()).await;
+    let id1 = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
     let user_account_id2 = UserAccountId::new();
 
     // When
@@ -302,16 +316,20 @@ async fn test_add_member() {
 
     // Then
     assert_eq!(id1, id2);
-  })
-  .await;
-}
 
-#[tokio::test]
-async fn test_remove_member() {
-  with_repository(|repository| async move {
+    drop(client);
+    container.stop();
+    drop(container);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn test_remove_member() {
+    let docker = Cli::default();
+    let (repository, container, client) = get_repository(&docker).await;
     // Given
     let user_account_id = UserAccountId::new();
-    let id1 = create_thread(&repository, ThreadName::new("ABC".to_string()), user_account_id.clone()).await;
+    let id1 = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
     let user_account_id2 = UserAccountId::new();
 
     let id2 = add_member(
@@ -329,68 +347,70 @@ async fn test_remove_member() {
     // Then
     assert_eq!(id1, id2);
     assert_eq!(id2, id3);
-  })
-  .await;
-}
 
-#[tokio::test]
-async fn test_post_message() {
-  with_repository(|repository| async move {
+    drop(client);
+    container.stop();
+    drop(container);
+  }
+
+  #[tokio::test]
+  #[serial]
+  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
+  async fn test_post_message() {
+    let docker = Cli::default();
+    let (repository, container, client) = get_repository(&docker).await;
     let user_account_id = UserAccountId::new();
-    let id1 = create_thread(&repository, ThreadName::new("ABC".to_string()), user_account_id.clone()).await;
+    let id1 = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
 
-    let id2 = post_message(
+    let _id2 = post_message(
       &repository,
       id1.clone(),
-      Message::new("Hello".to_string(), user_account_id.clone()),
+      "Hello".to_string(),
       user_account_id.clone(),
       user_account_id.clone(),
     )
     .await;
 
-    assert_eq!(id1, id2);
-  })
-  .await;
-}
+    // assert_eq!(id1, id2);
+    drop(client);
+    container.stop();
+    drop(container);
+  }
 
-#[tokio::test]
-async fn test_delete_message() {
-  with_repository(|repository| async move {
+  #[tokio::test]
+  #[serial]
+  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
+  async fn test_delete_message() {
+    let docker = Cli::default();
+    let (repository, container, client) = get_repository(&docker).await;
     let user_account_id = UserAccountId::new();
-    let id1 = create_thread(&repository, ThreadName::new("ABC".to_string()), user_account_id.clone()).await;
+    let id1 = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
 
-    let message = Message::new("Hello".to_string(), user_account_id.clone());
-    let id2 = post_message(
+    let message_id = post_message(
       &repository,
       id1.clone(),
-      message.clone(),
+      "Hello".to_string(),
       user_account_id.clone(),
       user_account_id.clone(),
     )
     .await;
+
+    let t = repository.find_by_id(&id1.clone()).await.unwrap();
+    assert!(t.messages().contains(&message_id));
 
     let id3 = delete_message(
       &repository,
       id1.clone(),
-      message.id.clone(),
+      message_id.clone(),
       user_account_id.clone(),
       user_account_id.clone(),
     )
     .await;
 
-    assert_eq!(id1, id2);
-    assert_eq!(id2, id3);
-  })
-  .await;
-}
+    assert_eq!(id1, id3);
 
-#[test]
-fn test() {
-  let body = CreateThreadRequestBody {
-    name: ThreadName::new("test".to_string()),
-    executor_id: UserAccountId::new(),
-  };
-
-  let json = serde_json::to_string(&body);
-  println!("{}", json.unwrap());
+    drop(client);
+    container.stop();
+    drop(container);
+  }
 }

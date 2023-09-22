@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 DYNAMODB_LOCAL=${DYNAMODB_LOCAL:-localhost}
 

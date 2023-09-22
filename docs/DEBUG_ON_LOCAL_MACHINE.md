@@ -1,71 +1,70 @@
 # ローカルマシンでデバッグ
 
-## DynamoDB LocalとDynamoDB AdminのDocker Composeを実行する。
-
-docker-composeとしてdynamodb-localとdynamodb-adminを起動します。
+## docker-composeにてデータベースだけを実行する。
 
 ```shell
-./tools/scripts/docker-compose-up.sh -d
+$ makers docker-compose-up-db
 ```
 
 ## IntelliJ IDEAを使ってデバッグする。
 
-この3つの設定を作成し、IntelliJ IDEAで実行する。デバッグしたい場合は、プロジェクトのどれかを
-を実行する。
+アプリケーションは動作していないので必要に応じて起動してデバッグしてください。
+
+- write-api-server
+    - `src/main.rs`
+- read-model-updater
+    - `src/main.rs`はAWS Lambda用なので、ローカルでは`bin/local.rs`を使います。
+- read-api-server
+    - `src/main.rs`
+
+環境変数を指定せずに起動した場合は、config/以下の設定ファイルの値で起動します。HTTPのポートはdocker-compose時と同じ番号が指定されていますので、以下の動作確認コマンドがそのまま使えます。
 
 ## 動作確認
 
-### アプリケーションの確認
-
-以下のコマンドで動作確認を行う。
+### ルートパスにアクセスする
 
 ```shell
-$ curl -s -X GET http://localhost:8080/
-Hello, Write API!%
+$ makers curl-get-root
+[cargo-make] INFO - makers 0.36.12
+[cargo-make] INFO - Calling cargo metadata to extract project info
+[cargo-make] INFO - Cargo metadata done
+--- Using Environments -----------------
+AWS_PROFILE      = ceer
+AWS_REGION       = ap-northeast-1
+PREFIX           = pah8iobi
+APPLICATION_NAME = ceer
+----------------------------------------
+[cargo-make] INFO - Build File: Makefile.toml
+[cargo-make] INFO - Task: curl-get-root
+[cargo-make] INFO - Profile: development
+[cargo-make] INFO - Running Task: legacy-migration
+[cargo-make] INFO - Running Task: curl-get-root-write-api-server
+Hello, Write API!
+[cargo-make] INFO - Running Task: curl-get-root-read-api-server
+Hello, Read API!
+[cargo-make] INFO - Build Done in 1.11 seconds.
 ```
 
-GraphiQL IDEのページが返ってくればOK。
-
-http://localhost:8082/
-
-APIを呼び出して動作を確認する。
+### グループチャットを作成した後、グループチャットリードモデルを取得する
 
 ```shell
-$ ./tools/scripts/create-thread.sh
-{"Success":{"id":{"value":"01H541BDRT2XP2QNH93MSPFAMH"}}}
-```
-
-GraphiQL IDEから以下のクエリを実行する。threadIdに上記コマンドで作成したID値を指定してください。
-
-```graphql
-{
-  getThread(threadId: "01H541BDRT2XP2QNH93MSPFAMH") {
-    id
-    name
-    ownerId
-    createdAt
-  }
-}
-```
-
-以下のようなレスポンスが返ってくればOK。
-
-```graphql
-{
-  "data": {
-    "getThread": {
-      "id": "01H541BDRT2XP2QNH93MSPFAMH",
-      "name": "test",
-      "ownerId": "01H4J5WDZDXYJ4NWRDT5AR1J6E",
-      "createdAt": "2023-07-12T03:12:10"
-    }
-  }
-}
-```
-
-curlで実行する場合は以下のようになります。
-
-```shell
-curl -X POST -H "Content-Type: application/json" -d '{ "query": "{ getThread(threadId: \"01H541BDRT2XP2QNH93MSPFAMH\"){ id } }" }' http://localhost:8082
-{"data":{"getThread":{"id":"01H541BDRT2XP2QNH93MSPFAMH"}}}%
+$ makers create-and-get-group-chat
+[cargo-make] INFO - makers 0.36.12
+[cargo-make] INFO - Calling cargo metadata to extract project info
+[cargo-make] INFO - Cargo metadata done
+--- Using Environments -----------------
+AWS_PROFILE      = ceer
+AWS_REGION       = ap-northeast-1
+PREFIX           = pah8iobi
+APPLICATION_NAME = ceer
+----------------------------------------
+[cargo-make] INFO - Build File: Makefile.toml
+[cargo-make] INFO - Task: create-and-get-group-chat
+[cargo-make] INFO - Profile: development
+[cargo-make] INFO - Running Task: legacy-migration
+[cargo-make] INFO - Running Task: create-and-get-group-chat
+create-group-chat: GROUP_CHAT_ID=01H6SXQH4HK1GRSD7ZYRR23N9R
+get-group-chat: ACTUAL_GROUP_CHAT_ID=01H6SXQH4HK1GRSD7ZYRR23N9R
+OK
+[cargo-make] INFO - Build Done in 3.29 seconds.
 ```

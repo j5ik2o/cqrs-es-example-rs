@@ -14,18 +14,18 @@
         "ApproximateCreationDateTime": 1480642020,
         "Keys": {
           "pkey": {
-            "S": "thread-33"
+            "S": "group-chat-33"
           },
           "skey": {
-            "S": "thread-1"
+            "S": "group-chat-1"
           }
         },
         "NewImage": {
           "pkey": {
-            "S": "thread-33"
+            "S": "group-chat-33"
           },
           "skey": {
-            "S": "thread-1"
+            "S": "group-chat-1"
           },
           "aid": {
             "S": "01H4ZC8VY8ZJEPF4PB3T3GM95X"
@@ -34,7 +34,7 @@
             "N": "1"
           },
           "payload": {
-            "S": "{\"type\":\"ThreadCreated\",\"id\":\"01H4ZC8VY8VV7S375BEHZ1TTXD\",\"aggregate_id\":{\"value\":\"01H4ZC8VY8WJVMBJ557JX69DQD\"},\"seq_nr\":1,\"name\":\"ABC\",\"members\":{\"members_ids_by_user_account_id\":{\"01H4ZC8VY8WJVMBJ557JX69DQD\":\"01H4ZC8VY8SS7M96RVDZWR5NZT\"},\"members\":{\"01H4ZC8VY8SS7M96RVDZWR5NZT\":{\"id\":\"01H4ZC8VY8SS7M96RVDZWR5NZT\",\"user_account_id\":{\"value\":\"01H4ZC8VY8WJVMBJ557JX69DQD\"},\"role\":\"Admin\"}}},\"occurred_at\":\"2023-07-10T07:46:48.392788Z\"}"
+            "S": "{\"type\":\"GroupChatCreated\",\"id\":\"01H4ZC8VY8VV7S375BEHZ1TTXD\",\"aggregate_id\":{\"value\":\"01H4ZC8VY8WJVMBJ557JX69DQD\"},\"seq_nr\":1,\"name\":\"ABC\",\"members\":{\"members_ids_by_user_account_id\":{\"01H4ZC8VY8WJVMBJ557JX69DQD\":\"01H4ZC8VY8SS7M96RVDZWR5NZT\"},\"members\":{\"01H4ZC8VY8SS7M96RVDZWR5NZT\":{\"id\":\"01H4ZC8VY8SS7M96RVDZWR5NZT\",\"user_account_id\":{\"value\":\"01H4ZC8VY8WJVMBJ557JX69DQD\"},\"role\":\"Admin\"}}},\"occurred_at\":\"2023-07-10T07:46:48.392788Z\"}"
           },
           "occurred_at": {
             "N": "1688975208392"

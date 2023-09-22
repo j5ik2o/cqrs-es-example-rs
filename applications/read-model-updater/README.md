@@ -1,12 +1,13 @@
-## 準備
+# read-model-updater
 
-```shell
-brew tap cargo-lambda/cargo-lambda
-brew install cargo-lambda
-```
+write-api-serverで発生するドメインイベントを使って、read-api-serverが利用するリードモデルを更新するプロセス。
 
-## NOTE
+## Dockerfile
 
-https://github.com/awslabs/aws-lambda-rust-runtime
+- Dockerfile: 本番用
+- Dockerfile.local: ローカル用
 
-https://developer.mamezou-tech.com/blogs/2023/03/19/aws-lambda-with-rust/
+## エントリポイント
+
+- `src/main.rs`: 本番用
+- `bin/local.rs`: ローカル用

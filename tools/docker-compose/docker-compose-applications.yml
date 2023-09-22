@@ -1,8 +1,7 @@
-# WIP
 version: '3.6'
 services:
   write-api-server-1:
-    image: j5ik2o/cqrs-es-example-rs-write-api-server:latest-arm64
+    image: write-api-server:latest-${ARCH}
     container_name: write-api-server-1
     ports:
       - 18080:8080
@@ -12,11 +11,13 @@ services:
       RUST_BACKTRACE: full
       APP__API__HOST: "0.0.0.0"
       APP__API__PORT: 8080
+      APP__API__ALLOW_ORIGINS: "http://localhost:18080,http://localhost:18082,http://localhost:8888"
       APP__PERSISTENCE__JOURNAL_TABLE_NAME: journal
       APP__PERSISTENCE__JOURNAL_AID_INDEX_NAME: journal-aid-index
       APP__PERSISTENCE__SNAPSHOT_TABLE_NAME: snapshot
       APP__PERSISTENCE__SNAPSHOT_AID_INDEX_NAME: snapshot-aid-index
-      APP__PERSISTENCE__JOURNAL_SHARD_COUNT: 64
+      APP__PERSISTENCE__SHARD_COUNT: 64
+      APP__PERSISTENCE__SNAPSHOT_INTERVAL: 10
       APP__AWS__REGION_NAME: ${AWS_REGION}
       APP__AWS__ENDPOINT_URL: http://localstack:4566
       APP__AWS__ACCESS_KEY_ID: x
@@ -26,7 +27,7 @@ services:
       - dynamodb-admin
       - dynamodb-setup
   read-model-updater-1:
-    image: j5ik2o/cqrs-es-example-rs-read-model-updater-local:latest-arm64
+    image: read-model-updater-local:latest-${ARCH}
     container_name: read-model-updater-1
     ports:
       - 18081:8080
@@ -48,7 +49,7 @@ services:
       - dynamodb-admin
       - dynamodb-setup
   read-api-server-1:
-    image: j5ik2o/cqrs-es-example-rs-read-api-server:latest-arm64
+    image: read-api-server:latest-${ARCH}
     container_name: read-api-server-1
     ports:
       - 18082:8080
@@ -58,6 +59,7 @@ services:
       RUST_BACKTRACE: full
       APP__API__HOST: "0.0.0.0"
       APP__API__PORT: 8080
+      APP__API__ALLOW_ORIGINS: "http://localhost:18080,http://localhost:18082,http://localhost:8888"
       APP__DATABASE__URL: mysql://ceer:ceer@mysql-local:3306/ceer
     depends_on:
       - mysql

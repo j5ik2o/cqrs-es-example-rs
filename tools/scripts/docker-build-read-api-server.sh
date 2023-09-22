@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -eu
 
@@ -13,7 +13,7 @@ fi
 echo "ARCH=${ARCH}"
 
 APP_NAME=read-api-server
-LOCAL_REPO_NAME=j5ik2o/cqrs-es-example-rs-${APP_NAME}
+LOCAL_REPO_NAME=${APP_NAME}
 
 TAG=latest
 LOCAL_URI=${LOCAL_REPO_NAME}:${TAG}
@@ -29,7 +29,7 @@ fi
 
 PIDS=()
 
-if [ "$ARCH" == "arm64" ] || [ "$IS_ALL" -eq 1 ]; then
+if [ "$ARCH" == "arm64" ] || [ "$ARCH" == "aarch64" ] ||  [ "$IS_ALL" -eq 1 ]; then
 
 docker buildx build --builder amd-arm --platform linux/arm64 \
   --build-context messense/rust-musl-cross:arm64-musl=docker-image://messense/rust-musl-cross:aarch64-musl \
@@ -38,7 +38,7 @@ PIDS+=($!)
 
 fi
 
-if [ "$ARCH" == "amd64" ] || [ "$IS_ALL" -eq 1 ]; then
+if [ "$ARCH" == "x86_64" ] || [ "$IS_ALL" -eq 1 ]; then
 
 docker buildx build --builder amd-arm --platform linux/amd64 \
   --build-context messense/rust-musl-cross:amd64-musl=docker-image://messense/rust-musl-cross:x86_64-musl \

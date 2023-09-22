@@ -1,6 +1,6 @@
-use std::future::Future;
+use std::env;
+use std::thread::sleep;
 use std::time::Duration;
-use std::{env, thread};
 
 use anyhow::Result;
 use aws_sdk_dynamodb::config::{Credentials, Region};
@@ -10,12 +10,13 @@ use aws_sdk_dynamodb::types::{
   ProvisionedThroughput, ScalarAttributeType,
 };
 use aws_sdk_dynamodb::Client;
-use testcontainers::clients;
+use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
 use testcontainers::images::generic::GenericImage;
+use testcontainers::{clients, Container};
 
-use cqrs_es_example_command_interface_adaptor_impl::gateways::event_persistence_gateway_with_transaction::EventPersistenceGatewayWithTransaction;
-use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_repository::ThreadRepositoryImpl;
+use command_interface_adaptor_impl::gateways::event_persistence_gateway_with_transaction::EventPersistenceGatewayWithTransaction;
+use command_interface_adaptor_impl::gateways::group_chat_repository::GroupChatRepositoryImpl;
 
 pub fn init_logger() {
   env::set_var("RUST_LOG", "debug");
@@ -177,10 +178,13 @@ pub fn create_client(dynamodb_port: u16) -> Client {
 async fn wait_table(client: &Client, target_table_name: &str) -> bool {
   let lto = client.list_tables().send().await;
   match lto {
-    Ok(lto) => match lto.table_names() {
-      Some(table_names) => table_names.iter().any(|tn| tn == target_table_name),
-      None => false,
-    },
+    Ok(lto) => {
+      log::info!("table_names: {:?}", lto.table_names());
+      match lto.table_names() {
+        Some(table_names) => table_names.iter().any(|tn| tn == target_table_name),
+        None => false,
+      }
+    }
     Err(e) => {
       println!("Error: {}", e);
       false
@@ -188,44 +192,61 @@ async fn wait_table(client: &Client, target_table_name: &str) -> bool {
   }
 }
 
-pub async fn with_repository<F, Fut>(f: F)
-where
-  F: Fn(ThreadRepositoryImpl<EventPersistenceGatewayWithTransaction>) -> Fut,
-  Fut: Future<Output = ()>,
-{
+pub async fn get_repository<'a>(
+  docker: &'a Cli,
+) -> (
+  GroupChatRepositoryImpl<EventPersistenceGatewayWithTransaction>,
+  Container<'a, GenericImage>,
+  Client,
+) {
   init_logger();
-  let docker = clients::Cli::default();
-  let wait_for = WaitFor::message_on_stdout("Port:");
-  let image = GenericImage::new("amazon/dynamodb-local", "1.18.0").with_wait_for(wait_for);
-  let dynamodb_node = docker.run::<GenericImage>(image);
-  let port = dynamodb_node.get_host_port_ipv4(8000);
+  let wait_for = WaitFor::message_on_stdout("Ready.");
+  let image = GenericImage::new("localstack/localstack", "2.1.0")
+    .with_env_var("SERVICES", "dynamodb")
+    .with_env_var("DEFAULT_REGION", "us-west-1")
+    .with_env_var("EAGER_SERVICE_LOADING", "1")
+    .with_env_var("DYNAMODB_SHARED_DB", "1")
+    .with_env_var("DYNAMODB_IN_MEMORY", "1")
+    .with_wait_for(wait_for);
+  let dynamodb_node: Container<GenericImage> = docker.run::<GenericImage>(image);
+  let port = dynamodb_node.get_host_port_ipv4(4566);
   log::debug!("DynamoDB port: {}", port);
+
+  let test_time_factor = env::var("TEST_TIME_FACTOR")
+    .unwrap_or("1".to_string())
+    .parse::<u64>()
+    .unwrap();
+
+  sleep(Duration::from_millis(1000 * test_time_factor));
+
   let client = create_client(port);
 
   let journal_table_name = "journal";
   let journal_aid_index_name = "journal-aid-index";
-  let _ = create_journal_table(&client, journal_table_name, journal_aid_index_name).await;
+  let _journal_table_output = create_journal_table(&client, journal_table_name, journal_aid_index_name).await;
 
   let snapshot_table_name = "snapshot";
   let snapshot_aid_index_name = "snapshot-aid-index";
-  let _ = create_snapshot_table(&client, snapshot_table_name, snapshot_aid_index_name).await;
+  let _snapshot_table_output = create_snapshot_table(&client, snapshot_table_name, snapshot_aid_index_name).await;
 
   while !(wait_table(&client, journal_table_name).await) {
-    thread::sleep(Duration::from_millis(1000));
+    log::info!("Waiting for journal table to be created");
+    sleep(Duration::from_millis(1000 * test_time_factor));
   }
 
   while !(wait_table(&client, snapshot_table_name).await) {
-    thread::sleep(Duration::from_millis(1000));
+    log::info!("Waiting for snapshot table to be created");
+    sleep(Duration::from_millis(1000 * test_time_factor));
   }
 
   let epg = EventPersistenceGatewayWithTransaction::new(
-    client,
+    client.clone(),
     journal_table_name.to_string(),
     journal_aid_index_name.to_string(),
     snapshot_table_name.to_string(),
     snapshot_aid_index_name.to_string(),
     64,
   );
-  let repository = ThreadRepositoryImpl::new(epg);
-  f(repository).await;
+  let repository = GroupChatRepositoryImpl::new(epg, 10);
+  (repository, dynamodb_node, client)
 }

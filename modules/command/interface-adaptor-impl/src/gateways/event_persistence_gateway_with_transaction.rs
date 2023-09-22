@@ -1,6 +1,4 @@
-use std::collections::hash_map::DefaultHasher;
 use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -8,32 +6,10 @@ use aws_sdk_dynamodb::types::{AttributeValue, Put, TransactWriteItem, Update};
 use aws_sdk_dynamodb::Client;
 use serde::{de, Serialize};
 
-use cqrs_es_example_domain::aggregate::{Aggregate, AggregateId};
-use cqrs_es_example_domain::Event;
+use command_domain::aggregate::{Aggregate, AggregateId};
+use command_domain::Event;
 
-use crate::gateways::EventPersistenceGateway;
-
-pub trait KeyResolver: Debug + Send + 'static {
-  fn resolve_pkey(&self, id_type_name: &str, value: &str, shard_count: u64) -> String;
-  fn resolve_skey(&self, id_type_name: &str, value: &str, seq_nr: usize) -> String;
-}
-
-#[derive(Debug, Clone)]
-pub struct DefaultPartitionKeyResolver;
-
-impl KeyResolver for DefaultPartitionKeyResolver {
-  fn resolve_pkey(&self, id_type_name: &str, value: &str, shard_count: u64) -> String {
-    let mut hasher = DefaultHasher::new();
-    value.hash(&mut hasher);
-    let hash_value = hasher.finish();
-    let remainder = hash_value % shard_count;
-    format!("{}-{}", id_type_name, remainder)
-  }
-
-  fn resolve_skey(&self, id_type_name: &str, value: &str, seq_nr: usize) -> String {
-    format!("{}-{}-{}", id_type_name, value, seq_nr)
-  }
-}
+use crate::gateways::*;
 
 #[derive(Debug, Clone)]
 pub struct EventPersistenceGatewayWithTransaction {
@@ -55,8 +31,7 @@ impl EventPersistenceGateway for EventPersistenceGatewayWithTransaction {
   async fn get_snapshot_by_id<E, T, AID: AggregateId>(&self, aid: &AID) -> Result<(T, usize, usize)>
   where
     E: ?Sized + Serialize + Event + for<'de> de::Deserialize<'de>,
-    T: ?Sized + Serialize + Aggregate + for<'de> de::Deserialize<'de>,
-  {
+    T: ?Sized + Serialize + Aggregate + for<'de> de::Deserialize<'de>, {
     let response = self
       .client
       .query()
@@ -90,8 +65,7 @@ impl EventPersistenceGateway for EventPersistenceGatewayWithTransaction {
 
   async fn get_events_by_id_and_seq_nr<T, AID: AggregateId>(&self, aid: &AID, seq_nr: usize) -> Result<Vec<T>>
   where
-    T: Debug + for<'de> de::Deserialize<'de>,
-  {
+    T: Debug + for<'de> de::Deserialize<'de>, {
     let response = self
       .client
       .query()
@@ -125,10 +99,8 @@ impl EventPersistenceGateway for EventPersistenceGatewayWithTransaction {
   ) -> Result<()>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event,
-  {
-    // TODO: 最新のスナップショットを取得し別のskeyを付与して保存する
-    // TODO: スナップショットの履歴が無限に増えないのように世代管理する
+    E: ?Sized + Serialize + Event, {
+    // TODO: 任意課題 難易度:超高 スナップショットの世代管理未対応
     match (event.is_created(), aggregate) {
       (true, Some(ar)) => {
         let _ = self
@@ -203,8 +175,7 @@ impl EventPersistenceGatewayWithTransaction {
   fn put_snapshot<E, A>(&mut self, event: &E, ar: &A) -> Result<Put>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     let put_snapshot = Put::builder()
       .table_name(self.snapshot_table_name.clone())
       .item(
@@ -225,8 +196,7 @@ impl EventPersistenceGatewayWithTransaction {
   fn update_snapshot<E, A>(&mut self, event: &E, version: usize, ar_opt: Option<&A>) -> Result<Update>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     let mut update_snapshot = Update::builder()
       .table_name(self.snapshot_table_name.clone())
       .update_expression("SET #version=:after_version")
@@ -263,8 +233,7 @@ impl EventPersistenceGatewayWithTransaction {
 
   fn put_journal<E>(&mut self, event: &E) -> Result<Put>
   where
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     let pkey = self.resolve_pkey(event.aggregate_id(), self.shard_count);
     let skey = self.resolve_skey(event.aggregate_id(), event.seq_nr());
     let aid = event.aggregate_id().to_string();

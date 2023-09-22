@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -eu
 
@@ -7,6 +7,6 @@ cd $(dirname "$0") || exit
 
 pushd ../../
 
-cargo build -p cqrs-es-example-read-model-updater
+cargo build -p read-model-updater
 
 popd

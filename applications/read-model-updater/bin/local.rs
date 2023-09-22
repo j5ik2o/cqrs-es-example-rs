@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::mem::size_of;
 
 use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
@@ -9,13 +10,17 @@ use aws_sdk_dynamodbstreams::config::{Credentials, Region};
 use aws_sdk_dynamodbstreams::types::ShardIteratorType;
 use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use chrono::Utc;
-use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_read_model_dao_impl::ThreadReadModelDaoImpl;
+use command_domain::id_generate;
+use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
 use http::{HeaderMap, HeaderValue};
 use lambda_runtime::{Context, LambdaEvent};
+
+use serde_dynamo::Item;
 use sqlx::{MySql, MySqlPool, Pool};
 
-use cqrs_es_example_read_model_updater::{load_app_config, AwsSettings};
+use read_model_updater::{load_app_config, AwsSettings};
 
+// ローカル版のRead Model Updater
 #[tokio::main]
 async fn main() -> Result<()> {
   tracing_subscriber::fmt()
@@ -31,17 +36,30 @@ async fn main() -> Result<()> {
   let dynamodb_client = create_aws_client(&app_settings.aws).await;
   let dynamodb_streams_client = create_aws_dynamodb_streams_client(&app_settings.aws).await;
   if let Some(stream_settings) = &app_settings.stream {
-    stream_events_driver(
-      &dynamodb_client,
-      &dynamodb_streams_client,
-      pool,
-      &stream_settings.journal_table_name,
-      stream_settings.max_item_count,
-    )
-    .await?;
+    loop {
+      match stream_events_driver(
+        &dynamodb_client,
+        &dynamodb_streams_client,
+        pool.clone(),
+        &stream_settings.journal_table_name,
+        stream_settings.max_item_count,
+      )
+      .await
+      {
+        Ok(_) => {}
+        Err(err) => {
+          tracing::error!(
+            "An error has occurred, but stream processing is restarted.\
+          If this error persists, the read model condition may be incorrect.: {}",
+            err
+          );
+          continue;
+        }
+      }
+    }
+  } else {
+    Err(anyhow::anyhow!("stream_settings is not found"))
   }
-
-  Ok(())
 }
 
 fn convert_to(src: aws_sdk_dynamodbstreams::types::AttributeValue) -> serde_dynamo::AttributeValue {
@@ -80,7 +98,7 @@ async fn stream_events_driver(
     .await?;
   let stream_arn = describe_table_out.table().unwrap().latest_stream_arn().unwrap();
 
-  let dao = ThreadReadModelDaoImpl::new(pool);
+  let dao = GroupChatReadModelUpdateDaoImpl::new(pool);
   let mut last_evaluated_shard_id: Option<String> = None;
   loop {
     tracing::info!("stream_arn = {:?}", stream_arn);
@@ -137,6 +155,9 @@ async fn stream_events_driver(
             .collect::<HashMap<String, serde_dynamo::AttributeValue>>()
             .into();
 
+          let sequence_number = id_generate();
+          let event_id = id_generate();
+
           let event = dynamodb::Event {
             records: vec![dynamodb::EventRecord {
               aws_region: "ap-northeast-1".to_string(),
@@ -145,11 +166,11 @@ async fn stream_events_driver(
                 keys: key_item,
                 new_image: item.clone(),
                 old_image: item.clone(),
-                sequence_number: Some("1405400000000002063282832".to_string()),
-                size_bytes: 54,
+                sequence_number: Some(sequence_number.to_string()),
+                size_bytes: size_of::<Item>() as i64,
                 stream_view_type: Some(StreamViewType::NewImage),
               },
-              event_id: "f07f8ca4b0b26cb9c4e5e77e69f274ee".to_string(),
+              event_id: event_id.to_string(),
               event_name: "INSERT".to_string(),
               event_source: None,
               event_version: None,
@@ -163,13 +184,23 @@ async fn stream_events_driver(
             }],
           };
 
+          let request_id = id_generate().to_string();
+          let deadline_ms = (Utc::now().timestamp_millis() + 3000).to_string();
+
           let mut headers = HeaderMap::new();
-          headers.insert("lambda-runtime-aws-request-id", HeaderValue::from_static("my-id"));
-          headers.insert("lambda-runtime-deadline-ms", HeaderValue::from_static("123"));
+          headers.insert(
+            "lambda-runtime-aws-request-id",
+            HeaderValue::from_str(&request_id).unwrap(),
+          );
+          headers.insert(
+            "lambda-runtime-deadline-ms",
+            HeaderValue::from_str(&deadline_ms).unwrap(),
+          );
+
           let context = Context::try_from(headers).unwrap();
           let lambda_event = LambdaEvent::new(event, context);
 
-          cqrs_es_example_read_model_updater::update_read_model(&dao, lambda_event).await?;
+          read_model_updater::update_read_model(&dao, lambda_event).await?;
         }
         processed_record_count += records.len();
         shard_iterator_opt = get_records_output.next_shard_iterator().map(|s| s.to_owned())

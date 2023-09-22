@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 set -eu
 
 # shellcheck disable=SC2046

@@ -1,25 +1,35 @@
+# 今回はdocker-composeでの動作確認となっているので、以下の手順は不要です
+
 # EKSへのデプロイ
 
-## DockerイメージをECRにプッシュする
+## DockerイメージをビルドしECRにプッシュする
 
 ```shell
 $ makers docker-ecr-build-push-all
 ```
 
-## Helmfile の設定ファイルを編集します。
+## Write API ServerとRead API Serverのための、Helmfile の設定ファイルを編集します。
 
 ```shell
-$ vi ./tools/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml
-ceer-root # tools/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml
+$ vi ./tools/deploy/config/environments/${PREFIX}-${APPLICATION_NAME}-eks.yaml
 ```
 
-コンソールに表示されるタグの値に注目してください。
-yamlファイルの以下の項目を適切に設定してください。
+コンソールに表示されるタグの値を、yamlファイルの以下の項目を適切に設定してください。
 
-- writeApiServer.image.repository
 - writeApiServer.image.tag
-- readApiServer.image.repository
 - readApiServer.image.tag
+
+## terraformの設定ファイルを編集します。
+
+```shell
+$ vi ./tools/deploy/terraform/${PREFIX}-${APPLICATION_NAME}-terraform.tfvars
+```
+
+コンソールに表示されるタグの値を、以下の項目を適切に設定してください。
+
+```tfvars
+read_model_updater_tag = "9ed584699fe19cab82121fae2d4ac7f1eee2e49089ba463cdd7378085ccc7b39-amd64"
+```
 
 ## アプリケーションのデプロイ
 
@@ -32,7 +42,7 @@ $ makers helmfile-apply-all
 クラスタが形成されるまでしばらく待ちます。ログにエラーがないことを確認してください。
 
 ```shell
-$ stern 'write-api-server-*' -n ceer
+$ stern '*' -n ceer
 ```
 
 すべてのPodがReady状態になっていることを確認する。
@@ -95,6 +105,26 @@ HOSTED_ZONE_ID=Z14GRHDCWA56QT
 }
 ```
 
+次にterraformを使ってRead Model Updaterをデプロイします。
+
+common.envの以下の項目をtrueに変更する。
+
+```shell
+READ_MODEL_UPDATER_ENABLED = true
+```
+
+terraform-planで変更差分を確認する
+
+```shell
+$ makers terraform-plan
+```
+
+terraform-applyでデプロイを行う
+
+```shell
+$ makers terraform-apply
+```
+
 ## アプリケーションの動作チェック
 
 フロントエンドが起動したら、以下のコマンドで動作を確認する。
@@ -111,10 +141,10 @@ Hello, Read API!
 APIを呼び出して動作を確認する。
 
 ```shell
-$ makers create-and-get-thread
+$ makers --profile production create-and-get-group-chat
 # snip
-create-thread: THREAD_ID=01H5Q476STTQ78D45ZR4EKXF0B
-get-thread: ACTUAL_THREAD_ID=01H5Q476STTQ78D45ZR4EKXF0B
+create-group-chat: GROUP_CHAT_ID=01H5Q476STTQ78D45ZR4EKXF0B
+get-group-chat: ACTUAL_GROUP_CHAT_ID=01H5Q476STTQ78D45ZR4EKXF0B
 OK
 # snip
 ```

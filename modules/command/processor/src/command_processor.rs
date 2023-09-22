@@ -1,121 +1,200 @@
 use anyhow::Result;
 
-use cqrs_es_example_command_interface_adaptor_if::ThreadRepository;
-use cqrs_es_example_domain::aggregate::Aggregate;
-use cqrs_es_example_domain::thread::member::{MemberId, Members};
-use cqrs_es_example_domain::thread::*;
-use cqrs_es_example_domain::user_account::UserAccountId;
+use command_domain::aggregate::Aggregate;
+use command_domain::group_chat::*;
+use command_domain::user_account::UserAccountId;
+use command_interface_adaptor_if::{GroupChatPresenter, GroupChatRepository};
 
-pub struct ThreadCommandProcessor<'a, TR: ThreadRepository> {
-  thread_repository: &'a mut TR,
+/// グループチャットへのコマンドを処理するユースケース実装。
+///
+/// NOTE: コマンドを処理するユースケースをコマンドプロセッサと呼びます(クエリを処理するユースケースはクエリプロセッサとなりますが、今回はGraphQLを採用しているためクエリプロッサは定義されていません)
+pub struct GroupChatCommandProcessor<'a, TR: GroupChatRepository> {
+  group_chat_repository: &'a mut TR,
 }
 
-impl<'a, TR: ThreadRepository> ThreadCommandProcessor<'a, TR> {
-  pub fn new(thread_repository: &'a mut TR) -> Self {
-    Self { thread_repository }
+impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
+  /// コンストラクタ。
+  ///
+  /// # 引数
+  /// - `group_chat_repository` - グループチャットリポジトリ
+  pub fn new(group_chat_repository: &'a mut TR) -> Self {
+    Self { group_chat_repository }
   }
 
-  pub async fn create_thread(&mut self, name: ThreadName, executor_id: UserAccountId) -> Result<ThreadId> {
-    let members = Members::new(executor_id);
-    let (t, te) = Thread::new(name, members);
-    self.thread_repository.store(&te, 1, Some(&t)).await?;
-    Ok(t.id().clone())
-  }
-
-  fn resolve_snapshot(&self, thread: Thread) -> Option<Thread> {
-    if thread.seq_nr() % 10 == 0 {
-      Some(thread)
-    } else {
-      None
-    }
-  }
-
-  pub async fn rename_thread(
+  /// グループチャットを作成する。
+  ///
+  /// # 引数
+  /// - `group_chat_presenter` - グループチャットプレゼンター
+  /// - `name` - グループチャット名
+  /// - `executor_id` - 実行者のユーザーアカウントID
+  ///
+  /// # 戻り値
+  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  pub async fn create_group_chat<P: GroupChatPresenter>(
     &mut self,
-    id: ThreadId,
-    name: ThreadName,
+    group_chat_presenter: &mut P,
+    name: GroupChatName,
     executor_id: UserAccountId,
-  ) -> Result<ThreadId> {
-    let mut thread = self.thread_repository.find_by_id(&id).await?;
-    let event = thread.rename(name, executor_id)?;
-    let snapshot_opt = self.resolve_snapshot(thread.clone());
-    self
-      .thread_repository
-      .store(&event, thread.version(), snapshot_opt.as_ref())
-      .await?;
-    Ok(id)
+  ) -> Result<()> {
+    let members = Members::new(executor_id);
+    let (t, te) = GroupChat::new(name, members);
+    self.group_chat_repository.store(&te, 1, Some(&t)).await?;
+    group_chat_presenter.present(te);
+    Ok(())
   }
 
-  pub async fn add_member(
+  /// グループチャットの名前を変更する。
+  ///
+  /// # 引数
+  /// - `group_chat_presenter` - グループチャットプレゼンター
+  /// - `id` - グループチャットID
+  /// - `name` - グループチャット名
+  ///
+  /// # 戻り値
+  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  pub async fn rename_group_chat<P: GroupChatPresenter>(
     &mut self,
-    id: ThreadId,
+    group_chat_presenter: &mut P,
+    id: GroupChatId,
+    name: GroupChatName,
+    executor_id: UserAccountId,
+  ) -> Result<()> {
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
+    let event = group_chat.rename(name, executor_id)?;
+    self
+      .group_chat_repository
+      .store(&event, group_chat.version(), Some(&group_chat))
+      .await?;
+    group_chat_presenter.present(event);
+    Ok(())
+  }
+
+  /// グループチャットにメンバーを追加する。
+  ///
+  /// # 引数
+  /// - `group_chat_presenter` - グループチャットプレゼンター
+  /// - `id` - グループチャットID
+  /// - `user_account_id` - ユーザーアカウントID
+  /// - `role` - メンバーの役割
+  /// - `executor_id` - 実行者のユーザーアカウントID
+  ///
+  /// # 戻り値
+  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  pub async fn add_member<P: GroupChatPresenter>(
+    &mut self,
+    group_chat_presenter: &mut P,
+    id: GroupChatId,
     user_account_id: UserAccountId,
     role: MemberRole,
     executor_id: UserAccountId,
-  ) -> Result<ThreadId> {
-    let mut thread = self.thread_repository.find_by_id(&id).await?;
-    log::debug!("thread.seq_nr_counter: {:?}", thread.seq_nr_counter);
+  ) -> Result<()> {
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
     let member_id = MemberId::new();
-    let event = thread.add_member(member_id, user_account_id, role, executor_id)?;
-    let snapshot_opt = self.resolve_snapshot(thread.clone());
+    let event = group_chat.add_member(member_id, user_account_id, role, executor_id)?;
     self
-      .thread_repository
-      .store(&event, thread.version(), snapshot_opt.as_ref())
+      .group_chat_repository
+      .store(&event, group_chat.version(), Some(&group_chat))
       .await?;
-    Ok(id)
+    group_chat_presenter.present(event);
+    Ok(())
   }
 
-  pub async fn remove_member(
+  /// グループチャットからメンバーを削除する。
+  ///
+  /// # 引数
+  /// - `group_chat_presenter` - グループチャットプレゼンター
+  /// - `id` - グループチャットID
+  /// - `user_account_id` - ユーザーアカウントID
+  /// - `executor_id` - 実行者のユーザーアカウントID
+  ///
+  /// # 戻り値
+  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  pub async fn remove_member<P: GroupChatPresenter>(
     &mut self,
-    id: ThreadId,
+    group_chat_presenter: &mut P,
+    id: GroupChatId,
     user_account_id: UserAccountId,
     executor_id: UserAccountId,
-  ) -> Result<ThreadId> {
-    let mut thread = self.thread_repository.find_by_id(&id).await?;
-    let event = thread.remove_member(user_account_id, executor_id)?;
-    let snapshot_opt = self.resolve_snapshot(thread.clone());
+  ) -> Result<()> {
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
+    let event = group_chat.remove_member(user_account_id, executor_id)?;
     self
-      .thread_repository
-      .store(&event, thread.version(), snapshot_opt.as_ref())
+      .group_chat_repository
+      .store(&event, group_chat.version(), Some(&group_chat))
       .await?;
-    Ok(id)
+    group_chat_presenter.present(event);
+    Ok(())
   }
 
-  pub async fn delete_thread(&mut self, id: ThreadId, executor_id: UserAccountId) -> Result<ThreadId> {
-    let mut thread = self.thread_repository.find_by_id(&id).await?;
-    let event = thread.delete(executor_id)?;
-    let snapshot_opt = self.resolve_snapshot(thread.clone());
-    self
-      .thread_repository
-      .store(&event, thread.version(), snapshot_opt.as_ref())
-      .await?;
-    Ok(id)
-  }
-
-  pub async fn post_message(&mut self, id: ThreadId, message: Message, executor_id: UserAccountId) -> Result<ThreadId> {
-    let mut thread = self.thread_repository.find_by_id(&id).await?;
-    let event = thread.post_message(message, executor_id)?;
-    let snapshot_opt = self.resolve_snapshot(thread.clone());
-    self
-      .thread_repository
-      .store(&event, thread.version(), snapshot_opt.as_ref())
-      .await?;
-    Ok(id)
-  }
-
-  pub async fn delete_message(
+  /// グループチャットを削除する。
+  ///
+  /// # 引数
+  /// - `group_chat_presenter` - グループチャットプレゼンター
+  /// - `id` - グループチャットID
+  /// - `executor_id` - 実行者のユーザーアカウントID
+  ///
+  /// # 戻り値
+  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  pub async fn delete_group_chat<P: GroupChatPresenter>(
     &mut self,
-    id: ThreadId,
+    group_chat_presenter: &mut P,
+    id: GroupChatId,
+    executor_id: UserAccountId,
+  ) -> Result<()> {
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
+    let event = group_chat.delete(executor_id)?;
+    self
+      .group_chat_repository
+      .store(&event, group_chat.version(), Some(&group_chat))
+      .await?;
+    group_chat_presenter.present(event);
+    Ok(())
+  }
+
+  /// グループチャットにメッセージを投稿する。
+  ///
+  /// # 引数
+  /// - `group_chat_presenter` - グループチャットプレゼンター
+  /// - `id` - グループチャットID
+  /// - `message` - メッセージ
+  /// - `executor_id` - 実行者のユーザーアカウントID
+  ///
+  /// # 戻り値
+  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  pub async fn post_message<P: GroupChatPresenter>(
+    &mut self,
+    _group_chat_presenter: &mut P,
+    _id: GroupChatId,
+    _message: Message,
+    _executor_id: UserAccountId,
+  ) -> Result<()> {
+    todo!() // 必須課題 難易度:中
+  }
+
+  /// グループチャットのメッセージを削除する。
+  ///
+  /// # 引数
+  /// - `group_chat_presenter` - グループチャットプレゼンター
+  /// - `id` - グループチャットID   
+  /// - `message_id` - メッセージID
+  /// - `executor_id` - 実行者のユーザーアカウントID
+  ///
+  /// # 戻り値
+  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  pub async fn delete_message<P: GroupChatPresenter>(
+    &mut self,
+    group_chat_presenter: &mut P,
+    id: GroupChatId,
     message_id: MessageId,
     executor_id: UserAccountId,
-  ) -> Result<ThreadId> {
-    let mut thread = self.thread_repository.find_by_id(&id).await?;
-    let event = thread.delete_message(message_id, executor_id)?;
-    let snapshot_opt = self.resolve_snapshot(thread.clone());
+  ) -> Result<()> {
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
+    let event = group_chat.delete_message(message_id, executor_id)?;
     self
-      .thread_repository
-      .store(&event, thread.version(), snapshot_opt.as_ref())
+      .group_chat_repository
+      .store(&event, group_chat.version(), Some(&group_chat))
       .await?;
-    Ok(id)
+    group_chat_presenter.present(event);
+    Ok(())
   }
 }

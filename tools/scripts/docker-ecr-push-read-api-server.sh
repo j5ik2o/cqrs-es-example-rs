@@ -1,11 +1,11 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -eu
 
 # shellcheck disable=SC2046
 cd $(dirname "$0") || exit
 
-LOCAL_REPO_NAME=j5ik2o/cqrs-es-example-rs-read-api-server
+LOCAL_REPO_NAME=read-api-server
 TAG=latest
 LOCAL_URI=${LOCAL_REPO_NAME}:${TAG}
 LOCAL_AMD64_URI=${LOCAL_REPO_NAME}:${TAG}-amd64
@@ -13,7 +13,7 @@ LOCAL_ARM64_URI=${LOCAL_REPO_NAME}:${TAG}-arm64
 
 pushd ../../
 
-ECR_BASE_URL=$(./tools/terraform/terraform-output.sh -raw ecr_read_api_server_repository_url)
+ECR_BASE_URL=$(./tools/deploy/terraform/terraform-output.sh -raw ecr_read_api_server_repository_url)
 
 popd
 

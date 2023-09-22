@@ -1,11 +1,10 @@
 use anyhow::Result;
-use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 
-use cqrs_es_example_query_interface_adaptor_impl::resolvers::QueryRoot;
+use query_interface_adaptor::resolvers::create_schema_builder;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-  let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
+  let schema = create_schema_builder().finish();
   println!("{}", schema.sdl());
   Ok(())
 }

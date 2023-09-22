@@ -5,7 +5,7 @@ set -eu
 OPTS=${OPTS:-}
 K8S_CONTEXT=${K8S_CONTEXT:-}
 
-if [[ -z "$K8S_CONTEXT" ]]; then
+if [ -z "$K8S_CONTEXT" ]; then
 	echo "K8S_CONTEXT is not set"
 	exit 1
 fi
@@ -17,7 +17,7 @@ echo "OPTS=${OPTS}"
 
 export AWS_DEFAULT_REGION=$AWS_REGION
 
-pushd ../helmfile.d
+pushd ../deploy/helmfile.d
 
 echo "helmfile --namespace ceer ${OPTS} -e ${PREFIX}-${APPLICATION_NAME}-eks $@"
 

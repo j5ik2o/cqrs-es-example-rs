@@ -1,6 +1,10 @@
 [api]
 host = "0.0.0.0"
-port = 8082
+port = 18082
+allow_origins = [
+  "http://127.0.0.1:18080",
+  "http://127.0.0.1:18082"
+]
 
 [aws]
 region_name = "ap-northeast-1"

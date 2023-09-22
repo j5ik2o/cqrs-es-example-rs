@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -eu
 
@@ -7,6 +7,6 @@ cd $(dirname "$0") || exit
 
 pushd ../../
 
-cargo build -p cqrs-es-example-write-api-server
+cargo build -p write-api-server
 
 popd

@@ -1,16 +1,19 @@
 use anyhow::Result;
 use aws_lambda_events::dynamodb;
+use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
 use config::Environment;
-use cqrs_es_example_command_interface_adaptor_if::ThreadReadModelDao;
 use lambda_runtime::LambdaEvent;
 use serde::Deserialize;
 use serde_dynamo::AttributeValue;
 use serde_json::Value;
 
-use cqrs_es_example_domain::thread::events::ThreadEvent;
+use command_domain::group_chat::GroupChatEvent;
+use command_domain::group_chat::MemberRole;
 
-pub async fn update_read_model<D: ThreadReadModelDao>(
-  thread_read_model_dao: &D,
+// NOTE: イベントのシーケンス番号とリードモデルのシーケンス番号がズレないことを前提にしているため
+// DynamoDBを初期化した際は、必ずAurora側のデータベースも初期化すること
+pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
+  group_chat_read_model_dao: &D,
   event: LambdaEvent<dynamodb::Event>,
 ) -> Result<()> {
   tracing::info!("Rust function invoked: event = {:?}", event);
@@ -22,16 +25,68 @@ pub async fn update_read_model<D: ThreadReadModelDao>(
     };
     let type_value_str = get_type_string(&payload_str);
     match type_value_str {
-      s if s.starts_with("Thread") => {
-        let ev = serde_json::from_str::<ThreadEvent>(&payload_str).unwrap();
+      s if s.starts_with("GroupChat") => {
+        let ev = serde_json::from_str::<GroupChatEvent>(&payload_str).unwrap();
         match &ev {
-          ThreadEvent::ThreadCreated(body) => thread_read_model_dao.insert_thread(body).await.unwrap(),
-          ThreadEvent::ThreadDeleted(body) => thread_read_model_dao.delete_thread(body).await.unwrap(),
-          ThreadEvent::ThreadRenamed(body) => thread_read_model_dao.rename_thread(body).await.unwrap(),
-          ThreadEvent::ThreadMemberAdd(body) => thread_read_model_dao.insert_member(body).await.unwrap(),
-          ThreadEvent::ThreadMemberRemoved(body) => thread_read_model_dao.delete_member(body).await.unwrap(),
-          ThreadEvent::ThreadMessagePosted(body) => thread_read_model_dao.post_message(body).await.unwrap(),
-          ThreadEvent::ThreadMessageDeleted(body) => thread_read_model_dao.delete_message(body).await.unwrap(),
+          GroupChatEvent::GroupChatCreated(body) => {
+            group_chat_read_model_dao
+              .insert_group_chat(
+                body.aggregate_id.clone(),
+                body.name.clone(),
+                body
+                  .members
+                  .administrator_id()
+                  .breach_encapsulation_of_user_account_id()
+                  .clone(),
+                body.occurred_at,
+              )
+              .await
+              .unwrap();
+            group_chat_read_model_dao
+              .insert_member(
+                body.aggregate_id.clone(),
+                body.members.administrator_id().breach_encapsulation_of_id().clone(),
+                body
+                  .members
+                  .administrator_id()
+                  .breach_encapsulation_of_user_account_id()
+                  .clone(),
+                MemberRole::Admin,
+                body.occurred_at,
+              )
+              .await
+              .unwrap();
+          }
+          GroupChatEvent::GroupChatDeleted(body) => group_chat_read_model_dao
+            .delete_group_chat(body.aggregate_id.clone())
+            .await
+            .unwrap(),
+          GroupChatEvent::GroupChatRenamed(body) => group_chat_read_model_dao
+            .rename_group_chat(body.aggregate_id.clone(), body.name.clone())
+            .await
+            .unwrap(),
+          GroupChatEvent::GroupChatMemberAdded(body) => group_chat_read_model_dao
+            .insert_member(
+              body.aggregate_id.clone(),
+              body.member.breach_encapsulation_of_id().clone(),
+              body.member.breach_encapsulation_of_user_account_id().clone(),
+              body.member.breach_encapsulation_of_role().clone(),
+              body.occurred_at,
+            )
+            .await
+            .unwrap(),
+          GroupChatEvent::GroupChatMemberRemoved(body) => group_chat_read_model_dao
+            .delete_member(body.aggregate_id.clone(), body.user_account_id.clone())
+            .await
+            .unwrap(),
+          GroupChatEvent::GroupChatMessagePosted(body) => group_chat_read_model_dao
+            .insert_message(body.aggregate_id.clone(), body.message.clone(), body.occurred_at)
+            .await
+            .unwrap(),
+          GroupChatEvent::GroupChatMessageDeleted(body) => group_chat_read_model_dao
+            .delete_message(body.aggregate_id.clone(), body.message_id.clone())
+            .await
+            .unwrap(),
         }
       }
       _ => {}
@@ -41,6 +96,7 @@ pub async fn update_read_model<D: ThreadReadModelDao>(
   Ok(())
 }
 
+/// DynamoDBのストリームから取得したイベントのペイロードからイベントタイプを取得する
 fn get_type_string(payload_str: &String) -> String {
   let parsed: Value = serde_json::from_str(payload_str).unwrap();
   let type_value = &parsed["type"];
@@ -50,14 +106,19 @@ fn get_type_string(payload_str: &String) -> String {
 
 #[derive(Deserialize, Debug)]
 pub struct AwsSettings {
+  /// AWSリージョン名
   pub region_name: String,
+  /// DynamoDBのエンドポイントURL(ローカル開発用)
   pub endpoint_url: Option<String>,
+  /// アクセスキーID(ローカル開発用)
   pub access_key_id: Option<String>,
+  /// シークレットアクセスキー(ローカル開発用)
   pub secret_access_key: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct DatabaseSettings {
+  /// データベース接続URL
   pub url: String,
 }
 
@@ -68,7 +129,9 @@ pub struct RedisSettings {
 
 #[derive(Deserialize, Debug)]
 pub struct StreamSettings {
+  /// コンシュームするジャーナルのテーブル名
   pub journal_table_name: String,
+  /// ストリームから読み込む最大件数
   pub max_item_count: usize,
 }
 
@@ -91,15 +154,21 @@ pub fn load_app_config() -> Result<AppSettings> {
 }
 
 #[cfg(test)]
-#[allow(deprecated)]
-mod test {
+mod tests {
   use aws_lambda_events::dynamodb::Event;
-  use cqrs_es_example_command_interface_adaptor_impl::gateways::thread_read_model_dao_impl::MockThreadReadModelDao;
+  use chrono::Utc;
+  use command_domain::id_generate;
+  use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::MockGroupChatReadModelUpdateDao;
   use http::{HeaderMap, HeaderValue};
   use lambda_runtime::Context;
+  use once_cell::sync::Lazy;
 
   use super::*;
 
+  static REQUEST_ID: Lazy<String> = Lazy::new(|| id_generate().to_string());
+  static DEADLINE_MS: Lazy<String> = Lazy::new(|| (Utc::now().timestamp_millis() + 3000).to_string());
+
+  /// DynamoDBのイベント(ダミー)のペイロードからイベントタイプを取得する
   #[tokio::test]
   async fn example_dynamodb_event() {
     let data = include_bytes!("../fixtures/example-dynamodb-event.json");
@@ -109,17 +178,13 @@ mod test {
     let reparsed: Event = serde_json::from_slice(output.as_bytes()).unwrap();
     assert_eq!(parsed, reparsed);
 
-    // let event = parsed.records.pop().unwrap();
-    // let date = Utc.ymd(2016, 12, 2).and_hms(1, 27, 0);
-    // assert_eq!(date, event.change.approximate_creation_date_time);
-
     let mut headers = HeaderMap::new();
-    headers.insert("lambda-runtime-aws-request-id", HeaderValue::from_static("my-id"));
-    headers.insert("lambda-runtime-deadline-ms", HeaderValue::from_static("123"));
+    headers.insert("lambda-runtime-aws-request-id", HeaderValue::from_static(&REQUEST_ID));
+    headers.insert("lambda-runtime-deadline-ms", HeaderValue::from_static(&DEADLINE_MS));
     let context = Context::try_from(headers).unwrap();
     let le = LambdaEvent::new(parsed, context);
 
-    let dao = MockThreadReadModelDao;
+    let dao = MockGroupChatReadModelUpdateDao;
 
     update_read_model(&dao, le).await.unwrap();
   }

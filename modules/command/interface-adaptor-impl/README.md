@@ -1,15 +1,22 @@
-# cqrs-es-example-command-interface-adaptor-impl
+# command-interface-adaptor-impl
 
 ## 概要
 
+このモジュールはコマンド側のインターフェースアダプターの実装を提供します。
+
+## 主な実装
+
 - EventPersistenceGateway
     - DynamoDBをイベントストア化するためのゲートウェイ実装
-- ThreadRepository
-    - EventPersistenceGatewayを利用したスレッドを永続化するためのリポジトリ実装
+- GroupChatRepository
+    - EventPersistenceGatewayを利用したグループチャットを永続化するためのリポジトリ実装
 
-## テーブル構成
+## EventPersistenceGatewayが利用するDynamoDBのテーブル構成
 
-キー設計の前提としては、書き込みを論理シャード内で最大限に分散させることを想定しています。
+- journal
+- snapshot
+
+いずれのテーブルも、キー設計の前提としては、論理シャード内で最大限に書き込みが分散させることを想定しています。
 
 ### journal
 
@@ -17,11 +24,11 @@
 
 | キー名         | 説明                                    | 具体的な値                                                                                                                                                                                                                                                                                                                                                                                                                                                             | 備考 |
 |:------------|:--------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---|
-| pkey        | パーションキー(集約種別名-hash(集約ID) % 論理シャードサイズ) | thread-1                                                                                                                                                                                                                                                                                                                                                                                                                                                          |    |
-| skey        | ソートキー(集約種別名-シーケンス番号)                  | thread-01H42K4ABWQ5V2XQEP3A48VE0Z-12345                                                                                                                                                                                                                                                                                                                                                                                                                                                      |    |
-| aid         | 集約ID                                  | thread-01H42K4ABWQ5V2XQEP3A48VE0Z                                                                                                                                                                                                                                                                                                                                                                                                                                 |    |
+| pkey        | パーションキー(集約種別名-hash(集約ID) % 論理シャードサイズ) | group-chat-1                                                                                                                                                                                                                                                                                                                                                                                                                                                          |    |
+| skey        | ソートキー(集約種別名-シーケンス番号)                  | group-chat-12345                                                                                                                                                                                                                                                                                                                                                                                                                                                      |    |
+| aid         | 集約ID                                  | group-chat-01H42K4ABWQ5V2XQEP3A48VE0Z                                                                                                                                                                                                                                                                                                                                                                                                                                 |    |
 | ser_nr      | シーケンス番号                               | 12345                                                                                                                                                                                                                                                                                                                                                                                                                                                             |    |
-| payload     | イベント内容                                | {"type":"Created","id":"01H42KBHCW1BZG504J4ZXKA2F2","aggregate_id":{"value":"01890535-c59c-72d5-08a8-dcea316374c8"},"seq_nr":1,"name":"test","members":{"members_ids_by_user_account_id":{"01H42KBHCWBDTZYQ7P78T8BTWX":"01H42KBHCWA8NE32M49YH544H1"},"members":{"01H42KBHCWA8NE32M49YH544H1":{"id":"01H42KBHCWA8NE32M49YH544H1","user_account_id":{"value":"01890535-c59c-5b75-ff5c-f63a3485eb9d"},"role":"Admin"}}},"occurred_at":"2023-06-29T03:32:37.404481Z"} |    |
+| payload     | イベント内容                                | {"type":"Created","id":"01H42KBHCW1BZG504J4ZXKA2F2","_aggregate_id":{"value":"01890535-c59c-72d5-08a8-dcea316374c8"},"seq_nr":1,"name":"test","members":{"members_ids_by_user_account_id":{"01H42KBHCWBDTZYQ7P78T8BTWX":"01H42KBHCWA8NE32M49YH544H1"},"members":{"01H42KBHCWA8NE32M49YH544H1":{"id":"01H42KBHCWA8NE32M49YH544H1","user_account_id":{"value":"01890535-c59c-5b75-ff5c-f63a3485eb9d"},"role":"Admin"}}},"occurred_at":"2023-06-29T03:32:37.404481Z"} |    |
 | occurred_at | 発生日時                                  | 2023-06-29T03:32:37.404481Z                                                                                                                                                                                                                                                                                                                                                                                                                                       |    |
 
 aidとseq_nrはGSIが適用されており、リプレイ時はこのインデックスを利用されます。
@@ -32,10 +39,10 @@ aidとseq_nrはGSIが適用されており、リプレイ時はこのインデ�
 
 | キー名     | 説明                                    | 具体的な値                                                                                                                                                                                                                                                                                                                                                                                      | 備考 |
 |:--------|:--------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---|
-| pkey    | パーションキー(集約種別名-hash(集約ID) % 論理シャードサイズ) | thread-1                                                                                                                                                                                                                                                                                                                                                                                   |    |
-| pkey    | パーションキー(集約種別名-バージョン番号)                | thread-01H42K4ABWQ5V2XQEP3A48VE0Z-12345                                                                                                                                                                                                                                                                                                                                                                               |    |
+| pkey    | パーションキー(集約種別名-hash(集約ID) % 論理シャードサイズ) | group-chat-1                                                                                                                                                                                                                                                                                                                                                                                   |    |
+| pkey    | パーションキー(集約種別名-バージョン番号)                | group-chat-12345                                                                                                                                                                                                                                                                                                                                                                               |    |
 | payload | 集約の状態                                 | {"id":{"value":"0189053a-d0b4-8f9b-4fb6-db91f72ccf16"},"name":"test","members":{"members_ids_by_user_account_id":{"01H42KNM5MBVRBZTADAZ9ETSPZ":"01H42KNM5M2QEW700VCW4J2KYE"},"members":{"01H42KNM5M2QEW700VCW4J2KYE":{"id":"01H42KNM5M2QEW700VCW4J2KYE","user_account_id":{"value":"0189053a-d0b4-5ef0-bfe9-4d57d2ed66df"},"role":"Admin"}}},"messages":[],"seq_nr_counter":1,"version":1} |    |
-| aid     | 集約ID                                  | thread-01H42K4ABWQ5V2XQEP3A48VE0Z                                                                                                                                                                                                                                                                                                                                                          |    |
+| aid     | 集約ID                                  | group-chat-01H42K4ABWQ5V2XQEP3A48VE0Z                                                                                                                                                                                                                                                                                                                                                          |    |
 | ser_nr  | シーケンス番号                               | 12345                                                                                                                                                                                                                                                                                                                                                                                      |    |
 | version | バージョン                                 | 1                                                                                                                                                                                                                                                                                                                                                                                          |    |
 
@@ -44,9 +51,7 @@ aidとseq_nrはGSIが適用されており、リプレイ時はこのインデ�
 ### イベント及びスナップショットの書き込み
 
 1. 集約にてコマンドが受理されると、最新のseq_nrが付与されたイベントが生成されます。
-2.
-
-生成されたイベントはjournalテーブルに書き込まれます。ただし、この書き込みは必ずsnapshotテーブルと同じトランザクションで行われ、versionが一致する条件下で実施されます。初回のイベント以外は、snapshotのpayloadを更新することはオプションです。
+2. 生成されたイベントはjournalテーブルに書き込まれます。ただし、この書き込みは必ずsnapshotテーブルと同じトランザクションで行われ、versionが一致する条件下で実施されます。初回のイベント以外は、snapshotのpayloadを更新することはオプションです。
 
 ### イベント及びスナップショットを使って集約をリプレイする
 

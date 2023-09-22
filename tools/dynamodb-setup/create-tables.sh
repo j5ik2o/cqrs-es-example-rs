@@ -4,7 +4,7 @@
 cd $(dirname "$0") && pwd
 
 # shellcheck disable=SC2039
-if [[ $# == 0 ]]; then
+if [ $# == 0 ]; then
   echo "Parameters are empty."
   exit 1
 fi
@@ -35,7 +35,7 @@ echo "JOURNAL_GSI_NAME = ${JOURNAL_GSI_NAME}"
 echo "SNAPSHOT_TABLE_NAME = ${SNAPSHOT_TABLE_NAME}"
 echo "SNAPSHOT_GSI_NAME = ${SNAPSHOT_GSI_NAME}"
 
-if [[ "${ENV_NAME}" = "dev" ]]; then
+if [ "${ENV_NAME}" = "dev" ]; then
   # shellcheck disable=SC2034
   ENDPOINT_URL_OPTION=" --endpoint-url http://${DYNAMODB_ENDPOINT} "
 fi

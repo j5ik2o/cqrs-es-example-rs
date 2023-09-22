@@ -1,13 +1,18 @@
 [api]
 host = "0.0.0.0"
-port = 8080
+port = 18080
+allow_origins = [
+    "http://127.0.0.1:18080",
+    "http://127.0.0.1:18082"
+]
 
 [persistence]
 journal_table_name = "journal"
 journal_aid_index_name = "journal-aid-index"
 snapshot_table_name = "snapshot"
 snapshot_aid_index_name = "snapshot-aid-index"
-journal_shard_count = 64
+shard_count = 64
+snapshot_interval = 10
 
 [aws]
 region_name = "ap-northeast-1"

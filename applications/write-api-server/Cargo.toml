@@ -1,34 +1,34 @@
 [package]
-name = "cqrs-es-example-write-api-server"
+name = "write-api-server"
 version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-envy = "0.4"
+anyhow = { workspace = true, features = ["backtrace"] }
+aws-config = { workspace = true }
+aws-sdk-dynamodb = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+config = { workspace = true }
+command-interface-adaptor-impl = { path = "../../modules/command/interface-adaptor-impl" }
+command-processor = { path = "../../modules/command/processor" }
+command-domain = { path = "../../modules/command/domain" }
+downcast-rs = { workspace = true }
+env_logger = { workspace = true }
+hyper = { workspace = true,  features = ["full"] }
+openssl = { workspace = true, features = ["vendored"] }
+serde = { workspace = true, features = ["derive"] }
+tokio = { workspace = true, features = ["full"] }
+tower = { workspace = true }
+tower-http = { workspace = true, features = ["cors"] }
+tracing = { workspace = true }
+tracing-log = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt", "ansi", "env-filter"] }
+utoipa = { version = "3.4.4", features = ["axum_extras", "yaml"] }
+utoipa-swagger-ui = { version = "3.1.5", features = ["axum"] }
+utoipa-redoc = { version = "0.1.0", features = ["axum"] }
 
-tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
-tracing = "0.1.37"
-tracing-log = "0.1.1"
 
-anyhow = "1.0.71"
-chrono = "0.4.26"
-downcast-rs = "1.2.0"
-config = "0.13.1"
-
-serde = { version = "1.0", features = ["derive"] }
-aws-config = "0.55.1"
-aws-sdk-dynamodb = { version = "0.28.0" }
-
-axum = "0.6.18"
-
-
-tokio = { version = "1", features = ["full"] }
-hyper = { version = "0.14.26", features = ["full"] }
-tower = "0.4.12"
-
-cqrs-es-example-domain = { version = "0.0.1", path = "../../modules/command/domain" }
-cqrs-es-example-command-processor = { version = "0.0.1", path = "../../modules/command/processor" }
-cqrs-es-example-command-interface-adaptor-impl = { version = "0.0.1", path = "../../modules/command/interface-adaptor-impl" }
-
-openssl = { version = "0.10.55", features = ["vendored"] }
-env_logger = "0.10.0"
+[[bin]]
+name = "export-openapi-yaml"
+path = "bin/export-openapi-yaml.rs"

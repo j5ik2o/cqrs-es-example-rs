@@ -5,11 +5,11 @@ env_files = [
 
 env_scripts = [
 '''
-if [[ -n "$K8S_CONTEXT" ]]; then
+#!/usr/bin/env bash
+if [ -n "$K8S_CONTEXT" ]; then
     echo "K8S_CONTEXT = $K8S_CONTEXT"
     kubectl config use-context $K8S_CONTEXT
 fi
-#!/bin/sh
 echo "--- Using Environments -----------------"
 echo "AWS_PROFILE      = $AWS_PROFILE"
 echo "AWS_REGION       = $AWS_REGION"
@@ -22,11 +22,13 @@ echo "----------------------------------------"
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 RUST_BACKTRACE=1
-RUST_TEST_THREADS=1
 WRITE_API_SERVER_PORT = 18080
 READ_API_SERVER_PORT = 18082
 WRITE_API_SERVER_BASE_URL = "http://localhost:${WRITE_API_SERVER_PORT}"
 READ_API_SERVER_BASE_URL = "http://localhost:${READ_API_SERVER_PORT}"
+WRITE_API_SERVER_NAME="write-api-server"
+READ_API_SERVER_NAME="read-api-server"
+READ_MODEL_UPDATER_NAME="read-model-updater"
 
 [env.production]
 WRITE_API_SERVER_PORT = 443
@@ -49,221 +51,371 @@ READ_API_SERVER_BASE_URL = "https://read-ceer-j5ik2o.cwtest.info"
 #echo ${TEST}
 #''']
 
+
+
 [tasks.fmt]
 description = "ソースコードをフォーマットします"
 workspace = false
 install_script = ['''
-#!/bin/sh
+#!/usr/bin/env bash
 rustup which rustfmt --toolchain nightly
-if [[ $? -ne 0 ]]; then
+if [ $? -ne 0 ]; then
   rustup install nightly
 fi
 ''']
 script = '''
-#!/bin/sh
+#!/usr/bin/env bash
 cargo +nightly fmt
 '''
 
-[tasks.get-aws-account-id]
+[tasks.run-write-api-server]
 workspace = false
 script = '''
+#!/usr/bin/env bash
+cargo run -p ${WRITE_API_SERVER_NAME} --bin ${WRITE_API_SERVER_NAME}
+'''
+
+[tasks.run-read-api-server]
+workspace = false
+script = '''
+#!/usr/bin/env bash
+cargo run -p ${READ_API_SERVER_NAME} --bin ${READ_API_SERVER_NAME}
+'''
+
+[tasks.run-read-model-updater-local]
+workspace = false
+script = '''
+#!/usr/bin/env bash
+cargo run -p ${READ_MODEL_UPDATER_NAME} --bin local
+'''
+
+[tasks.get-aws-account-id]
+description = "AWSアカウントIDを取得します"
+workspace = false
+script = '''
+#!/usr/bin/env bash
 export AWS_PAGER=""
 aws sts get-caller-identity \
     --query Account \
     --output text
 '''
 
+[tasks.view-openapi]
+description = "Write API Server: OpenAPI定義内容をエクスポートします"
+workspace = false
+script = '''
+#!/usr/bin/env bash
+cargo run -p ${WRITE_API_SERVER_NAME} --bin export-openapi-yaml
+'''
+
+[tasks.export-openapi]
+description = "Write API Server: OpenAPI定義内容をエクスポートします"
+workspace = false
+script = '''
+#!/usr/bin/env bash
+if [ -z "$1" ]; then
+    echo "usage: makers export-openapi <output-file>"
+    exit 1
+fi
+cargo run -p ${WRITE_API_SERVER_NAME} --bin export-openapi-yaml > $1
+'''
+
+[tasks.view-swagger-ui]
+workspace = false
+script = '''
+#!/usr/bin/env bash
+open ${WRITE_API_SERVER_BASE_URL}/swagger-ui
+'''
+
+[tasks.view-sdl]
+description = "Read API Server: GraphQLのSDLをエクスポートします"
+workspace = false
+script = '''
+#!/usr/bin/env bash
+cargo run -p ${READ_API_SERVER_NAME} --bin export-sdl
+'''
+
+[tasks.export-sdl]
+description = "Read API Server: GraphQLのSDLをエクスポートします"
+workspace = false
+script = '''
+#!/usr/bin/env bash
+if [ -z "$1" ]; then
+    echo "usage: makers export-sdl <output-file>"
+    exit 1
+fi
+cargo run -p ${READ_API_SERVER_NAME} --bin export-sdl > $1
+'''
+# --- terraform
 
 [tasks.terraform-create-lock-table]
+description = "terraformのロックテーブルを作成します"
 workspace = false
-condition_script = ["./tools/terraform/non-exisits-terraform-lock-table.sh"]
-command = "./tools/terraform/create-lock-table.sh"
+condition_script = ["./tools/deploy/terraform/non-exisits-terraform-lock-table.sh"]
+command = "./tools/deploy/terraform/create-lock-table.sh"
 
 [tasks.terraform-create-tf-bucket]
+description = "terraformのtfstateを保存するバケットを作成します"
 workspace = false
-condition_script = ["./tools/terraform/non-exisits-terraform-lf-bucket.sh"]
-command = "./tools/terraform/create-tf-bucket.sh"
+condition_script = ["./tools/deploy/terraform/non-exisits-terraform-lf-bucket.sh"]
+command = "./tools/deploy/terraform/create-tf-bucket.sh"
 
 [tasks.terraform-prepare]
+description = "terraformの準備をします"
 workspace = false
 run_task = { name = ["terraform-create-lock-table", "terraform-create-tf-bucket"], parallel = true }
 
 [tasks.terraform-list-lock-table]
+description = "terraformのロックテーブルを一覧表示します"
 workspace = false
-command = "./tools/terraform/list-lock-table.sh"
+command = "./tools/deploy/terraform/list-lock-table.sh"
 
 [tasks.terraform-list-tf-bucket]
+description = "terraformのtfstateを保存するバケットを一覧表示します"
 workspace = false
-command = "./tools/terraform/list-tf-bucket.sh"
-
-# ---
+command = "./tools/deploy/terraform/list-tf-bucket.sh"
 
 [tasks.terraform-init]
+description = "terraformの初期化をします"
 workspace = false
 dependencies = ["terraform-prepare"]
-command = "./tools/terraform/terraform-init.sh"
+command = "./tools/deploy/terraform/terraform-init.sh"
 
 [tasks.terraform-plan]
+description = "terraform planを実行します"
 workspace = false
-command = "./tools/terraform/terraform-plan.sh"
+command = "./tools/deploy/terraform/terraform-plan.sh"
 
 [tasks.terraform-apply]
+description = "terraform applyを実行します"
 workspace = false
-command = "./tools/terraform/terraform-apply.sh"
+command = "./tools/deploy/terraform/terraform-apply.sh"
 args = ["-auto-approve"]
 
 [tasks.terraform-destroy]
+description = "terraform destroyを実行します"
 workspace = false
-command = "./tools/terraform/terraform-destroy.sh"
+command = "./tools/deploy/terraform/terraform-destroy.sh"
 args = ["-auto-approve"]
 
 [tasks.update-kubeconfig]
+description = "kubeconfigを更新します"
 workspace = false
-command = "./tools/terraform/update-kubconfig.sh"
+command = "./tools/deploy/terraform/update-kubconfig.sh"
 
 [tasks.export-auth-config-map]
+description = "認証情報をエクスポートします"
 workspace = false
-command = "./tools/terraform/export-auth-config-map.sh"
+command = "./tools/deploy/terraform/export-auth-config-map.sh"
 
 [tasks.apply-auth-config-map]
+description = "認証情報を適用します"
 workspace = false
-command = "./tools/terraform/apply-auth-config-map.sh"
+command = "./tools/deploy/terraform/apply-auth-config-map.sh"
 
 [tasks.terraform-output]
+description = "terraform outputを実行します"
 workspace = false
 script = '''
-./tools/terraform/terraform-output.sh -json | jq .
+./tools/deploy/terraform/terraform-output.sh -json | jq .
 '''
 
 [tasks.get-ecr-refinery-repository-url]
+description = "Refinery用ECRのリポジトリURLを取得します"
 workspace = false
 script = '''
-RESULT=$(./tools/terraform/terraform-output.sh -json | jq -r .ecr_refinery_repository_url.value)
+#!/usr/bin/env bash
+RESULT=$(./tools/deploy/terraform/terraform-output.sh -json | jq -r .ecr_refinery_repository_url.value)
 echo "url = ${RESULT}"
 '''
 
 [tasks.get-aurora-cluster-master-username]
+description = "Auroraのマスターユーザー名を取得します"
 workspace = false
 script = '''
-RESULT=$(./tools/terraform/terraform-output.sh -json | jq -r .aurora_cluster_master_username.value)
+#!/usr/bin/env bash
+RESULT=$(./tools/deploy/terraform/terraform-output.sh -json | jq -r .aurora_cluster_master_username.value)
 echo "MYSQL_USER_NAME = ${RESULT}"
 '''
 
 [tasks.get-aurora-cluster-master-password]
+description = "Auroraのマスターパスワードを取得します"
 workspace = false
 script = '''
-RESULT=$(./tools/terraform/terraform-output.sh -json | jq -r .aurora_cluster_master_password.value)
+#!/usr/bin/env bash
+RESULT=$(./tools/deploy/terraform/terraform-output.sh -json | jq -r .aurora_cluster_master_password.value)
 echo "MYSQL_USER_PASSWORD = ${RESULT}"
 '''
 
 [tasks.get-aurora-cluster-endpoint]
+description = "Auroraのエンドポイントを取得します"
 workspace = false
 script = '''
-RESULT=$(./tools/terraform/terraform-output.sh -json | jq -r .aurora_cluster_endpoint.value)
+#!/usr/bin/env bash
+RESULT=$(./tools/deploy/terraform/terraform-output.sh -json | jq -r .aurora_cluster_endpoint.value)
 echo "MYSQL_HOST = ${RESULT}"
 '''
 
 [tasks.get-aurora-cluster-port]
+description = "Auroraのポートを取得します"
 workspace = false
 script = '''
-RESULT=$(./tools/terraform/terraform-output.sh -json | jq -r .aurora_cluster_port.value)
+#!/usr/bin/env bash
+RESULT=$(./tools/deploy/terraform/terraform-output.sh -json | jq -r .aurora_cluster_port.value)
 echo "MYSQL_PORT = ${RESULT}"
 '''
 
 [tasks.get-aurora-cluster-database]
+description = "Auroraのデータベース名を取得します"
 workspace = false
 script = '''
-RESULT=$(./tools/terraform/terraform-output.sh -json | jq -r .aurora_cluster_database_name.value)
+#!/usr/bin/env bash
+RESULT=$(./tools/deploy/terraform/terraform-output.sh -json | jq -r .aurora_cluster_database_name.value)
 echo "MYSQL_DATABASE = ${RESULT}"
 '''
 
 [tasks.get-aurora-cluster-all-info]
+description = "Auroraの全情報を取得します"
 workspace = false
 dependencies = ["get-aurora-cluster-master-username", "get-aurora-cluster-master-password", "get-aurora-cluster-endpoint", "get-aurora-cluster-port", "get-aurora-cluster-database"]
 
+# ---
+
 [tasks.k8s-config-get-contexts]
+description = "kubectl config get-contextsを実行します"
 workspace = false
 script = '''
-#!/bin/sh
+#!/usr/bin/env bash
 kubectl config get-contexts
 '''
 
 [tasks.k8s-port-forward-dashboard]
+description = "kubernetes-dashboardをポートフォワードします"
 workspace = false
 script = '''
-#!/bin/sh
+#!/usr/bin/env bash
 DASHBOARD_NS=kubernetes-dashboard
 export POD_NAME=$(kubectl get pods -n $DASHBOARD_NS -l "app.kubernetes.io/name=kubernetes-dashboard,app.kubernetes.io/instance=kubernetes-dashboard" -o jsonpath="{.items[0].metadata.name}")
 kubectl -n $DASHBOARD_NS port-forward $POD_NAME 8443:8443
 '''
 
 [tasks.k8s-create-dashboard-token]
+description = "kubernetes-dashboardのトークンを作成します"
 workspace = false
 script = '''
-#!/bin/sh
+#!/usr/bin/env bash
 kubectl -n kubernetes-dashboard create token kubernetes-dashboard
 '''
 
-# ----
-[tasks.docker-build-refinery-amd64]
+# --- docker build
+
+[tasks.docker-build-prepare]
+description = "docker buildxの準備をします"
 workspace = false
+command = "./tools/scripts/docker-buildx-create.sh"
+
+[tasks.docker-build-refinery-amd64]
+description = "Docker build for refinery on amd64"
+workspace = false
+dependencies = ["docker-build-prepare"]
 script = '''
+#!/usr/bin/env bash
 cd ./tools/refinery
 export APP_NAME=${PREFIX}-ecr-${APPLICATION_NAME}-refinery
 make build-nc
 '''
 
-# docker-build write-api-server
 [tasks.docker-build-write-api-server-amd64]
 description = "Docker build for write-api-server on amd64"
 workspace = false
+dependencies = ["docker-build-prepare"]
 command = "./tools/scripts/docker-build-write-api-server.sh"
 args = ["amd64"]
 
 [tasks.docker-build-write-api-server-arm64]
+description = "Docker build for write-api-server on arm64"
 workspace = false
+dependencies = ["docker-build-prepare"]
 command = "./tools/scripts/docker-build-write-api-server.sh"
 args = ["arm64"]
 
 [tasks.docker-build-write-api-server]
+description = "Docker build for write-api-server"
 workspace = false
-run_task = { name = ["docker-build-write-api-server-amd64", "docker-build-write-api-server-arm64"], parallel = true }
+dependencies = ["docker-build-prepare"]
+command = "./tools/scripts/docker-build-write-api-server.sh"
 
-# docker-build read-api-server
-[tasks.docker-build-read-api-server-amd64]
+[tasks.docker-build-write-api-server-all]
+description = "Docker build for write-api-server"
 workspace = false
+dependencies = ["docker-build-prepare"]
+command = "./tools/scripts/docker-build-write-api-server.sh"
+args = ["all"]
+
+[tasks.docker-build-read-api-server-amd64]
+description = "Docker build for read-api-server on amd64"
+workspace = false
+dependencies = ["docker-build-prepare"]
 command = "./tools/scripts/docker-build-read-api-server.sh"
 args = ["amd64"]
 
 [tasks.docker-build-read-api-server-arm64]
+description = "Docker build for read-api-server on arm64"
 workspace = false
+dependencies = ["docker-build-prepare"]
 command = "./tools/scripts/docker-build-read-api-server.sh"
 args = ["arm64"]
 
 [tasks.docker-build-read-api-server]
+description = "Docker build for read-api-server"
 workspace = false
-run_task = { name = ["docker-build-read-api-server-amd64", "docker-build-read-api-server-arm64"], parallel = true }
+dependencies = ["docker-build-prepare"]
+command = "./tools/scripts/docker-build-read-api-server.sh"
 
-# docker-build read-model-updater
-[tasks.docker-build-read-model-updater-prod-amd64]
+[tasks.docker-build-read-api-server-all]
+description = "Docker build for read-api-server"
 workspace = false
+dependencies = ["docker-build-prepare"]
+command = "./tools/scripts/docker-build-read-api-server.sh"
+args = ["all"]
+
+[tasks.docker-build-read-model-updater-prod-amd64]
+description = "Docker build for read-model-updater on amd64"
+workspace = false
+dependencies = ["docker-build-prepare"]
 command = "./tools/scripts/docker-build-read-model-updater.sh"
 
 [tasks.docker-build-read-model-updater-local-amd64]
+description = "Docker build for read-model-updater-local on amd64"
 workspace = false
+dependencies = ["docker-build-prepare"]
+command = "./tools/scripts/docker-build-read-model-updater-local.sh"
+args = ["amd64"]
+
+[tasks.docker-build-read-model-updater-local-arm64]
+description = "Docker build for read-model-updater-local on arm64"
+workspace = false
+dependencies = ["docker-build-prepare"]
+command = "./tools/scripts/docker-build-read-model-updater-local.sh"
+args = ["arm64"]
+
+[tasks.docker-build-read-model-updater-local]
+description = "Docker build for read-model-updater-local"
+workspace = false
+dependencies = ["docker-build-prepare"]
 command = "./tools/scripts/docker-build-read-model-updater-local.sh"
 
-# docker-build-all
-
 [tasks.docker-build-prod-all]
-description = "本番用Write/Read API ServerのDockerイメージをビルドします"
+description = "本番用のDockerイメージをビルドします"
 workspace = false
-run_task = { name = ["docker-build-write-api-server", "docker-build-read-api-server", "docker-build-read-model-updater-prod-amd64"], parallel = true }
+run_task = { name = ["docker-build-write-api-server-all", "docker-build-read-api-server-all", "docker-build-read-model-updater-prod-amd64"] }
 
 [tasks.docker-build-local-all]
-description = "ローカル用Write/Read API ServerのDockerイメージをビルドします"
+description = "ローカル用のDockerイメージをビルドします"
 workspace = false
-run_task = { name = ["docker-build-write-api-server", "docker-build-read-api-server", "docker-build-read-model-updater-local-amd64"], parallel = true }
+run_task = { name = ["docker-build-write-api-server", "docker-build-read-api-server", "docker-build-read-model-updater-local"] }
+
+# --- docker-compose
 
 [tasks.docker-compose-up-db]
 description = "Docker Compose(データベースのみ)を起動します"
@@ -281,12 +433,14 @@ description = "Docker Composeを停止します"
 workspace = false
 command = "./tools/scripts/docker-compose-down.sh"
 
-# ---------------------------------------------
+# --- docker-ecr-push
+
 [tasks.docker-ecr-push-refinery]
 description = "RefineryのDockerイメージをECRにpushします"
 workspace = false
 dependencies = ["docker-build-refinery-amd64"]
 script = '''
+#!/usr/bin/env bash
 cd ./tools/refinery
 export APP_NAME=${PREFIX}-ecr-${APPLICATION_NAME}-refinery
 make publish
@@ -307,7 +461,6 @@ description = "Read Model UpdaterのDockerイメージをECRにpushします"
 workspace = false
 command = "./tools/scripts/docker-ecr-push-read-model-updater.sh"
 
-# ecr-push
 [tasks.aws-ecr-login]
 description = "AWS ECRにログインします"
 workspace = false
@@ -333,7 +486,7 @@ description = "Write/Read API ServerのDockerイメージをECRにpushします"
 workspace = false
 run_task = { name = ["docker-build-prod-all", "docker-ecr-push-write-api-server", "docker-ecr-push-read-api-server"] }
 
-# -------
+# --- helmfile
 
 [tasks.helmfile-diff-write-api-server]
 workspace = false
@@ -358,8 +511,6 @@ workspace = false
 command = "./tools/scripts/helmfile.sh"
 args = ["diff"]
 
-# ---
-
 [tasks.helmfile-apply-write-api-server]
 workspace = false
 env = { "OPTS" = "--selector group=write-api-server" }
@@ -382,8 +533,6 @@ args = ["apply"]
 workspace = false
 command = "./tools/scripts/helmfile.sh"
 args = ["apply"]
-
-# ---
 
 [tasks.helmfile-destroy-write-api-server]
 workspace = false
@@ -408,46 +557,52 @@ workspace = false
 command = "./tools/scripts/helmfile.sh"
 args = ["destroy"]
 
-# -------
+# --- kubectl
 
 [tasks.kubectl-get-ingress-write-api-server]
 description = "Write API ServerのIngressを取得します"
 workspace = false
 script = '''
+#!/usr/bin/env bash
 kubectl -n ceer get ingress write-api-server
-'''
-
-[tasks.update-dns-write-api-server]
-description = "Write API Serverの外部DNSを更新します"
-workspace = false
-script = '''
-./tools/scripts/aws-route53-upsert-external-dns-of-write-api-server.sh
 '''
 
 [tasks.kubectl-get-ingress-read-api-server]
 description = "Read API ServerのIngressを取得します"
 workspace = false
 script = '''
+#!/usr/bin/env bash
 kubectl -n ceer get ingress read-api-server
+'''
+
+[tasks.update-dns-write-api-server]
+description = "Write API Serverの外部DNSを更新します"
+workspace = false
+script = '''
+#!/usr/bin/env bash
+./tools/scripts/aws-route53-upsert-external-dns-of-write-api-server.sh
 '''
 
 [tasks.update-dns-read-api-server]
 description = "Read API Serverの外部DNSを更新します"
 workspace = false
 script = '''
+#!/usr/bin/env bash
 ./tools/scripts/aws-route53-upsert-external-dns-of-read-api-server.sh
 '''
 
 [tasks.update-dns-all]
+description = "Write/Read API Serverの外部DNSを更新します"
 workspace = false
 run_task = { name = ["update-dns-write-api-server", "update-dns-read-api-server"] }
 
-# -------
+# --- Testing
 
 [tasks.curl-get-root-write-api-server]
 description = "Write API Serverのルートにアクセスします"
 workspace = false
 script = '''
+#!/usr/bin/env bash
 curl -s -X GET ${WRITE_API_SERVER_BASE_URL}
 echo ""
 '''
@@ -456,6 +611,7 @@ echo ""
 description = "Read API Serverのルートにアクセスします"
 workspace = false
 script = '''
+#!/usr/bin/env bash
 curl -s -X GET ${READ_API_SERVER_BASE_URL}
 echo ""
 '''
@@ -469,28 +625,55 @@ dependencies = ["curl-get-root-write-api-server", "curl-get-root-read-api-server
 description = "GraphQL IDEを開きます"
 workspace = false
 script = '''
+#!/usr/bin/env bash
 open ${READ_API_SERVER_BASE_URL}/graphql
 '''
 
-[tasks.create-thread]
-description = "スレッドを作成します"
+[tasks.create-group-chat]
+description = "グループチャットを作成します"
 workspace = false
 script = '''
-./tools/scripts/curl-post-create-thread.sh | jq .
+#!/usr/bin/env bash
+./tools/scripts/curl-post-create-group-chat.sh | jq .
 '''
 
-[tasks.create-and-get-thread]
-description = "スレッドを作成して取得します"
+[tasks.create-and-get-group-chat]
+description = "グループチャットを作成して取得します"
 workspace = false
 script = '''
-export THREAD_ID=$(./tools/scripts/curl-post-create-thread.sh | jq -r .Success.id.value)
-echo "create-thread: THREAD_ID=${THREAD_ID}"
-sleep 1
-ACTUAL_ID=$(./tools/scripts/curl-post-get-thread.sh | jq -r .data.getThread.id)
-echo "get-thread: ACTUAL_THREAD_ID=${ACTUAL_ID}"
-if [ "${THREAD_ID}" = "${ACTUAL_ID}" ]; then
-  echo "OK"
-else
-  echo "NG"
-fi
+#!/usr/bin/env bash
+
+export GROUP_CHAT_ID=$(./tools/scripts/curl-post-create-group-chat.sh | jq -r .group_chat_id)
+echo "create-group-chat: GROUP_CHAT_ID=${GROUP_CHAT_ID}"
+
+# トライの最大回数
+MAX_RETRIES=10
+# トライごとの待ち時間
+SLEEP_TIME=1
+
+for i in $(seq 1 $MAX_RETRIES); do
+    ACTUAL_ID=$(./tools/scripts/curl-post-get-group-chat.sh | jq -r .data.getGroupChat.id)
+    echo "get-group-chat (attempt ${i}): ACTUAL_GROUP_CHAT_ID=${ACTUAL_ID}"
+
+    if [ "${GROUP_CHAT_ID}" = "${ACTUAL_ID}" ]; then
+        echo "OK"
+        exit 0
+    fi
+
+    # 指定された時間だけ待つ
+    sleep $SLEEP_TIME
+done
+
+echo "NG"
+exit 1
+
 '''
+
+[tasks.verify-group-chat]
+description = "グループチャットを作成・メンバー追加・メッセージ投稿を行います"
+workspace = false
+script = '''
+#!/usr/bin/env bash
+./tools/scripts/verify-group-chat.sh
+'''
+

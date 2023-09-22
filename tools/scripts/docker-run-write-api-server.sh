@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -eu
 
@@ -9,4 +9,4 @@ docker run -v $(pwd)/../../config:/config \
   -p 8080:8080 \
   -e RUST_LOG=debug \
   -e RUST_BACKTRACE=1 \
-  -d j5ik2o/cqrs-es-example-rs-write-api-server:latest-arm64
+  -d write-api-server:latest-arm64

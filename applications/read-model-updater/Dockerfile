@@ -1,7 +1,7 @@
 #ref: https://dev.classmethod.jp/articles/rust-app-container-on-lambda-function/
 FROM public.ecr.aws/lambda/provided:al2 as build
 
-ARG NAME=cqrs-es-example-read-model-updater
+ARG NAME=read-model-updater
 
 RUN yum update -y && yum install -y gcc
 
@@ -20,5 +20,5 @@ RUN cargo build -p ${NAME} --release --target x86_64-unknown-linux-gnu
 
 FROM public.ecr.aws/lambda/provided:al2
 RUN mkdir -p /var/runtime && mkdir -p /tmp
-COPY --from=build /tmp/target/x86_64-unknown-linux-gnu/release/cqrs-es-example-read-model-updater /var/runtime/bootstrap
+COPY --from=build /tmp/target/x86_64-unknown-linux-gnu/release/read-model-updater /var/runtime/bootstrap
 CMD [ "lambda-handler" ]

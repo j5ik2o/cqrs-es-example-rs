@@ -6,14 +6,14 @@ use aws_sdk_dynamodb::operation::put_item::PutItemOutput;
 use aws_sdk_dynamodb::operation::update_item::UpdateItemOutput;
 use aws_sdk_dynamodb::types::AttributeValue;
 use aws_sdk_dynamodb::Client;
-use cqrs_es_example_domain::aggregate::{Aggregate, AggregateId};
-use cqrs_es_example_domain::Event;
 use serde::{de, Serialize};
 
-use crate::gateways::event_persistence_gateway_with_transaction::{DefaultPartitionKeyResolver, KeyResolver};
-use crate::gateways::EventPersistenceGateway;
+use command_domain::aggregate::{Aggregate, AggregateId};
+use command_domain::Event;
 
-// 以下に基づいて実装した例。結局無駄な書き込みが防げないので、この実装は再採用。
+use crate::gateways::*;
+
+// 以下に基づいて実装した例。結局無駄な書き込みが防げないので、この実装は不採用。利用していない実装なので完全に無視してください。
 // https://aws.amazon.com/jp/blogs/news/build-a-cqrs-event-store-with-amazon-dynamodb/
 
 #[async_trait::async_trait]
@@ -21,8 +21,7 @@ impl EventPersistenceGateway for EventPersistenceGatewayWithoutTransaction {
   async fn get_snapshot_by_id<E, T, AID: AggregateId>(&self, aid: &AID) -> Result<(T, usize, usize)>
   where
     E: ?Sized + Serialize + Event + for<'de> de::Deserialize<'de>,
-    T: ?Sized + Serialize + Aggregate + for<'de> de::Deserialize<'de>,
-  {
+    T: ?Sized + Serialize + Aggregate + for<'de> de::Deserialize<'de>, {
     let response = self
       .client
       .query()
@@ -70,8 +69,7 @@ impl EventPersistenceGateway for EventPersistenceGatewayWithoutTransaction {
 
   async fn get_events_by_id_and_seq_nr<T, AID: AggregateId>(&self, aid: &AID, seq_nr: usize) -> Result<Vec<T>>
   where
-    T: Debug + for<'de> de::Deserialize<'de>,
-  {
+    T: Debug + for<'de> de::Deserialize<'de>, {
     let response = self
       .client
       .query()
@@ -105,10 +103,7 @@ impl EventPersistenceGateway for EventPersistenceGatewayWithoutTransaction {
   ) -> Result<()>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event,
-  {
-    // TODO: 最新のスナップショットを取得し別のskeyを付与して保存する
-    // TODO: スナップショットの履歴が無限に増えないのように世代管理する
+    E: ?Sized + Serialize + Event, {
     match (event.is_created(), aggregate) {
       (true, Some(ar)) => {
         let _ = self.put_snapshot_with_event(event, ar).await?;
@@ -182,8 +177,7 @@ impl EventPersistenceGatewayWithoutTransaction {
   async fn put_snapshot_with_event<E, A>(&mut self, event: &E, ar: &A) -> Result<PutItemOutput>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     let result = self
       .client
       .put_item()
@@ -208,8 +202,7 @@ impl EventPersistenceGatewayWithoutTransaction {
   async fn update_snapshot<E, A>(&mut self, event: &E, version: usize, ar_opt: Option<&A>) -> Result<UpdateItemOutput>
   where
     A: ?Sized + Serialize + Aggregate,
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     let mut update_snapshot = self
       .client
       .update_item()
@@ -241,8 +234,7 @@ impl EventPersistenceGatewayWithoutTransaction {
 
   async fn put_journal<E>(&self, event: &E) -> Result<()>
   where
-    E: ?Sized + Serialize + Event,
-  {
+    E: ?Sized + Serialize + Event, {
     let pkey = self.resolve_pkey(event.aggregate_id(), self.shard_count);
     let skey = self.resolve_skey(event.aggregate_id(), event.seq_nr());
     let aid = event.aggregate_id().to_string();

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # FYI: https://zenn.dev/kinzal/articles/9ee60ebbebc29c
 # FYI: https://github.com/chatwork/ddb-to-kds/blob/main/Dockerfile
@@ -13,7 +13,7 @@ pushd ../../
 
 docker build \
   --platform=linux/amd64 \
-  -t j5ik2o/cqrs-es-example-rs-read-model-updater:latest-amd64 \
+  -t read-model-updater:latest-amd64 \
   -f applications/read-model-updater/Dockerfile .
 
 popd

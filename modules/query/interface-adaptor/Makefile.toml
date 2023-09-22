@@ -1,0 +1,7 @@
+[tasks.sqlx-prepare]
+description = "Prepare sqlx"
+command = "cargo"
+args = ["sqlx", "prepare", "-D", "mysql://ceer:ceer@localhost:3306/ceer"]
+
+[tasks.build]
+dependencies = ["sqlx-prepare"]

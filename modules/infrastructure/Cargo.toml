@@ -1,9 +1,9 @@
 [package]
-name = "cqrs-es-example-infrastructure"
+name = "infrastructure"
 version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.71"
-chrono = "0.4.26"
-downcast-rs = "1.2.0"
+anyhow = { workspace = true, features = ["backtrace"] }
+chrono = { workspace = true, features = ["serde"] }
+downcast-rs = { workspace = true }

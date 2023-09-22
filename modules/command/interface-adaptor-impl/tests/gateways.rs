@@ -1,5 +1,5 @@
 mod common;
 
 pub mod gateways {
-  pub mod thread_repository;
+  pub mod group_chat_repository;
 }
