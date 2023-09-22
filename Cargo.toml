@@ -17,7 +17,7 @@ members = [
 anyhow = "1.0.75"
 thiserror = "1.0.44"
 async-graphql = "6.0.1"
-async-graphql-axum = "6.0.1"
+async-graphql-axum = "6.0.6"
 async-trait = "0.1.73"
 aws-config = "0.55.1"
 aws_lambda_events = { vesrion = "0.10.0", default-features = false }
