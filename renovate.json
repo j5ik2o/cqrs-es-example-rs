@@ -12,8 +12,8 @@
       "automerge": true
     },
     {
-      "matchManagers": ["dockerfile", "docker-compose", "helm-values"],
-      "matchPackageNames": ["localstack/localstack", "amazon/dynamodb-local"],
+      "matchManagers": ["dockerfile", "docker-compose", "helm-values", "terraform"],
+      "matchPackageNames": ["localstack/localstack", "amazon/dynamodb-local", "aws", "helm"],
       "enabled": false
     }
   ]
