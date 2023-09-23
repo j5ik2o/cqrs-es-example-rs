@@ -62,7 +62,7 @@ jobs:
     needs: [lint, test-infrastructure]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -79,7 +79,7 @@ jobs:
       [lint, test-infrastructure, test-command-processor, test-command-domain]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
