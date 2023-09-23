@@ -13,7 +13,7 @@
     },
     {
       "matchManagers": ["dockerfile", "docker-compose", "helm-values", "terraform"],
-      "matchPackageNames": ["localstack/localstack", "amazon/dynamodb-local", "aws", "helm", "kubernetes", "registry.terraform.io/terraform-aws-modules/eks/aws"],
+      "matchPackageNames": ["localstack/localstack", "amazon/dynamodb-local", "aws", "helm", "kubernetes", "registry.terraform.io/terraform-aws-modules/eks/aws", "terraform-aws-modules/kms/aws"],
       "enabled": false
     }
   ]
