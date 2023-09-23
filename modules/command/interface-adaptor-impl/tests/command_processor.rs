@@ -9,7 +9,7 @@ use testcontainers::clients::Cli;
 
 mod common;
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test() {
   test_group_chat_create().await;
   test_group_chat_rename().await;

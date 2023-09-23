@@ -234,7 +234,7 @@ mod tests {
   use super::*;
   use testcontainers::clients::Cli;
 
-  #[tokio::test]
+  #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
   async fn test() {
     test_create_group_chat().await;
     test_delete_group_chat().await;

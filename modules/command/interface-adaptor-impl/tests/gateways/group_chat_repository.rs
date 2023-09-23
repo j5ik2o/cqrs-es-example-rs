@@ -9,7 +9,7 @@ mod tests {
   use event_store_adapter_rs::types::Aggregate;
   use testcontainers::clients::Cli;
 
-  #[tokio::test]
+  #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
   async fn test() {
     test_group_chat_create().await;
     test_group_chat_add_member().await;
