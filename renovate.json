@@ -10,6 +10,11 @@
     {
       "matchDepTypes": ["devDependencies"],
       "automerge": true
+    },
+    {
+      "matchManagers": ["dockerfile", "docker-compose", "helm-values"],
+      "matchPackageNames": ["localstack/localstack", "amazon/dynamodb-local"],
+      "enabled": false
     }
   ]
 }
