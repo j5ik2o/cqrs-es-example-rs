@@ -53,7 +53,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo test --verbose -p infrastructure
+      - run: cargo test --verbose --release -p infrastructure
   test-command-domain:
     runs-on: ubuntu-latest
     needs: [lint, test-infrastructure]
@@ -69,7 +69,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo test --verbose -p command-domain
+      - run: cargo test --verbose --release -p command-domain
   test-command-interface-adaptor-impl:
     runs-on: ubuntu-latest
     needs:
@@ -86,7 +86,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo test --verbose -p command-interface-adaptor-impl
+      - run: cargo test --verbose --release -p command-interface-adaptor-impl
         timeout-minutes: 30
   test-command-processor:
     runs-on: ubuntu-latest
@@ -98,7 +98,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - run: cargo test --verbose -p command-processor
+      - run: cargo test --verbose --release -p command-processor
   test-query-interface-adaptor:
     runs-on: ubuntu-latest
     needs: [lint, test-infrastructure]
@@ -114,7 +114,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo test --verbose -p query-interface-adaptor
+      - run: cargo test --verbose --release -p query-interface-adaptor
   test-write-api-server:
     runs-on: ubuntu-latest
     needs: [ test-infrastructure, test-command-domain, test-command-interface-adaptor-impl, test-command-processor ]
@@ -132,7 +132,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - run: cargo test --verbose -p write-api-server
+      - run: cargo test --verbose --release -p write-api-server
   test-read-model-updater:
     runs-on: ubuntu-latest
     needs: [test-infrastructure, test-command-domain]
@@ -148,7 +148,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo test --verbose -p read-model-updater
+      - run: cargo test --verbose --release -p read-model-updater
   test-read-api-server:
     runs-on: ubuntu-latest
     needs: [test-infrastructure, test-query-interface-adaptor]
@@ -164,4 +164,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo test --verbose -p read-api-server
+      - run: cargo test --verbose --release -p read-api-server
