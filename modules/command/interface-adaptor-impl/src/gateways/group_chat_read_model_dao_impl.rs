@@ -191,7 +191,6 @@ pub mod tests {
   use std::{env, thread};
 
   use chrono::Utc;
-  use serial_test::serial;
   use sqlx::MySqlPool;
   use testcontainers::clients::Cli;
   use testcontainers::core::WaitFor;
@@ -252,7 +251,16 @@ pub mod tests {
   }
 
   #[tokio::test]
-  #[serial]
+  async fn test() {
+    test_insert_group_chat().await;
+    test_delete_group_chat().await;
+    test_rename_group_chat().await;
+    test_insert_member().await;
+    test_delete_member().await;
+    // test_post_message().await;
+    // test_delete_message().await;
+  }
+
   async fn test_insert_group_chat() {
     init();
     let docker = Cli::docker();
@@ -275,8 +283,6 @@ pub mod tests {
       .unwrap();
   }
 
-  #[tokio::test]
-  #[serial]
   async fn test_delete_group_chat() {
     init();
     let docker = Cli::docker();
@@ -300,8 +306,6 @@ pub mod tests {
     dao.delete_group_chat(aggregate_id).await.unwrap();
   }
 
-  #[tokio::test]
-  #[serial]
   async fn test_rename_group_chat() {
     init();
     let docker = Cli::docker();
@@ -327,8 +331,6 @@ pub mod tests {
     dao.rename_group_chat(aggregate_id, name).await.unwrap();
   }
 
-  #[tokio::test]
-  #[serial]
   async fn test_insert_member() {
     init();
     let docker = Cli::docker();
@@ -360,8 +362,6 @@ pub mod tests {
       .unwrap();
   }
 
-  #[tokio::test]
-  #[serial]
   async fn test_delete_member() {
     init();
     let docker = Cli::docker();
@@ -402,8 +402,6 @@ pub mod tests {
     dao.delete_member(aggregate_id, user_account_id).await.unwrap();
   }
 
-  #[tokio::test]
-  #[serial]
   async fn test_post_message() {
     init();
     let docker = Cli::docker();
@@ -446,9 +444,6 @@ pub mod tests {
     dao.insert_message(aggregate_id, message, Utc::now()).await.unwrap();
   }
 
-  #[tokio::test]
-  #[serial]
-  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
   async fn test_delete_message() {
     todo!() // 必須課題 難易度:中
   }

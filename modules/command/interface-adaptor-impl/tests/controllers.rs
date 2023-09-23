@@ -232,11 +232,19 @@ async fn delete_message<TR: GroupChatRepository>(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use serial_test::serial;
   use testcontainers::clients::Cli;
 
-  #[tokio::test]
-  #[serial]
+  #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+  async fn test() {
+    test_create_group_chat().await;
+    test_delete_group_chat().await;
+    test_rename_group_chat().await;
+    test_add_member().await;
+    test_remove_member().await;
+    // test_post_message().await;
+    // test_delete_message().await;
+  }
+
   async fn test_create_group_chat() {
     let docker = Cli::default();
     let (repository, container, client) = get_repository(&docker).await;
@@ -248,8 +256,6 @@ mod tests {
     drop(container);
   }
 
-  #[tokio::test]
-  #[serial]
   async fn test_delete_group_chat() {
     let docker = Cli::default();
     let (repository, container, client) = get_repository(&docker).await;
@@ -268,8 +274,6 @@ mod tests {
     drop(container);
   }
 
-  #[tokio::test]
-  #[serial]
   async fn test_rename_group_chat() {
     let docker = Cli::default();
     let (repository, container, client) = get_repository(&docker).await;
@@ -294,8 +298,6 @@ mod tests {
     drop(container);
   }
 
-  #[tokio::test]
-  #[serial]
   async fn test_add_member() {
     let docker = Cli::default();
     let (repository, container, client) = get_repository(&docker).await;
@@ -322,8 +324,6 @@ mod tests {
     drop(container);
   }
 
-  #[tokio::test]
-  #[serial]
   async fn test_remove_member() {
     let docker = Cli::default();
     let (repository, container, client) = get_repository(&docker).await;
@@ -353,9 +353,6 @@ mod tests {
     drop(container);
   }
 
-  #[tokio::test]
-  #[serial]
-  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
   async fn test_post_message() {
     let docker = Cli::default();
     let (repository, container, client) = get_repository(&docker).await;
@@ -377,9 +374,6 @@ mod tests {
     drop(container);
   }
 
-  #[tokio::test]
-  #[serial]
-  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
   async fn test_delete_message() {
     let docker = Cli::default();
     let (repository, container, client) = get_repository(&docker).await;

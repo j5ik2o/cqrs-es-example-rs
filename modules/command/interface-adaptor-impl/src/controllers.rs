@@ -729,6 +729,12 @@ mod tests {
   use super::*;
 
   #[tokio::test]
+  async fn test() {
+    test_root().await;
+    test_alive().await;
+    test_ready().await;
+  }
+
   async fn test_root() {
     let router = Router::new().route(EndpointPaths::Root.as_str(), get(hello_write_api));
 
@@ -746,7 +752,6 @@ mod tests {
     assert_eq!(&body[..], b"Hello, Write API!");
   }
 
-  #[tokio::test]
   async fn test_alive() {
     let repository = MockGroupChatRepository::new();
     let app_state = AppState::new(repository);
@@ -769,7 +774,6 @@ mod tests {
     assert_eq!(&body[..], b"OK");
   }
 
-  #[tokio::test]
   async fn test_ready() {
     let repository = MockGroupChatRepository::new();
     let app_state = AppState::new(repository);

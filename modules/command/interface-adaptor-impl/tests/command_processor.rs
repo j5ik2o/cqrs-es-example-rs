@@ -5,13 +5,21 @@ use command_interface_adaptor_if::*;
 use command_interface_adaptor_impl::controllers::GroupChatIdPresenter;
 use command_processor::command_processor::GroupChatCommandProcessor;
 use common::*;
-use serial_test::serial;
 use testcontainers::clients::Cli;
 
 mod common;
 
-#[tokio::test]
-#[serial]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn test() {
+  test_group_chat_create().await;
+  test_group_chat_rename().await;
+  test_group_chat_add_member().await;
+  test_group_chat_remove_member().await;
+  // test_group_chat_post_message().await;
+  // test_group_chat_delete_message().await;
+  test_group_chat_destroy().await;
+}
+
 async fn test_group_chat_create() {
   let docker = Cli::default();
   let (mut repository, container, client) = get_repository(&docker).await;
@@ -32,8 +40,6 @@ async fn test_group_chat_create() {
   drop(client);
 }
 
-#[tokio::test]
-#[serial]
 async fn test_group_chat_rename() {
   let docker = Cli::default();
   let (mut repository, container, client) = get_repository(&docker).await;
@@ -66,8 +72,6 @@ async fn test_group_chat_rename() {
   drop(container);
 }
 
-#[tokio::test]
-#[serial]
 async fn test_group_chat_add_member() {
   let docker = Cli::default();
   let (mut repository, container, client) = get_repository(&docker).await;
@@ -108,8 +112,6 @@ async fn test_group_chat_add_member() {
   drop(container);
 }
 
-#[tokio::test]
-#[serial]
 async fn test_group_chat_remove_member() {
   let docker = Cli::default();
   let (mut repository, container, client) = get_repository(&docker).await;
@@ -159,9 +161,6 @@ async fn test_group_chat_remove_member() {
   drop(container);
 }
 
-#[tokio::test]
-#[serial]
-#[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
 async fn test_group_chat_post_message() {
   let docker = Cli::default();
   let (mut repository, container, client) = get_repository(&docker).await;
@@ -216,9 +215,6 @@ async fn test_group_chat_post_message() {
   drop(container);
 }
 
-#[tokio::test]
-#[serial]
-#[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
 async fn test_group_chat_delete_message() {
   let docker = Cli::default();
   let (mut repository, container, client) = get_repository(&docker).await;
@@ -279,8 +275,6 @@ async fn test_group_chat_delete_message() {
   drop(container);
 }
 
-#[tokio::test]
-#[serial]
 async fn test_group_chat_destroy() {
   let docker = Cli::default();
   let (mut repository, container, client) = get_repository(&docker).await;
