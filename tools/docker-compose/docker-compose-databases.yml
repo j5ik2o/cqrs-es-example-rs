@@ -37,7 +37,7 @@ services:
     depends_on:
       - mysql
   localstack:
-    image: localstack/localstack:2.1.0
+    image: localstack/localstack:2.2.0
     hostname: localstack-local
     ports:
       - "4566:4566"
