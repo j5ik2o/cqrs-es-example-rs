@@ -50,7 +50,7 @@ tower-http = "0.4.3"
 tracing = "0.1.37"
 tracing-log = "0.1.1"
 tracing-subscriber = { version = "0.3.16", default-features = false }
-ulid-generator-rs = "0.0.88"
+ulid-generator-rs = "0.0.89"
 
 mime = "0.3.17"
 refinery = { version = "0.8", features = ["mysql"] }
