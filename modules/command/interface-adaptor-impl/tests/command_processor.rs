@@ -65,7 +65,7 @@ async fn test_group_chat_rename() {
 
   // Then
   assert!(result.is_ok());
-  let group_chat = repository.find_by_id(id).await.unwrap();
+  let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert_eq!(*group_chat.name(), name);
 
   drop(client);
@@ -104,7 +104,7 @@ async fn test_group_chat_add_member() {
 
   // Then
   assert!(result.is_ok());
-  let group_chat = repository.find_by_id(id).await.unwrap();
+  let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert!(group_chat.members().is_administrator(&admin_id));
   assert!(group_chat.members().is_member(&user_account_id));
 
@@ -153,7 +153,7 @@ async fn test_group_chat_remove_member() {
 
   // Then
   assert!(result.is_ok());
-  let group_chat = repository.find_by_id(id).await.unwrap();
+  let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert!(group_chat.members().is_administrator(&admin_id));
   assert!(!group_chat.members().is_member(&user_account_id));
 
@@ -204,7 +204,7 @@ async fn test_group_chat_post_message() {
 
   // Then
   assert!(result.is_ok());
-  let group_chat = repository.find_by_id(id).await.unwrap();
+  let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert_eq!(group_chat.messages().len(), 1);
   assert_eq!(
     group_chat.messages().get_at(0).unwrap().breach_encapsulation_of_text(),
@@ -268,7 +268,7 @@ async fn test_group_chat_delete_message() {
 
   // Then
   assert!(result.is_ok());
-  let group_chat = repository.find_by_id(id).await.unwrap();
+  let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert_eq!(group_chat.messages().len(), 0);
 
   drop(client);

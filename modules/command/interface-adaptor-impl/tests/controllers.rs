@@ -389,7 +389,7 @@ mod tests {
     )
     .await;
 
-    let t = repository.find_by_id(&id1.clone()).await.unwrap();
+    let t = repository.find_by_id(&id1.clone()).await.unwrap().unwrap();
     assert!(t.messages().contains(&message_id));
 
     let id3 = delete_message(

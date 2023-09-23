@@ -1,12 +1,10 @@
 use anyhow::Result;
-use event_store_adapter_rs::types::{Aggregate, Event};
+use event_store_adapter_rs::types::{Aggregate, Event, EventStore};
 use std::collections::{HashMap, VecDeque};
 
 use command_domain::group_chat::GroupChatEvent;
 use command_domain::group_chat::{GroupChat, GroupChatId};
 use command_interface_adaptor_if::GroupChatRepository;
-
-use crate::gateways::EventPersistenceGateway;
 
 #[derive(Debug, Clone)]
 pub struct MockGroupChatRepository {
@@ -38,32 +36,38 @@ impl GroupChatRepository for MockGroupChatRepository {
     Ok(())
   }
 
-  async fn find_by_id(&self, id: &GroupChatId) -> Result<GroupChat> {
+  async fn find_by_id(&self, id: &GroupChatId) -> Result<Option<GroupChat>> {
     let events = self.events.get(id).unwrap().clone();
     let snapshot = self.snapshot.get(id).unwrap().clone();
     let result = GroupChat::replay(events.into(), snapshot, 0);
-    Ok(result)
+    Ok(Some(result))
   }
 }
 
 #[derive(Debug, Clone)]
-pub struct GroupChatRepositoryImpl<EPG: EventPersistenceGateway> {
-  event_persistence_gateway: EPG,
+pub struct GroupChatRepositoryImpl<EPG: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> {
+  event_store: EPG,
   snapshot_interval: usize,
 }
 
-unsafe impl<EPG: EventPersistenceGateway> Sync for GroupChatRepositoryImpl<EPG> {}
+unsafe impl<EPG: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> Sync
+  for GroupChatRepositoryImpl<EPG>
+{
+}
 
-unsafe impl<EPG: EventPersistenceGateway> Send for GroupChatRepositoryImpl<EPG> {}
+unsafe impl<EPG: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> Send
+  for GroupChatRepositoryImpl<EPG>
+{
+}
 
-impl<EPG: EventPersistenceGateway> GroupChatRepositoryImpl<EPG> {
+impl<EPG: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> GroupChatRepositoryImpl<EPG> {
   /// コンストラクタ。
   ///
   /// # 引数
   /// - `event_persistence_gateway` - イベント永続化ゲートウェイ
-  pub fn new(event_persistence_gateway: EPG, snapshot_interval: usize) -> Self {
+  pub fn new(event_store: EPG, snapshot_interval: usize) -> Self {
     Self {
-      event_persistence_gateway,
+      event_store,
       snapshot_interval,
     }
   }
@@ -93,28 +97,29 @@ impl<EPG: EventPersistenceGateway> GroupChatRepositoryImpl<EPG> {
 }
 
 #[async_trait::async_trait]
-impl<EPG: EventPersistenceGateway> GroupChatRepository for GroupChatRepositoryImpl<EPG> {
+impl<EPG: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> GroupChatRepository
+  for GroupChatRepositoryImpl<EPG>
+{
   async fn store(&mut self, event: &GroupChatEvent, version: usize, snapshot: Option<&GroupChat>) -> Result<()> {
-    self
-      .event_persistence_gateway
-      .store_event_with_snapshot_opt(
-        event,
-        version,
-        Self::resolve_snapshot(self.snapshot_interval, event.is_created(), snapshot),
-      )
-      .await
+    match Self::resolve_snapshot(self.snapshot_interval, event.is_created(), snapshot) {
+      Some(snapshot) => self.event_store.persist_event_and_snapshot(event, snapshot).await?,
+      None => self.event_store.persist_event(event, version).await?,
+    }
+    Ok(())
   }
 
-  async fn find_by_id(&self, id: &GroupChatId) -> Result<GroupChat> {
-    let (snapshot, seq_nr, version) = self
-      .event_persistence_gateway
-      .get_snapshot_by_id::<GroupChatEvent, GroupChat, GroupChatId>(id)
-      .await?;
-    let events = self
-      .event_persistence_gateway
-      .get_events_by_id_and_seq_nr::<GroupChatEvent, GroupChatId>(id, seq_nr)
-      .await?;
-    let result = GroupChat::replay(events, Some(snapshot), version);
-    Ok(result)
+  async fn find_by_id(&self, id: &GroupChatId) -> Result<Option<GroupChat>> {
+    let snapshot_opt = self.event_store.get_latest_snapshot_by_id(id).await?;
+    match snapshot_opt {
+      None => Ok(None),
+      Some(snapshot) => {
+        let events = self
+          .event_store
+          .get_events_by_id_since_seq_nr(id, snapshot.seq_nr())
+          .await?;
+        let result = GroupChat::replay(events, Some(snapshot.clone()), snapshot.version());
+        Ok(Some(result))
+      }
+    }
   }
 }
