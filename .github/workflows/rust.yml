@@ -28,7 +28,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           path: |
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           path: |
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test-infrastructure]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           path: |
@@ -78,7 +78,7 @@ jobs:
     needs:
       [lint, test-infrastructure, test-command-processor, test-command-domain]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           path: |
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test-command-domain]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -106,7 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test-infrastructure]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           path: |
@@ -122,7 +122,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ test-infrastructure, test-command-domain, test-command-interface-adaptor-impl, test-command-processor ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           path: |
@@ -140,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-infrastructure, test-command-domain]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           path: |
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-infrastructure, test-query-interface-adaptor]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           path: |
