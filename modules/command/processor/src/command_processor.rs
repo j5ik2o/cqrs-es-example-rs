@@ -58,7 +58,7 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     name: GroupChatName,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
     let event = group_chat.rename(name, executor_id)?;
     self
       .group_chat_repository
@@ -87,7 +87,7 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     role: MemberRole,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
     let member_id = MemberId::new();
     let event = group_chat.add_member(member_id, user_account_id, role, executor_id)?;
     self
@@ -115,7 +115,7 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     user_account_id: UserAccountId,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
     let event = group_chat.remove_member(user_account_id, executor_id)?;
     self
       .group_chat_repository
@@ -140,7 +140,7 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     id: GroupChatId,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
     let event = group_chat.delete(executor_id)?;
     self
       .group_chat_repository
@@ -187,7 +187,7 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     message_id: MessageId,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?;
+    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
     let event = group_chat.delete_message(message_id, executor_id)?;
     self
       .group_chat_repository

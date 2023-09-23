@@ -10,12 +10,13 @@ use aws_sdk_dynamodb::types::{
   ProvisionedThroughput, ScalarAttributeType,
 };
 use aws_sdk_dynamodb::Client;
+use event_store_adapter_rs::event_store::EventStoreForDynamoDB;
 use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
 use testcontainers::images::generic::GenericImage;
 use testcontainers::Container;
+use command_domain::group_chat::{GroupChat, GroupChatEvent, GroupChatId};
 
-use command_interface_adaptor_impl::gateways::event_persistence_gateway_with_transaction::EventPersistenceGatewayWithTransaction;
 use command_interface_adaptor_impl::gateways::group_chat_repository::GroupChatRepositoryImpl;
 
 pub fn init_logger() {
@@ -195,7 +196,7 @@ async fn wait_table(client: &Client, target_table_name: &str) -> bool {
 pub async fn get_repository<'a>(
   docker: &'a Cli,
 ) -> (
-  GroupChatRepositoryImpl<EventPersistenceGatewayWithTransaction>,
+  GroupChatRepositoryImpl<EventStoreForDynamoDB<GroupChatId, GroupChat, GroupChatEvent>>,
   Container<'a, GenericImage>,
   Client,
 ) {
@@ -239,7 +240,7 @@ pub async fn get_repository<'a>(
     sleep(Duration::from_millis(1000 * test_time_factor));
   }
 
-  let epg = EventPersistenceGatewayWithTransaction::new(
+  let epg = EventStoreForDynamoDB::new(
     client.clone(),
     journal_table_name.to_string(),
     journal_aid_index_name.to_string(),

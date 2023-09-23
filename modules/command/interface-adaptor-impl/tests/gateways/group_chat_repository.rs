@@ -28,7 +28,7 @@ mod tests {
     let result = repository.store(&create_event, 1, Some(&group_chat)).await;
     assert!(result.is_ok());
 
-    let actual = repository.find_by_id(group_chat.id()).await.unwrap();
+    let actual = repository.find_by_id(group_chat.id()).await.unwrap().unwrap();
     assert_eq!(actual.id(), group_chat.id());
     assert_eq!(actual.name(), group_chat.name());
     assert!(actual.members().is_member(&admin_id));
@@ -50,7 +50,7 @@ mod tests {
     let result = repository.store(&create_event, 1, Some(&actual)).await;
     assert!(result.is_ok());
 
-    let mut actual = repository.find_by_id(actual.id()).await.unwrap();
+    let mut actual = repository.find_by_id(actual.id()).await.unwrap().unwrap();
     let member_id = MemberId::new();
     let add_member_event = actual
       .add_member(
@@ -63,7 +63,7 @@ mod tests {
     let result = repository.store(&add_member_event, actual.version(), None).await;
     assert!(result.is_ok());
 
-    let mut actual = repository.find_by_id(actual.id()).await.unwrap();
+    let mut actual = repository.find_by_id(actual.id()).await.unwrap().unwrap();
     let member_id = MemberId::new();
     let user_account_id2 = UserAccountId::new();
     let add_member_event = actual
@@ -78,7 +78,7 @@ mod tests {
     let result = repository.store(&add_member_event, actual.version(), None).await;
     assert!(result.is_ok());
 
-    let actual = repository.find_by_id(actual.id()).await.unwrap();
+    let actual = repository.find_by_id(actual.id()).await.unwrap().unwrap();
     assert!(actual.members().is_administrator(&admin_user_account_id));
     assert!(actual.members().is_member(&user_account_id));
 

@@ -27,7 +27,7 @@ pub trait GroupChatRepository: Debug + Clone + Sync + Send + 'static {
   ///
   /// # 戻り値
   /// - 取得できた場合はOk(GroupChat), 取得できなかった場合はErrを返す。
-  async fn find_by_id(&self, id: &GroupChatId) -> Result<GroupChat>;
+  async fn find_by_id(&self, id: &GroupChatId) -> Result<Option<GroupChat>>;
 }
 
 /// グループチャットリードモデル更新用のデータアクセスオブジェクト。

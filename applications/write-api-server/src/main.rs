@@ -8,6 +8,7 @@ use aws_sdk_dynamodb::config::{Credentials, Region};
 use aws_sdk_dynamodb::Client;
 use axum::http::HeaderValue;
 use config::{Config, Environment};
+use event_store_adapter_rs::event_store::EventStoreForDynamoDB;
 use hyper::header::CONTENT_TYPE;
 use serde::Deserialize;
 use tower_http::cors::{AllowMethods, CorsLayer};
@@ -17,7 +18,6 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
 use command_interface_adaptor_impl::controllers::create_router;
-use command_interface_adaptor_impl::gateways::event_persistence_gateway_with_transaction::EventPersistenceGatewayWithTransaction;
 use command_interface_adaptor_impl::gateways::group_chat_repository::GroupChatRepositoryImpl;
 use write_api_server::ApiDoc;
 
@@ -64,7 +64,7 @@ async fn main() -> Result<()> {
 
   let app_settings = load_app_config().unwrap();
   let aws_client = create_aws_client(&app_settings.aws).await;
-  let egg = EventPersistenceGatewayWithTransaction::new(
+  let egg = EventStoreForDynamoDB::new(
     aws_client,
     app_settings.persistence.journal_table_name.clone(),
     app_settings.persistence.journal_aid_index_name.clone(),

@@ -2,8 +2,6 @@ use std::collections::hash_map::DefaultHasher;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 
-pub mod event_persistence_gateway_with_transaction;
-pub mod event_persistence_gateway_without_transaction;
 pub mod group_chat_read_model_dao_impl;
 pub mod group_chat_repository;
 
