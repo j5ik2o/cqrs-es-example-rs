@@ -17,5 +17,7 @@
       "matchPackageNames": ["localstack/localstack", "amazon/dynamodb-local", "aws", "helm", "kubernetes", "registry.terraform.io/terraform-aws-modules/eks/aws", "terraform-aws-modules/kms/aws"],
       "enabled": false
     }
-  ]
+  ],
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 5
 }
