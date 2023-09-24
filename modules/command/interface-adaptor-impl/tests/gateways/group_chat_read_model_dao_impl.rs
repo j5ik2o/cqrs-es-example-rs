@@ -1,4 +1,3 @@
-
 use std::{env, thread};
 
 use chrono::Utc;
