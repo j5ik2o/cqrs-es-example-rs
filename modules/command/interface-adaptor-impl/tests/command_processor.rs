@@ -11,7 +11,7 @@ mod common;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test() {
-    let docker = Cli::default();
+  let docker = Cli::default();
   test_group_chat_create(&docker).await;
   test_group_chat_rename(&docker).await;
   test_group_chat_add_member(&docker).await;
@@ -64,7 +64,6 @@ async fn test_group_chat_rename(docker: &Cli) {
   assert!(result.is_ok());
   let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert_eq!(*group_chat.name(), name);
-
 }
 
 async fn test_group_chat_add_member(docker: &Cli) {
@@ -101,7 +100,6 @@ async fn test_group_chat_add_member(docker: &Cli) {
   let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert!(group_chat.members().is_administrator(&admin_id));
   assert!(group_chat.members().is_member(&user_account_id));
-
 }
 
 async fn test_group_chat_remove_member(docker: &Cli) {
@@ -147,7 +145,6 @@ async fn test_group_chat_remove_member(docker: &Cli) {
   let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert!(group_chat.members().is_administrator(&admin_id));
   assert!(!group_chat.members().is_member(&user_account_id));
-
 }
 
 async fn test_group_chat_post_message(docker: &Cli) {
@@ -198,7 +195,6 @@ async fn test_group_chat_post_message(docker: &Cli) {
     group_chat.messages().get_at(0).unwrap().breach_encapsulation_of_text(),
     text
   );
-
 }
 
 async fn test_group_chat_delete_message(docker: &Cli) {
@@ -255,7 +251,6 @@ async fn test_group_chat_delete_message(docker: &Cli) {
   assert!(result.is_ok());
   let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert_eq!(group_chat.messages().len(), 0);
-
 }
 
 async fn test_group_chat_destroy(docker: &Cli) {
@@ -279,5 +274,4 @@ async fn test_group_chat_destroy(docker: &Cli) {
 
   // Then
   assert!(result.is_ok());
-
 }

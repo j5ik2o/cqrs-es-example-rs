@@ -1,4 +1,3 @@
-
 use crate::common::get_repository;
 use command_domain::group_chat::{GroupChat, GroupChatName, MemberRole};
 use command_domain::group_chat::{MemberId, Members};
