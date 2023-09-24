@@ -236,28 +236,27 @@ mod tests {
 
   #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
   async fn test() {
-    test_create_group_chat().await;
-    test_delete_group_chat().await;
-    test_rename_group_chat().await;
-    test_add_member().await;
-    test_remove_member().await;
-    // test_post_message().await;
-    // test_delete_message().await;
+    let docker = Cli::docker();
+    test_create_group_chat(&docker).await;
+    test_delete_group_chat(&docker).await;
+    test_rename_group_chat(&docker).await;
+    test_add_member(&docker).await;
+    test_remove_member(&docker).await;
+    // test_post_message(&docker).await;
+    // test_delete_message(&docker).await;
   }
 
-  async fn test_create_group_chat() {
-    let docker = Cli::default();
-    let (repository, container, client) = get_repository(&docker).await;
+  async fn test_create_group_chat(docker: &Cli) {
+    let (repository, container, client) = get_repository(docker).await;
     let user_account_id = UserAccountId::new();
     let _ = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
 
-    drop(client);
-    container.stop();
-    drop(container);
+    // drop(client);
+    // container.stop();
+    // drop(container);
   }
 
-  async fn test_delete_group_chat() {
-    let docker = Cli::default();
+  async fn test_delete_group_chat(docker: &Cli) {
     let (repository, container, client) = get_repository(&docker).await;
     // Given
     let user_account_id = UserAccountId::new();
@@ -269,13 +268,12 @@ mod tests {
     // Then
     assert_eq!(id1, id2);
 
-    drop(client);
-    container.stop();
-    drop(container);
+    // drop(client);
+    // container.stop();
+    // drop(container);
   }
 
-  async fn test_rename_group_chat() {
-    let docker = Cli::default();
+  async fn test_rename_group_chat(docker: &Cli) {
     let (repository, container, client) = get_repository(&docker).await;
     // Given
     let user_account_id = UserAccountId::new();
@@ -293,13 +291,12 @@ mod tests {
     // Then
     assert_eq!(id1, id2);
 
-    drop(client);
-    container.stop();
-    drop(container);
+    // drop(client);
+    // container.stop();
+    // drop(container);
   }
 
-  async fn test_add_member() {
-    let docker = Cli::default();
+  async fn test_add_member(docker: &Cli) {
     let (repository, container, client) = get_repository(&docker).await;
     // Given
     let user_account_id = UserAccountId::new();
@@ -319,12 +316,12 @@ mod tests {
     // Then
     assert_eq!(id1, id2);
 
-    drop(client);
-    container.stop();
-    drop(container);
+    // drop(client);
+    // container.stop();
+    // drop(container);
   }
 
-  async fn test_remove_member() {
+  async fn test_remove_member(docker: &Cli) {
     let docker = Cli::default();
     let (repository, container, client) = get_repository(&docker).await;
     // Given
@@ -348,14 +345,13 @@ mod tests {
     assert_eq!(id1, id2);
     assert_eq!(id2, id3);
 
-    drop(client);
-    container.stop();
-    drop(container);
+    // drop(client);
+    // container.stop();
+    // drop(container);
   }
 
-  async fn test_post_message() {
-    let docker = Cli::default();
-    let (repository, container, client) = get_repository(&docker).await;
+  async fn test_post_message(docker: &Cli) {
+    let (repository, container, client) = get_repository(docker).await;
     let user_account_id = UserAccountId::new();
     let id1 = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
 
@@ -369,14 +365,13 @@ mod tests {
     .await;
 
     // assert_eq!(id1, id2);
-    drop(client);
-    container.stop();
-    drop(container);
+    // drop(client);
+    // container.stop();
+    // drop(container);
   }
 
-  async fn test_delete_message() {
-    let docker = Cli::default();
-    let (repository, container, client) = get_repository(&docker).await;
+  async fn test_delete_message(docker: &Cli) {
+    let (repository, container, client) = get_repository(docker).await;
     let user_account_id = UserAccountId::new();
     let id1 = create_group_chat(&repository, GroupChatName::new("ABC").unwrap(), user_account_id.clone()).await;
 
@@ -403,8 +398,8 @@ mod tests {
 
     assert_eq!(id1, id3);
 
-    drop(client);
-    container.stop();
-    drop(container);
+    // drop(client);
+    // container.stop();
+    // drop(container);
   }
 }

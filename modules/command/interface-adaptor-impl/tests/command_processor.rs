@@ -11,17 +11,17 @@ mod common;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test() {
-  test_group_chat_create().await;
-  test_group_chat_rename().await;
-  test_group_chat_add_member().await;
-  test_group_chat_remove_member().await;
-  // test_group_chat_post_message().await;
-  // test_group_chat_delete_message().await;
-  test_group_chat_destroy().await;
+  let docker = Cli::default();
+  test_group_chat_create(&docker).await;
+  test_group_chat_rename(&docker).await;
+  test_group_chat_add_member(&docker).await;
+  test_group_chat_remove_member(&docker).await;
+  // test_group_chat_post_message(&docker).await;
+  // test_group_chat_delete_message(&docker).await;
+  test_group_chat_destroy(&docker).await;
 }
 
-async fn test_group_chat_create() {
-  let docker = Cli::default();
+async fn test_group_chat_create(docker: &Cli) {
   let (mut repository, container, client) = get_repository(&docker).await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
@@ -36,13 +36,10 @@ async fn test_group_chat_create() {
 
   // Then
   assert!(result.is_ok());
-  drop(container);
-  drop(client);
 }
 
-async fn test_group_chat_rename() {
-  let docker = Cli::default();
-  let (mut repository, container, client) = get_repository(&docker).await;
+async fn test_group_chat_rename(docker: &Cli) {
+  let (mut repository, container, client) = get_repository(docker).await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -67,14 +64,10 @@ async fn test_group_chat_rename() {
   assert!(result.is_ok());
   let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert_eq!(*group_chat.name(), name);
-
-  drop(client);
-  drop(container);
 }
 
-async fn test_group_chat_add_member() {
-  let docker = Cli::default();
-  let (mut repository, container, client) = get_repository(&docker).await;
+async fn test_group_chat_add_member(docker: &Cli) {
+  let (mut repository, container, client) = get_repository(docker).await;
   // with_repository(|mut repository| async move {
   // Given
   let name = GroupChatName::new("ABC").unwrap();
@@ -107,14 +100,10 @@ async fn test_group_chat_add_member() {
   let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert!(group_chat.members().is_administrator(&admin_id));
   assert!(group_chat.members().is_member(&user_account_id));
-
-  drop(client);
-  drop(container);
 }
 
-async fn test_group_chat_remove_member() {
-  let docker = Cli::default();
-  let (mut repository, container, client) = get_repository(&docker).await;
+async fn test_group_chat_remove_member(docker: &Cli) {
+  let (mut repository, container, client) = get_repository(docker).await;
   let user_account_id = UserAccountId::new();
   let admin_id = UserAccountId::new();
 
@@ -156,14 +145,10 @@ async fn test_group_chat_remove_member() {
   let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert!(group_chat.members().is_administrator(&admin_id));
   assert!(!group_chat.members().is_member(&user_account_id));
-
-  drop(client);
-  drop(container);
 }
 
-async fn test_group_chat_post_message() {
-  let docker = Cli::default();
-  let (mut repository, container, client) = get_repository(&docker).await;
+async fn test_group_chat_post_message(docker: &Cli) {
+  let (mut repository, container, client) = get_repository(docker).await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -210,14 +195,10 @@ async fn test_group_chat_post_message() {
     group_chat.messages().get_at(0).unwrap().breach_encapsulation_of_text(),
     text
   );
-
-  drop(client);
-  drop(container);
 }
 
-async fn test_group_chat_delete_message() {
-  let docker = Cli::default();
-  let (mut repository, container, client) = get_repository(&docker).await;
+async fn test_group_chat_delete_message(docker: &Cli) {
+  let (mut repository, container, client) = get_repository(docker).await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -270,14 +251,10 @@ async fn test_group_chat_delete_message() {
   assert!(result.is_ok());
   let group_chat = repository.find_by_id(id).await.unwrap().unwrap();
   assert_eq!(group_chat.messages().len(), 0);
-
-  drop(client);
-  drop(container);
 }
 
-async fn test_group_chat_destroy() {
-  let docker = Cli::default();
-  let (mut repository, container, client) = get_repository(&docker).await;
+async fn test_group_chat_destroy(docker: &Cli) {
+  let (mut repository, container, client) = get_repository(docker).await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -297,7 +274,4 @@ async fn test_group_chat_destroy() {
 
   // Then
   assert!(result.is_ok());
-
-  drop(client);
-  drop(container);
 }
