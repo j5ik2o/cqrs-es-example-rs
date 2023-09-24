@@ -89,7 +89,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo test --verbose --release -p command-interface-adaptor-impl
+      - run: KEEP_CONTAINERS=true cargo test --verbose --release -p command-interface-adaptor-impl
         timeout-minutes: 30
   test-command-processor:
     runs-on: ubuntu-latest
