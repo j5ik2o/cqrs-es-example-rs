@@ -192,22 +192,14 @@ impl GroupChat {
   ///
   /// # 戻り値
   /// - [GroupChat]
-  pub fn replay(events: Vec<GroupChatEvent>, snapshot_opt: Option<GroupChat>, version: usize) -> Self {
+  pub fn replay(events: Vec<GroupChatEvent>, snapshot: GroupChat) -> Self {
     log::debug!("event.size = {}", events.len());
-    let mut result = events
-      .iter()
-      .fold(snapshot_opt, |result, event| match (result, event) {
-        (Some(mut this), event) => {
-          log::debug!("Replaying snapshot: {:?}", this);
-          log::debug!("Replaying event: {:?}", event);
-          this.apply_event(event);
-          Some(this)
-        }
-        (..) => None,
-      })
-      .unwrap();
-    result.set_version(version);
-    result
+    events.iter().fold(snapshot, |mut result, event| {
+      log::debug!("Replaying snapshot: {:?}", result);
+      log::debug!("Replaying event: {:?}", event);
+      result.apply_event(event);
+      result
+    })
   }
 
   /// [GroupChatName]の参照を返す。
