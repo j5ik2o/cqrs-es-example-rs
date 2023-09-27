@@ -1,6 +1,6 @@
 python 3.11.5
 terraform 1.5.7
-helm 3.12.3
+helm 3.13.0
 kubectl 1.28.2
 stern 1.25.0
 helmfile 0.157.0
