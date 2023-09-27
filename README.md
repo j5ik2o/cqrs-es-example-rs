@@ -10,6 +10,8 @@
 
 このリポジトリは、RustでのCQRS/ESのサンプル実装です。
 
+Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs)を利用しています。
+
 ## 概要
 
 ### コンポーネント構成
