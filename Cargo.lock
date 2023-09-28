@@ -4192,9 +4192,9 @@ checksum = "ed646292ffc8188ef8ea4d1e0e0150fb15a5c2e12ad9b8fc191ae7a8a7f3c4b9"
 
 [[package]]
 name = "ulid-generator-rs"
-version = "0.0.89"
+version = "0.0.90"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a9ad87d14f534a7d9a443840dbc52c3bab205bcbb3b5b0ad0079041cd479727"
+checksum = "0db626ac0ddf6c795e46f466076a595269a950e2c3e7cb0bb38fed4fb3cc755c"
 dependencies = [
  "chrono",
  "rand",
