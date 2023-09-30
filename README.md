@@ -25,7 +25,7 @@ Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5i
 
 ### システム構成図
 
-![](./system-layout.png)
+![](docs/images/system-layout.png)
 
 ## 開発環境
 
