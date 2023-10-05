@@ -322,31 +322,6 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-dynamodb"
-version = "0.31.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68c8031724f83eebc927fe26658b9849dd66f2a6c7c30984f1e9adcd42e9e7b9"
-dependencies = [
- "aws-credential-types",
- "aws-http",
- "aws-runtime",
- "aws-smithy-async",
- "aws-smithy-client",
- "aws-smithy-http",
- "aws-smithy-json",
- "aws-smithy-runtime",
- "aws-smithy-runtime-api",
- "aws-smithy-types",
- "aws-types",
- "bytes",
- "fastrand",
- "http",
- "regex",
- "tokio-stream",
- "tracing",
-]
-
-[[package]]
-name = "aws-sdk-dynamodb"
 version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37779120020190d09d90682a65618ce0ecfa942944334fec62d6097870835d92"
@@ -946,7 +921,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "aws-config",
- "aws-sdk-dynamodb 0.32.0",
+ "aws-sdk-dynamodb",
  "chrono",
  "command-domain",
  "downcast-rs",
@@ -967,7 +942,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "aws-config",
- "aws-sdk-dynamodb 0.32.0",
+ "aws-sdk-dynamodb",
  "axum",
  "chrono",
  "command-domain",
@@ -1384,13 +1359,13 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "event-store-adapter-rs"
-version = "0.2.13"
+version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23aafe36f181fef0606e1aafc0226a271e46cf18e04272f9daed702a191bab50"
+checksum = "e2ac88db18c55ebf8219773582aabd76b40e16000dcb4a5770d64e29e272b0de"
 dependencies = [
  "async-trait",
  "aws-config",
- "aws-sdk-dynamodb 0.31.1",
+ "aws-sdk-dynamodb",
  "chrono",
  "log",
  "serde",
@@ -2835,7 +2810,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "aws-config",
- "aws-sdk-dynamodb 0.32.0",
+ "aws-sdk-dynamodb",
  "aws-sdk-dynamodbstreams",
  "aws_lambda_events",
  "backtrace",
@@ -4674,7 +4649,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "aws-config",
- "aws-sdk-dynamodb 0.32.0",
+ "aws-sdk-dynamodb",
  "axum",
  "chrono",
  "command-domain",
