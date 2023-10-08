@@ -27,7 +27,7 @@ tracing-subscriber = { workspace = true, features = ["fmt", "ansi", "env-filter"
 utoipa = { version = "3.5.0", features = ["axum_extras", "yaml"] }
 utoipa-swagger-ui = { version = "3.1.6", features = ["axum"] }
 utoipa-redoc = { version = "0.1.0", features = ["axum"] }
-event-store-adapter-rs = "0.2.15"
+event-store-adapter-rs = "0.2.16"
 
 
 [[bin]]
