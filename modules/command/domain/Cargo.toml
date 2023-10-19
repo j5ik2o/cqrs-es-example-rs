@@ -14,4 +14,4 @@ once_cell = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 ulid-generator-rs = { workspace = true, features = ["uuid", "serde"] }
-event-store-adapter-rs = "0.2.18"
+event-store-adapter-rs = "0.2.19"
