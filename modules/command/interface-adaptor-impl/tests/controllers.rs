@@ -236,7 +236,7 @@ mod tests {
 
   #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
   async fn test() {
-    let docker = Cli::docker();
+    let docker = Cli::default();
     test_create_group_chat(&docker).await;
     test_delete_group_chat(&docker).await;
     test_rename_group_chat(&docker).await;

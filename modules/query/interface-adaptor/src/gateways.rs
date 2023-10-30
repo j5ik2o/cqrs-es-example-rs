@@ -232,8 +232,7 @@ mod tests {
   use sqlx::MySqlPool;
   use testcontainers::clients::Cli;
   use testcontainers::core::WaitFor;
-  use testcontainers::images::generic::GenericImage;
-  use testcontainers::Container;
+  use testcontainers::{Container, GenericImage};
 
   fn mysql_image() -> GenericImage {
     GenericImage::new("mysql", "8.0")
@@ -324,7 +323,7 @@ mod tests {
   #[tokio::test]
   async fn test_get_group_chat() {
     init();
-    let docker = Cli::docker();
+    let docker = Cli::default();
     let mysql_node: Container<GenericImage> = docker.run(mysql_image());
     let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
@@ -354,7 +353,7 @@ mod tests {
   #[tokio::test]
   async fn test_get_group_chats() {
     init();
-    let docker = Cli::docker();
+    let docker = Cli::default();
     let mysql_node: Container<GenericImage> = docker.run(mysql_image());
     let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
@@ -391,7 +390,7 @@ mod tests {
   #[tokio::test]
   async fn test_get_members() {
     init();
-    let docker = Cli::docker();
+    let docker = Cli::default();
     let mysql_node: Container<GenericImage> = docker.run(mysql_image());
     let mysql_port = mysql_node.get_host_port_ipv4(3306);
 

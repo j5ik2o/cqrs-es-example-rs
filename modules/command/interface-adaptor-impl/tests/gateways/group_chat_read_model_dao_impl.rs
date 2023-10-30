@@ -4,8 +4,7 @@ use chrono::Utc;
 use sqlx::MySqlPool;
 use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
-use testcontainers::images::generic::GenericImage;
-use testcontainers::Container;
+use testcontainers::{Container, GenericImage};
 
 use command_domain::group_chat::MemberId;
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message};
@@ -61,7 +60,7 @@ fn init() {
 
 #[tokio::test]
 async fn test() {
-  let docker = Cli::docker();
+  let docker = Cli::default();
   test_insert_group_chat(&docker).await;
   test_delete_group_chat(&docker).await;
   test_rename_group_chat(&docker).await;
