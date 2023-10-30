@@ -14,8 +14,7 @@ use command_domain::group_chat::{GroupChat, GroupChatEvent, GroupChatId};
 use event_store_adapter_rs::event_store::EventStoreForDynamoDB;
 use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
-use testcontainers::images::generic::GenericImage;
-use testcontainers::Container;
+use testcontainers::{Container, GenericImage};
 
 use command_interface_adaptor_impl::gateways::group_chat_repository::GroupChatRepositoryImpl;
 

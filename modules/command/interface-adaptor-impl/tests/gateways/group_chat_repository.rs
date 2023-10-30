@@ -8,7 +8,7 @@ use testcontainers::clients::Cli;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test() {
-  let docker = Cli::docker();
+  let docker = Cli::default();
   test_group_chat_create(&docker).await;
   test_group_chat_add_member(&docker).await;
 }
