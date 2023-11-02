@@ -427,6 +427,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "aws-sdk-dynamodb"
+version = "0.35.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "619c744e76f42f681cb7ccefb73eae9df6d111c08f292c5e390dee6fcae4e3ca"
+dependencies = [
+ "aws-credential-types 0.57.1",
+ "aws-http 0.57.1",
+ "aws-runtime 0.57.1",
+ "aws-smithy-async 0.57.1",
+ "aws-smithy-http 0.57.1",
+ "aws-smithy-json 0.57.1",
+ "aws-smithy-runtime 0.57.1",
+ "aws-smithy-runtime-api 0.57.1",
+ "aws-smithy-types 0.57.1",
+ "aws-types 0.57.1",
+ "bytes",
+ "fastrand",
+ "http",
+ "regex",
+ "tracing",
+]
+
+[[package]]
 name = "aws-sdk-dynamodbstreams"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -858,6 +881,8 @@ dependencies = [
  "ryu",
  "serde",
  "time",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -1228,7 +1253,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "aws-config 0.57.1",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 0.35.0",
  "chrono",
  "command-domain",
  "downcast-rs",
@@ -1249,7 +1274,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "aws-config 0.57.1",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 0.35.0",
  "axum",
  "chrono",
  "command-domain",
@@ -1672,7 +1697,7 @@ checksum = "a0ec8db21cdcb80b6626c6f46e9ef9d1226ba66b6838aa33d65bae77982f2aff"
 dependencies = [
  "async-trait",
  "aws-config 0.56.1",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 0.34.0",
  "chrono",
  "log",
  "serde",
@@ -3118,7 +3143,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "aws-config 0.57.1",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 0.35.0",
  "aws-sdk-dynamodbstreams",
  "aws_lambda_events",
  "backtrace",
@@ -4976,7 +5001,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "aws-config 0.57.1",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 0.35.0",
  "axum",
  "chrono",
  "command-domain",
