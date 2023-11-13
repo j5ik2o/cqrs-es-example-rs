@@ -49,7 +49,7 @@ tower = "0.4.13"
 tower-http = "0.4.4"
 tracing = "0.1.40"
 tracing-log = "0.2.0"
-tracing-subscriber = { version = "0.3.17", default-features = false }
+tracing-subscriber = { version = "0.3.18", default-features = false }
 ulid-generator-rs = "0.0.92"
 
 mime = "0.3.17"
