@@ -24,7 +24,7 @@ tokio = { workspace = true, features = ["full"] }
 tower = { workspace = true }
 utoipa = { version = "3.5.0", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "3.1.6", features = ["axum"] }
-utoipa-redoc = { version = "0.1.0", features = ["axum"] }
+utoipa-redoc = { version = "1.0.0", features = ["axum"] }
 event-store-adapter-rs = "0.2.24"
 
 [dev-dependencies]
