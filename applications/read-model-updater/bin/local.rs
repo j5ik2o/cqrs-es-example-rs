@@ -114,7 +114,6 @@ async fn stream_events_driver(
       .stream_description()
       .unwrap()
       .shards()
-      .unwrap()
       .to_vec();
 
     for shard in shards {
@@ -135,7 +134,7 @@ async fn stream_events_driver(
           .shard_iterator(shard_iterator_opt.unwrap())
           .send()
           .await?;
-        let records = get_records_output.records().unwrap();
+        let records = get_records_output.records();
         for record in records {
           let stream_record = record.dynamodb.clone().unwrap();
           // tracing::info!("dynamodb stream event = {:?}", stream_record);

@@ -10,7 +10,7 @@ path = "bin/local.rs"
 [dependencies]
 anyhow = { workspace = true, features = ["backtrace"] }
 async-trait = { workspace = true }
-aws-config = { workspace = true }
+aws-config = { workspace = true, features = ["behavior-version-latest"] }
 aws_lambda_events = { workspace = true, default-features = false, features = ["dynamodb"] }
 aws-sdk-dynamodb = { workspace = true }
 aws-sdk-dynamodbstreams = { workspace = true }
