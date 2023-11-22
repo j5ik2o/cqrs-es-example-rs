@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true, features = ["backtrace"] }
 async-trait = { workspace = true }
-aws-config = { workspace = true }
+aws-config = { workspace = true, features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 command-domain = { path = "../domain" }

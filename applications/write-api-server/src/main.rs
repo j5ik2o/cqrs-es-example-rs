@@ -4,8 +4,8 @@ use std::str::FromStr;
 
 use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
+use aws_sdk_dynamodb::client::Client;
 use aws_sdk_dynamodb::config::{Credentials, Region};
-use aws_sdk_dynamodb::Client;
 use axum::http::HeaderValue;
 use config::{Config, Environment};
 use event_store_adapter_rs::event_store::EventStoreForDynamoDB;
