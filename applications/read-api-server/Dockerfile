@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.5
+# syntax=docker/dockerfile:1.6
 FROM --platform=$BUILDPLATFORM messense/rust-musl-cross:${TARGETARCH}-musl as builder
 
 ARG NAME=read-api-server
