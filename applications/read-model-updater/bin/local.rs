@@ -110,11 +110,7 @@ async fn stream_events_driver(
       builder = builder.exclusive_start_shard_id(shard_id);
     }
     let describe_stream_output = builder.send().await?;
-    let shards = describe_stream_output
-      .stream_description()
-      .unwrap()
-      .shards()
-      .to_vec();
+    let shards = describe_stream_output.stream_description().unwrap().shards().to_vec();
 
     for shard in shards {
       tracing::info!("shard = {:?}", shard);
