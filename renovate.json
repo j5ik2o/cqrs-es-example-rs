@@ -16,6 +16,11 @@
       "matchManagers": ["dockerfile", "docker-compose", "helm-values", "terraform"],
       "matchPackageNames": ["localstack/localstack", "amazon/dynamodb-local", "aws", "helm", "kubernetes", "registry.terraform.io/terraform-aws-modules/eks/aws", "terraform-aws-modules/kms/aws"],
       "enabled": false
+    },
+    {
+      "matchManagers": ["cargo"],
+      "matchPackageNames": ["axum", "http", "hyper", "tokio", "tower", "tower-http"],
+      "enabled": false
     }
   ],
   "prHourlyLimit": 0,

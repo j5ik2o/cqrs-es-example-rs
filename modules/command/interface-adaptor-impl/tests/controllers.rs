@@ -1,5 +1,5 @@
+use axum::body::Body;
 use axum::http::{header, Method, Request, StatusCode};
-use hyper::Body;
 use std::str::FromStr;
 use tower::util::ServiceExt;
 
