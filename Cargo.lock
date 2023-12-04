@@ -351,6 +351,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "aws-sdk-dynamodb"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23c4ed3708df2778c0c49b16e8235e52eb8f2133ae6752c40eea1376e2563fec"
+dependencies = [
+ "aws-credential-types",
+ "aws-http",
+ "aws-runtime",
+ "aws-smithy-async",
+ "aws-smithy-http",
+ "aws-smithy-json",
+ "aws-smithy-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-types",
+ "bytes",
+ "fastrand",
+ "http",
+ "regex",
+ "tracing",
+]
+
+[[package]]
 name = "aws-sdk-dynamodbstreams"
 version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -924,7 +947,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "aws-config",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 0.39.0",
  "chrono",
  "command-domain",
  "downcast-rs",
@@ -945,7 +968,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "aws-config",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 0.39.0",
  "axum",
  "chrono",
  "command-domain",
@@ -1362,14 +1385,14 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "event-store-adapter-rs"
-version = "0.2.28"
+version = "0.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91096f506effc00c02b46fe93b1e2b0c7b04fd39341fb40ee32a648373af7f3f"
+checksum = "0c954fbbfdbee137a2308226de7d98b52cc8c6a00ff74719ef46a6b9847f76fd"
 dependencies = [
  "async-trait",
  "aws-config",
  "aws-http",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 1.3.0",
  "chrono",
  "log",
  "serde",
@@ -2839,7 +2862,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "aws-config",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 0.39.0",
  "aws-sdk-dynamodbstreams",
  "aws_lambda_events",
  "backtrace",
@@ -4639,7 +4662,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "aws-config",
- "aws-sdk-dynamodb",
+ "aws-sdk-dynamodb 0.39.0",
  "axum",
  "chrono",
  "command-domain",
