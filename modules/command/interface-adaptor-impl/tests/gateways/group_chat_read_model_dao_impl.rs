@@ -4,8 +4,9 @@ use chrono::Utc;
 use sqlx::MySqlPool;
 use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
-use testcontainers::{Container, GenericImage};
+use testcontainers::{clients, Container, GenericImage};
 
+use crate::common::DOCKER;
 use command_domain::group_chat::MemberId;
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message};
 use command_domain::user_account::UserAccountId;
@@ -59,19 +60,10 @@ fn init() {
 }
 
 #[tokio::test]
-async fn test() {
-  let docker = Cli::default();
-  test_insert_group_chat(&docker).await;
-  test_delete_group_chat(&docker).await;
-  test_rename_group_chat(&docker).await;
-  test_insert_member(&docker).await;
-  test_delete_member(&docker).await;
-  // test_post_message().await;
-  // test_delete_message().await;
-}
-
-async fn test_insert_group_chat(docker: &Cli) {
+async fn test_insert_group_chat() {
   init();
+  let docker = DOCKER.get_or_init(clients::Cli::default);
+
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
   let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
@@ -91,8 +83,11 @@ async fn test_insert_group_chat(docker: &Cli) {
     .unwrap();
 }
 
-async fn test_delete_group_chat(docker: &Cli) {
+#[tokio::test]
+async fn test_delete_group_chat() {
   init();
+  let docker = DOCKER.get_or_init(clients::Cli::default);
+
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
   let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
@@ -113,8 +108,11 @@ async fn test_delete_group_chat(docker: &Cli) {
   dao.delete_group_chat(aggregate_id).await.unwrap();
 }
 
-async fn test_rename_group_chat(docker: &Cli) {
+#[tokio::test]
+async fn test_rename_group_chat() {
   init();
+  let docker = DOCKER.get_or_init(clients::Cli::default);
+
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
   let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
@@ -137,8 +135,11 @@ async fn test_rename_group_chat(docker: &Cli) {
   dao.rename_group_chat(aggregate_id, name).await.unwrap();
 }
 
-async fn test_insert_member(docker: &Cli) {
+#[tokio::test]
+async fn test_insert_member() {
   init();
+  let docker = DOCKER.get_or_init(clients::Cli::default);
+
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
   let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
@@ -167,8 +168,11 @@ async fn test_insert_member(docker: &Cli) {
     .unwrap();
 }
 
-async fn test_delete_member(docker: &Cli) {
+#[tokio::test]
+async fn test_delete_member() {
   init();
+  let docker = DOCKER.get_or_init(clients::Cli::default);
+
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
   let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
