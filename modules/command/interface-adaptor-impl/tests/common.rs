@@ -1,4 +1,5 @@
 use std::env;
+use std::sync::OnceLock;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -14,9 +15,11 @@ use command_domain::group_chat::{GroupChat, GroupChatEvent, GroupChatId};
 use event_store_adapter_rs::event_store::EventStoreForDynamoDB;
 use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
-use testcontainers::{Container, GenericImage};
+use testcontainers::{clients, Container, GenericImage};
 
 use command_interface_adaptor_impl::gateways::group_chat_repository::GroupChatRepositoryImpl;
+
+pub static DOCKER: OnceLock<clients::Cli> = OnceLock::new();
 
 pub fn init_logger() {
   env::set_var("RUST_LOG", "debug");
