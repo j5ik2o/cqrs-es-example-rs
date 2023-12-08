@@ -1363,9 +1363,9 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "event-store-adapter-rs"
-version = "0.2.30"
+version = "0.2.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4531c020cd9a607261b93cdeaa2c0545f5ab45b41bdfbc0fb51b14a76947539"
+checksum = "1bc7392cf6b4d4c1c30a4f5c8602a90098c0d61945f2369a02d6d6dc673664ac"
 dependencies = [
  "async-trait",
  "aws-config",
