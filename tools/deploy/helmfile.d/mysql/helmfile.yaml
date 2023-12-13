@@ -13,7 +13,7 @@ releases:
     labels:
       group: mysql
     chart: bitnami/mysql
-    version: 9.14.4
+    version: 9.15.0
     wait: true
     installedTemplate: '{{ .Values.mysql.enabled }}'
     values:
