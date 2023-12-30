@@ -15,7 +15,7 @@ members = [
 
 [workspace.dependencies]
 anyhow = "1.0.77"
-thiserror = "1.0.52"
+thiserror = "1.0.53"
 async-graphql = "6.0.11"
 async-graphql-axum = "6.0.11"
 async-trait = "0.1.75"
