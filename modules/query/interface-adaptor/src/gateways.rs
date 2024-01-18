@@ -229,10 +229,12 @@ mod tests {
   use command_domain::user_account::UserAccountId;
   use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
   use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
+  use serial_test::serial;
   use sqlx::MySqlPool;
+  use std::sync::OnceLock;
   use testcontainers::clients::Cli;
   use testcontainers::core::WaitFor;
-  use testcontainers::{Container, GenericImage};
+  use testcontainers::{clients, Container, GenericImage};
 
   fn mysql_image() -> GenericImage {
     GenericImage::new("mysql", "8.0")
@@ -275,7 +277,7 @@ mod tests {
     let _report = embedded::migrations::runner().run(&mut conn).unwrap();
   }
 
-  fn init() {
+  fn init_logger() {
     std::env::set_var("RUST_LOG", "debug");
     let _ = env_logger::builder().is_test(true).try_init();
   }
@@ -320,10 +322,13 @@ mod tests {
       .unwrap();
   }
 
+  pub static DOCKER: OnceLock<clients::Cli> = OnceLock::new();
+
   #[tokio::test]
+  #[serial]
   async fn test_get_group_chat() {
-    init();
-    let docker = Cli::default();
+    init_logger();
+    let docker = DOCKER.get_or_init(Cli::default);
     let mysql_node: Container<GenericImage> = docker.run(mysql_image());
     let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
@@ -351,9 +356,10 @@ mod tests {
   }
 
   #[tokio::test]
+  #[serial]
   async fn test_get_group_chats() {
-    init();
-    let docker = Cli::default();
+    init_logger();
+    let docker = DOCKER.get_or_init(Cli::default);
     let mysql_node: Container<GenericImage> = docker.run(mysql_image());
     let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
@@ -388,9 +394,10 @@ mod tests {
   }
 
   #[tokio::test]
+  #[serial]
   async fn test_get_members() {
-    init();
-    let docker = Cli::default();
+    init_logger();
+    let docker = DOCKER.get_or_init(Cli::default);
     let mysql_node: Container<GenericImage> = docker.run(mysql_image());
     let mysql_port = mysql_node.get_host_port_ipv4(3306);
 

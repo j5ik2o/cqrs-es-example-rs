@@ -1,12 +1,13 @@
 use std::{env, thread};
 
 use chrono::Utc;
+use serial_test::serial;
 use sqlx::MySqlPool;
 use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
 use testcontainers::{clients, Container, GenericImage};
 
-use crate::common::DOCKER;
+use crate::common::{init_logger, DOCKER};
 use command_domain::group_chat::MemberId;
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message};
 use command_domain::user_account::UserAccountId;
@@ -60,6 +61,7 @@ fn init() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_insert_group_chat() {
   init();
   let docker = DOCKER.get_or_init(clients::Cli::default);
@@ -84,8 +86,9 @@ async fn test_insert_group_chat() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_delete_group_chat() {
-  init();
+  init_logger();
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
@@ -109,8 +112,9 @@ async fn test_delete_group_chat() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_rename_group_chat() {
-  init();
+  init_logger();
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
@@ -136,8 +140,9 @@ async fn test_rename_group_chat() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_insert_member() {
-  init();
+  init_logger();
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
@@ -169,9 +174,10 @@ async fn test_insert_member() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_delete_member() {
-  init();
-  let docker = DOCKER.get_or_init(clients::Cli::default);
+  init_logger();
+  let docker = DOCKER.get_or_init(Cli::default);
 
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
   let mysql_port = mysql_node.get_host_port_ipv4(3306);
@@ -210,8 +216,9 @@ async fn test_delete_member() {
   dao.delete_member(aggregate_id, user_account_id).await.unwrap();
 }
 
-async fn test_post_message(docker: &Cli) {
-  init();
+async fn test_post_message() {
+  init_logger();
+  let docker = DOCKER.get_or_init(Cli::default);
   let mysql_node: Container<GenericImage> = docker.run(mysql_image());
   let mysql_port = mysql_node.get_host_port_ipv4(3306);
 
