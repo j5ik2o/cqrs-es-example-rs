@@ -35,3 +35,4 @@ refinery-core = "0.8"
 testcontainers = "0.15.0"
 hyper = { workspace = true }
 tower = { workspace = true }
+serial_test = { workspace = true }

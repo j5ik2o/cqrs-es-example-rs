@@ -28,3 +28,4 @@ tower = { workspace = true }
 command-domain = { path = "../../command/domain" }
 command-interface-adaptor-if = { path = "../../command/interface-adaptor-if" }
 command-interface-adaptor-impl = { path = "../../command/interface-adaptor-impl" }
+serial_test = { workspace = true }
