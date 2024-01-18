@@ -19,7 +19,7 @@
     },
     {
       "matchManagers": ["cargo"],
-      "matchPackageNames": ["axum", "http", "hyper", "tokio", "tower", "tower-http"],
+      "matchPackageNames": ["axum", "http", "hyper", "tokio", "tower", "tower-http", "lambda_runtime"],
       "enabled": false
     }
   ],
