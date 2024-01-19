@@ -42,3 +42,8 @@ Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5i
 
 - [AWSのセットアップ](docs/AWS_SETUP.md)
 - [EKSへのデプロイ](docs/DEPLOY_TO_EKS.md)
+
+
+## リンク
+
+- [Rust版](https://github.com/j5ik2o/cqrs-es-example-go)
