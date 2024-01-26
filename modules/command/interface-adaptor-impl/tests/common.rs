@@ -12,7 +12,7 @@ use aws_sdk_dynamodb::types::{
 };
 use aws_sdk_dynamodb::Client;
 use command_domain::group_chat::{GroupChat, GroupChatEvent, GroupChatId};
-use event_store_adapter_rs::event_store::EventStoreForDynamoDB;
+use event_store_adapter_rs::EventStoreForDynamoDB;
 use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
 use testcontainers::{clients, Container, GenericImage};

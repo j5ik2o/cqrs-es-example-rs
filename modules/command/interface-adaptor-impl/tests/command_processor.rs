@@ -153,7 +153,8 @@ async fn test_group_chat_remove_member() {
   assert!(!group_chat.members().is_member(&user_account_id));
 }
 
-#[ignore]
+#[tokio::test]
+#[serial]
 async fn test_group_chat_post_message() {
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
@@ -206,7 +207,8 @@ async fn test_group_chat_post_message() {
   );
 }
 
-#[ignore]
+#[tokio::test]
+#[serial]
 async fn test_group_chat_delete_message() {
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
