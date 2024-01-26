@@ -8,7 +8,7 @@ use aws_sdk_dynamodb::client::Client;
 use aws_sdk_dynamodb::config::{Credentials, Region};
 use axum::http::HeaderValue;
 use config::{Config, Environment};
-use event_store_adapter_rs::event_store::EventStoreForDynamoDB;
+use event_store_adapter_rs::EventStoreForDynamoDB;
 use hyper::header::CONTENT_TYPE;
 use serde::Deserialize;
 use tower_http::cors::{AllowMethods, CorsLayer};

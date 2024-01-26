@@ -164,7 +164,7 @@ impl MemberDao for MemberDaoImpl {
 // ---
 
 /// メッセージリードモデル
-#[derive(SimpleObject)]
+#[derive(SimpleObject, Clone)]
 pub struct Message {
   /// メッセージID
   id: String,
@@ -212,20 +212,40 @@ impl MessageDaoImpl {
 
 #[async_trait]
 impl MessageDao for MessageDaoImpl {
-  async fn get_message(&self, _message_id: String, _account_id: String) -> Result<Message> {
-    todo!() // 必須課題 難易度:中
+  async fn get_message(&self, message_id: String, account_id: String) -> Result<Message> {
+    let message = sqlx::query_as!(
+      Message,
+      r#"SELECT m.id, m.group_chat_id, m.account_id, m.text, m.created_at
+        FROM messages AS m WHERE m.id = ?
+            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.account_id = ?)"#,
+      message_id,
+      account_id
+    )
+        .fetch_one(&self.my_sql_pool)
+        .await?;
+    Ok(message)
   }
 
-  async fn get_messages(&self, _group_chat_id: String, _account_id: String) -> Result<Vec<Message>> {
-    todo!() // 必須課題 難易度:中
+  async fn get_messages(&self, group_chat_id: String, account_id: String) -> Result<Vec<Message>> {
+    let messages = sqlx::query_as!(
+      Message,
+      r#"SELECT m.id, m.group_chat_id, m.account_id, m.text, m.created_at
+        FROM messages AS m WHERE m.group_chat_id = ?
+            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.account_id = ?)"#,
+      group_chat_id,
+      account_id
+    )
+        .fetch_all(&self.my_sql_pool)
+        .await?;
+    Ok(messages)
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::gateways::{GroupChatDao, GroupChatDaoImpl, MemberDao, MemberDaoImpl};
+  use crate::gateways::{GroupChatDao, GroupChatDaoImpl, MemberDao, MemberDaoImpl, MessageDao, MessageDaoImpl};
   use chrono::{DateTime, Utc};
-  use command_domain::group_chat::{GroupChatId, GroupChatName, MemberId, MemberRole};
+  use command_domain::group_chat::{GroupChatId, GroupChatName, MemberId, MemberRole, Message};
   use command_domain::user_account::UserAccountId;
   use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
   use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
@@ -427,15 +447,101 @@ mod tests {
     assert!(members.iter().any(|e| e.account_id == account_id.to_string()));
   }
 
-  #[test]
-  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
-  fn test_get_message() {
-    todo!() // 必須課題 難易度:低
+  #[tokio::test]
+  async fn test_get_message() {
+    init_logger();
+    let docker = DOCKER.get_or_init(Cli::default);
+    let mysql_node: Container<GenericImage> = docker.run(mysql_image());
+    let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+    refinery_migrate(mysql_port);
+
+    let url = make_database_url_for_application(mysql_port);
+    let pool = MySqlPool::connect(&url).await.unwrap();
+    let update_dao = GroupChatReadModelUpdateDaoImpl::new(pool.clone());
+
+    let admin_id = UserAccountId::new();
+    let group_chat_name = GroupChatName::new("test").unwrap();
+    let created_at = Utc::now();
+
+    let group_chat_id =
+      insert_group_chat_and_member(&update_dao, group_chat_name.clone(), admin_id.clone(), created_at).await;
+
+    let dao = GroupChatReadModelUpdateDaoImpl::new(pool.clone());
+    let message_text = "test".to_string();
+    let message = Message::new(message_text, admin_id.clone());
+
+    dao
+      .insert_message(group_chat_id, message.clone(), created_at)
+      .await
+      .unwrap();
+    let dao = MessageDaoImpl::new(pool.clone());
+
+    let message = dao
+      .get_message(
+        message.breach_encapsulation_of_id().to_string(),
+        admin_id.clone().to_string(),
+      )
+      .await
+      .unwrap();
+
+    assert_eq!(message.text, "test");
+    assert_eq!(message.account_id, admin_id.to_string());
   }
 
-  #[test]
-  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
-  fn test_get_messages() {
-    todo!() // 必須課題 難易度:低
+  #[tokio::test]
+  async fn test_get_messages() {
+    init_logger();
+    let docker = DOCKER.get_or_init(Cli::default);
+    let mysql_node: Container<GenericImage> = docker.run(mysql_image());
+    let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+    refinery_migrate(mysql_port);
+
+    let url = make_database_url_for_application(mysql_port);
+    let pool = MySqlPool::connect(&url).await.unwrap();
+    let update_dao = GroupChatReadModelUpdateDaoImpl::new(pool.clone());
+
+    let admin_id = UserAccountId::new();
+    let group_chat_name = GroupChatName::new("test").unwrap();
+    let created_at = Utc::now();
+
+    let group_chat_id =
+      insert_group_chat_and_member(&update_dao, group_chat_name.clone(), admin_id.clone(), created_at).await;
+
+    let dao = GroupChatReadModelUpdateDaoImpl::new(pool.clone());
+    let message_text1 = "test1".to_string();
+    let message_text2 = "test2".to_string();
+    let message1 = Message::new(message_text1, admin_id.clone());
+    let message2 = Message::new(message_text2, admin_id.clone());
+
+    dao
+      .insert_message(group_chat_id.clone(), message1.clone(), created_at)
+      .await
+      .unwrap();
+    dao
+      .insert_message(group_chat_id.clone(), message2.clone(), created_at)
+      .await
+      .unwrap();
+
+    let dao = MessageDaoImpl::new(pool.clone());
+    let messages = dao
+      .get_messages(group_chat_id.clone().to_string(), admin_id.to_string())
+      .await
+      .unwrap();
+
+    println!(
+      "{:?}",
+      messages
+        .to_vec()
+        .iter()
+        .map(|e| (e.id.clone(), e.text.clone()))
+        .collect::<Vec<_>>()
+    );
+    assert_eq!(messages.len(), 2);
+    assert_eq!(messages[0].text, "test1");
+    assert_eq!(messages[1].text, "test2");
+    assert_eq!(messages[0].account_id, admin_id.to_string());
+    assert_eq!(messages[1].account_id, admin_id.to_string());
   }
 }

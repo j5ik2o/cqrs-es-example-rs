@@ -329,8 +329,24 @@ impl GroupChat {
   /// - 実行者がメンバーでない場合はエラーを返す。
   /// - メッセージIDが既に存在する場合はエラーを返す。
   /// - 成功した場合は、GroupChatMessagePostedイベントを返す。
-  pub fn post_message(&mut self, _message: Message, _executor_id: UserAccountId) -> Result<GroupChatEvent> {
-    todo!() // 必須課題 難易度:高
+  pub fn post_message(&mut self, message: Message, executor_id: UserAccountId) -> Result<GroupChatEvent> {
+    if self.deleted {
+      return Err(anyhow!("The group chat is deleted"));
+    }
+    if executor_id != message.breach_encapsulation_of_sender_id().clone() {
+      return Err(anyhow!("executor is not message sender"));
+    }
+    if !self.members.is_member(&executor_id) {
+      return Err(anyhow!("user_account_id is not a member of the group chat"));
+    }
+    if self.messages.contains(message.breach_encapsulation_of_id()) {
+      return Err(anyhow!("Message is already exist"));
+    }
+    self.messages.add(message.clone());
+    self.seq_nr_counter += 1;
+    Ok(GroupChatEvent::GroupChatMessagePosted(
+      GroupChatEventMessagePostedBody::new(self.id.clone(), self.seq_nr_counter, message, executor_id),
+    ))
   }
 
   /// メッセージを削除する
@@ -496,7 +512,6 @@ mod tests {
   }
 
   #[test]
-  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
   fn test_post_message() {
     let group_chat_name = GroupChatName::new("test").unwrap();
     let admin_user_account_id = UserAccountId::new();
@@ -524,7 +539,6 @@ mod tests {
   }
 
   #[test]
-  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
   fn test_delete_message() {
     let group_chat_name = GroupChatName::new("test").unwrap();
     let admin_user_account_id = UserAccountId::new();
@@ -557,7 +571,6 @@ mod tests {
   }
 
   #[test]
-  #[ignore] // post_messageの実装完了後に#[ignore]を削除してください。
   fn test_to_json() {
     let group_chat_name = GroupChatName::new("test").unwrap();
     let admin_user_account_id = UserAccountId::new();

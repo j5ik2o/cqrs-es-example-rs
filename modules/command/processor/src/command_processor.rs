@@ -1,8 +1,9 @@
 use anyhow::Result;
+use event_store_adapter_rs::types::Aggregate;
+
 use command_domain::group_chat::*;
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::{GroupChatPresenter, GroupChatRepository};
-use event_store_adapter_rs::types::Aggregate;
 
 /// グループチャットへのコマンドを処理するユースケース実装。
 ///
@@ -58,14 +59,19 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     name: GroupChatName,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
-    let event = group_chat.rename(name, executor_id)?;
-    self
-      .group_chat_repository
-      .store(&event, group_chat.version(), Some(&group_chat))
-      .await?;
-    group_chat_presenter.present(event);
-    Ok(())
+    let mut group_chat_opt = self.group_chat_repository.find_by_id(&id).await?;
+    match &mut group_chat_opt {
+      Some(group_chat) => {
+        let event = group_chat.rename(name, executor_id)?;
+        self
+          .group_chat_repository
+          .store(&event, group_chat.version(), Some(&group_chat))
+          .await?;
+        group_chat_presenter.present(event);
+        Ok(())
+      }
+      None => Err(anyhow::anyhow!("GroupChat not found.")),
+    }
   }
 
   /// グループチャットにメンバーを追加する。
@@ -87,15 +93,20 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     role: MemberRole,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
-    let member_id = MemberId::new();
-    let event = group_chat.add_member(member_id, user_account_id, role, executor_id)?;
-    self
-      .group_chat_repository
-      .store(&event, group_chat.version(), Some(&group_chat))
-      .await?;
-    group_chat_presenter.present(event);
-    Ok(())
+    let mut group_chat_opt = self.group_chat_repository.find_by_id(&id).await?;
+    match &mut group_chat_opt {
+      Some(group_chat) => {
+        let member_id = MemberId::new();
+        let event = group_chat.add_member(member_id, user_account_id, role, executor_id)?;
+        self
+          .group_chat_repository
+          .store(&event, group_chat.version(), Some(&group_chat))
+          .await?;
+        group_chat_presenter.present(event);
+        Ok(())
+      }
+      None => Err(anyhow::anyhow!("GroupChat not found.")),
+    }
   }
 
   /// グループチャットからメンバーを削除する。
@@ -115,14 +126,19 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     user_account_id: UserAccountId,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
-    let event = group_chat.remove_member(user_account_id, executor_id)?;
-    self
-      .group_chat_repository
-      .store(&event, group_chat.version(), Some(&group_chat))
-      .await?;
-    group_chat_presenter.present(event);
-    Ok(())
+    let mut group_chat_opt = self.group_chat_repository.find_by_id(&id).await?;
+    match &mut group_chat_opt {
+      Some(group_chat) => {
+        let event = group_chat.remove_member(user_account_id, executor_id)?;
+        self
+          .group_chat_repository
+          .store(&event, group_chat.version(), Some(&group_chat))
+          .await?;
+        group_chat_presenter.present(event);
+        Ok(())
+      }
+      None => Err(anyhow::anyhow!("GroupChat not found.")),
+    }
   }
 
   /// グループチャットを削除する。
@@ -140,14 +156,19 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     id: GroupChatId,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
-    let event = group_chat.delete(executor_id)?;
-    self
-      .group_chat_repository
-      .store(&event, group_chat.version(), Some(&group_chat))
-      .await?;
-    group_chat_presenter.present(event);
-    Ok(())
+    let mut group_chat_opt = self.group_chat_repository.find_by_id(&id).await?;
+    match &mut group_chat_opt {
+      Some(group_chat) => {
+        let event = group_chat.delete(executor_id)?;
+        self
+          .group_chat_repository
+          .store(&event, group_chat.version(), Some(&group_chat))
+          .await?;
+        group_chat_presenter.present(event);
+        Ok(())
+      }
+      None => Err(anyhow::anyhow!("GroupChat not found.")),
+    }
   }
 
   /// グループチャットにメッセージを投稿する。
@@ -162,19 +183,31 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
   /// - 成功した場合はOk, 失敗した場合はErrを返す。
   pub async fn post_message<P: GroupChatPresenter>(
     &mut self,
-    _group_chat_presenter: &mut P,
-    _id: GroupChatId,
-    _message: Message,
-    _executor_id: UserAccountId,
+    group_chat_presenter: &mut P,
+    id: GroupChatId,
+    message: Message,
+    executor_id: UserAccountId,
   ) -> Result<()> {
-    todo!() // 必須課題 難易度:中
+    let mut group_chat_opt = self.group_chat_repository.find_by_id(&id).await?;
+    match group_chat_opt.as_mut() {
+      Some(group_chat) => {
+        let event = group_chat.post_message(message, executor_id)?;
+        self
+          .group_chat_repository
+          .store(&event, group_chat.version(), Some(&group_chat))
+          .await?;
+        group_chat_presenter.present(event);
+        Ok(())
+      }
+      None => Err(anyhow::anyhow!("GroupChat not found.")),
+    }
   }
 
   /// グループチャットのメッセージを削除する。
   ///
   /// # 引数
   /// - `group_chat_presenter` - グループチャットプレゼンター
-  /// - `id` - グループチャットID   
+  /// - `id` - グループチャットID
   /// - `message_id` - メッセージID
   /// - `executor_id` - 実行者のユーザーアカウントID
   ///
@@ -187,13 +220,18 @@ impl<'a, TR: GroupChatRepository> GroupChatCommandProcessor<'a, TR> {
     message_id: MessageId,
     executor_id: UserAccountId,
   ) -> Result<()> {
-    let mut group_chat = self.group_chat_repository.find_by_id(&id).await?.unwrap();
-    let event = group_chat.delete_message(message_id, executor_id)?;
-    self
-      .group_chat_repository
-      .store(&event, group_chat.version(), Some(&group_chat))
-      .await?;
-    group_chat_presenter.present(event);
-    Ok(())
+    let mut group_chat_opt = self.group_chat_repository.find_by_id(&id).await?;
+    match &mut group_chat_opt {
+      Some(group_chat) => {
+        let event = group_chat.delete_message(message_id, executor_id)?;
+        self
+          .group_chat_repository
+          .store(&event, group_chat.version(), Some(&group_chat))
+          .await?;
+        group_chat_presenter.present(event);
+        Ok(())
+      }
+      None => Err(anyhow::anyhow!("GroupChat not found.")),
+    }
   }
 }
