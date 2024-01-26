@@ -465,25 +465,25 @@ mod tests {
     let created_at = Utc::now();
 
     let group_chat_id =
-        insert_group_chat_and_member(&update_dao, group_chat_name.clone(), admin_id.clone(), created_at).await;
+      insert_group_chat_and_member(&update_dao, group_chat_name.clone(), admin_id.clone(), created_at).await;
 
     let dao = GroupChatReadModelUpdateDaoImpl::new(pool.clone());
     let message_text = "test".to_string();
     let message = Message::new(message_text, admin_id.clone());
 
     dao
-        .insert_message(group_chat_id, message.clone(), created_at)
-        .await
-        .unwrap();
+      .insert_message(group_chat_id, message.clone(), created_at)
+      .await
+      .unwrap();
     let dao = MessageDaoImpl::new(pool.clone());
 
     let message = dao
-        .get_message(
-          message.breach_encapsulation_of_id().to_string(),
-          admin_id.clone().to_string(),
-        )
-        .await
-        .unwrap();
+      .get_message(
+        message.breach_encapsulation_of_id().to_string(),
+        admin_id.clone().to_string(),
+      )
+      .await
+      .unwrap();
 
     assert_eq!(message.text, "test");
     assert_eq!(message.account_id, admin_id.to_string());
@@ -507,7 +507,7 @@ mod tests {
     let created_at = Utc::now();
 
     let group_chat_id =
-        insert_group_chat_and_member(&update_dao, group_chat_name.clone(), admin_id.clone(), created_at).await;
+      insert_group_chat_and_member(&update_dao, group_chat_name.clone(), admin_id.clone(), created_at).await;
 
     let dao = GroupChatReadModelUpdateDaoImpl::new(pool.clone());
     let message_text1 = "test1".to_string();
@@ -516,27 +516,27 @@ mod tests {
     let message2 = Message::new(message_text2, admin_id.clone());
 
     dao
-        .insert_message(group_chat_id.clone(), message1.clone(), created_at)
-        .await
-        .unwrap();
+      .insert_message(group_chat_id.clone(), message1.clone(), created_at)
+      .await
+      .unwrap();
     dao
-        .insert_message(group_chat_id.clone(), message2.clone(), created_at)
-        .await
-        .unwrap();
+      .insert_message(group_chat_id.clone(), message2.clone(), created_at)
+      .await
+      .unwrap();
 
     let dao = MessageDaoImpl::new(pool.clone());
     let messages = dao
-        .get_messages(group_chat_id.clone().to_string(), admin_id.to_string())
-        .await
-        .unwrap();
+      .get_messages(group_chat_id.clone().to_string(), admin_id.to_string())
+      .await
+      .unwrap();
 
     println!(
       "{:?}",
       messages
-          .to_vec()
-          .iter()
-          .map(|e| (e.id.clone(), e.text.clone()))
-          .collect::<Vec<_>>()
+        .to_vec()
+        .iter()
+        .map(|e| (e.id.clone(), e.text.clone()))
+        .collect::<Vec<_>>()
     );
     assert_eq!(messages.len(), 2);
     assert_eq!(messages[0].text, "test1");
