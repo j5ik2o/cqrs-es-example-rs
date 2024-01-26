@@ -19,7 +19,7 @@ tokio = { workspace = true, features = ["full"] }
 tower-http = { workspace = true, features = ["fs"] }
 
 [dev-dependencies]
-env_logger = "0.10.2"
+env_logger = "0.11.0"
 refinery = { version = "0.8", features = ["mysql"] }
 refinery-core = "0.8"
 testcontainers = "0.15.0"
