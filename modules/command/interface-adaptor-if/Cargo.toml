@@ -18,6 +18,6 @@ tokio = { workspace = true, features = ["full"] }
 tower = { workspace = true }
 
 [dev-dependencies]
-env_logger = "0.11.0"
+env_logger = "0.11.1"
 mime = "0.3.17"
 testcontainers = "0.15.0"
