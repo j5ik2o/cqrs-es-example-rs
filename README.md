@@ -12,6 +12,8 @@ This repository is a sample implementation of CQRS/ES in Rust.
 
 It uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs) for Event Sourcing.
 
+[日本語](./README.ja.md)
+
 ## Overview
 
 ### Component Composition
