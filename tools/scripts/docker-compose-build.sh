@@ -31,5 +31,4 @@ done
 # Remove processed options from $@
 shift $(($OPTIND - 1))
 
-docker compose -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} down -v --remove-orphans
-docker compose -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} up --remove-orphans --force-recreate --renew-anon-volumes -d "$@"
+docker compose -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} build

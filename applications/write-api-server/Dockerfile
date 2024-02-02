@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.6
-FROM --platform=$BUILDPLATFORM messense/rust-musl-cross:${TARGETARCH}-musl as builder
+ARG TAG_PREFIX
+FROM --platform=$BUILDPLATFORM messense/rust-musl-cross:${TAG_PREFIX}-musl as builder
 
 ARG NAME=write-api-server
 ARG TARGETARCH
