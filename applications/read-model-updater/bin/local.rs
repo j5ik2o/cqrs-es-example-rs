@@ -124,7 +124,7 @@ async fn stream_events_driver(
       let mut shard_iterator_opt = get_shard_iterator_output.shard_iterator().map(|s| s.to_owned());
       let mut processed_record_count = 0usize;
       while shard_iterator_opt.is_some() && processed_record_count < max_item_count {
-        // tracing::info!("shard_iterator = {:?}", shard_iterator_opt.clone().unwrap());
+        tracing::info!("shard_iterator = {:?}", shard_iterator_opt.clone().unwrap());
         let get_records_output = dynamodb_streams_client
           .get_records()
           .shard_iterator(shard_iterator_opt.unwrap())
@@ -133,7 +133,7 @@ async fn stream_events_driver(
         let records = get_records_output.records();
         for record in records {
           let stream_record = record.dynamodb.clone().unwrap();
-          // tracing::info!("dynamodb stream event = {:?}", stream_record);
+          tracing::info!("dynamodb stream event = {:?}", stream_record);
 
           let new_image = stream_record
             .new_image()

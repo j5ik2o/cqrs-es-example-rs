@@ -2,6 +2,12 @@ version: '3.6'
 services:
   write-api-server-1:
     image: write-api-server:latest-${ARCH}
+#    build:
+#      context: ../../
+#      dockerfile: applications/write-api-server/Dockerfile
+#      args:
+#        TAG_PREFIX: ${TAG_PREFIX}
+#        TARGETARCH: ${ARCH}
     container_name: write-api-server-1
     ports:
       - 18080:8080
@@ -28,6 +34,12 @@ services:
       - dynamodb-setup
   read-model-updater-1:
     image: read-model-updater-local:latest-${ARCH}
+#    build:
+#      context: ../../
+#      dockerfile: applications/read-model-updater/Dockerfile.local
+#      args:
+#        TAG_PREFIX: ${TAG_PREFIX}
+#        TARGETARCH: ${ARCH}
     container_name: read-model-updater-1
     ports:
       - 18081:8080
@@ -50,6 +62,12 @@ services:
       - dynamodb-setup
   read-api-server-1:
     image: read-api-server:latest-${ARCH}
+#    build:
+#      context: ../../
+#      dockerfile: applications/read-api-server/Dockerfile
+#      args:
+#        TAG_PREFIX: ${TAG_PREFIX}
+#        TARGETARCH: ${ARCH}
     container_name: read-api-server-1
     ports:
       - 18082:8080

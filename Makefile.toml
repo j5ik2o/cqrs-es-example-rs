@@ -428,6 +428,11 @@ description = "Docker Composeを起動します"
 workspace = false
 command = "./tools/scripts/docker-compose-up.sh"
 
+[tasks.docker-compose-build]
+description = "Docker Composeをビルドします"
+workspace = false
+command = "./tools/scripts/docker-compose-build.sh"
+
 [tasks.docker-compose-down]
 description = "Docker Composeを停止します"
 workspace = false

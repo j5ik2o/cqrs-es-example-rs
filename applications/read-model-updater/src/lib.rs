@@ -19,14 +19,19 @@ pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
   tracing::info!("Rust function invoked: event = {:?}", event);
   for record in event.payload.records {
     let attribute_values = record.change.new_image.clone().into_inner();
+    tracing::info!("attribute_values = {:?}", attribute_values);
     let payload_str = match attribute_values.get("payload").unwrap() {
       AttributeValue::S(v) => v.clone(),
+      AttributeValue::B(v) => String::from_utf8(v.clone()).unwrap(),
       _ => panic!("unexpected type"),
     };
+    tracing::info!("payload_str = {}", payload_str);
     let type_value_str = get_type_string(&payload_str);
+    tracing::info!("type_value_str = {}", type_value_str);
     match type_value_str {
       s if s.starts_with("GroupChat") => {
         let ev = serde_json::from_str::<GroupChatEvent>(&payload_str).unwrap();
+        tracing::info!("ev = {:?}", ev);
         match &ev {
           GroupChatEvent::GroupChatCreated(body) => {
             group_chat_read_model_dao
