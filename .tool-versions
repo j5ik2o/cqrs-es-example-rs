@@ -1,5 +1,5 @@
 python 3.12.2
-terraform 1.7.2
+terraform 1.7.3
 helm 3.14.0
 kubectl 1.29.1
 stern 1.25.0
