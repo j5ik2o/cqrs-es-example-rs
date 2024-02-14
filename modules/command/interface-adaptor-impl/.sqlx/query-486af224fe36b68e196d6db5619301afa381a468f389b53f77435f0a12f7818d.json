@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO members (id, group_chat_id, user_account_id, role, created_at) VALUES (?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "486af224fe36b68e196d6db5619301afa381a468f389b53f77435f0a12f7818d"
+}

@@ -5,7 +5,6 @@ use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatRepository;
 use event_store_adapter_rs::types::Aggregate;
 use serial_test::serial;
-use std::env;
 use testcontainers::clients;
 use testcontainers::clients::Cli;
 

@@ -37,8 +37,8 @@ impl GroupChat {
 /// グループチャットを取得するためのインターフェース
 #[async_trait]
 pub trait GroupChatDao: Send + Sync {
-  async fn get_group_chat(&self, group_chat_id: String, account_id: String) -> Result<GroupChat>;
-  async fn get_group_chats(&self, account_id: String) -> Result<Vec<GroupChat>>;
+  async fn get_group_chat(&self, group_chat_id: String, user_account_id: String) -> Result<GroupChat>;
+  async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>>;
 }
 
 /// [GroupChatDao]の実装
@@ -54,27 +54,27 @@ impl GroupChatDaoImpl {
 
 #[async_trait]
 impl GroupChatDao for GroupChatDaoImpl {
-  async fn get_group_chat(&self, group_chat_id: String, account_id: String) -> Result<GroupChat> {
+  async fn get_group_chat(&self, group_chat_id: String, user_account_id: String) -> Result<GroupChat> {
     let group_chat = sqlx::query_as!(
       GroupChat,
       r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at
         FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
-        WHERE m.group_chat_id = ? AND m.account_id = ?"#,
+        WHERE m.group_chat_id = ? AND m.user_account_id = ?"#,
       group_chat_id,
-      account_id
+      user_account_id
     )
     .fetch_one(&self.my_sql_pool)
     .await?;
     Ok(group_chat)
   }
 
-  async fn get_group_chats(&self, account_id: String) -> Result<Vec<GroupChat>> {
+  async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>> {
     let group_chats = sqlx::query_as!(
       GroupChat,
       r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at
         FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
-        WHERE m.account_id = ?"#,
-      account_id
+        WHERE m.user_account_id = ?"#,
+      user_account_id
     )
     .fetch_all(&self.my_sql_pool)
     .await?;
@@ -92,7 +92,7 @@ pub struct Member {
   /// グループチャットID
   group_chat_id: String,
   /// アカウントID
-  account_id: String,
+  user_account_id: String,
   /// ロール
   role: String,
   /// 作成日時
@@ -100,11 +100,17 @@ pub struct Member {
 }
 
 impl Member {
-  pub fn new(id: String, group_chat_id: String, account_id: String, role: String, created_at: NaiveDateTime) -> Self {
+  pub fn new(
+    id: String,
+    group_chat_id: String,
+    user_account_id: String,
+    role: String,
+    created_at: NaiveDateTime,
+  ) -> Self {
     Self {
       id,
       group_chat_id,
-      account_id,
+      user_account_id,
       role,
       created_at,
     }
@@ -116,8 +122,8 @@ impl Member {
 /// メンバーを取得するためのインターフェース
 #[async_trait]
 pub trait MemberDao: Send + Sync {
-  async fn get_member(&self, group_chat_id: String, account_id: String) -> Result<Member>;
-  async fn get_members(&self, group_chat_id: String, account_id: String) -> Result<Vec<Member>>;
+  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member>;
+  async fn get_members(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Member>>;
 }
 
 /// [MemberDao]の実装
@@ -133,27 +139,27 @@ impl MemberDaoImpl {
 
 #[async_trait]
 impl MemberDao for MemberDaoImpl {
-  async fn get_member(&self, group_chat_id: String, account_id: String) -> Result<Member> {
+  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member> {
     let member = sqlx::query_as!(
       Member,
-      "SELECT id, group_chat_id, account_id, role, created_at FROM members WHERE group_chat_id = ? AND account_id = ?",
+      "SELECT id, group_chat_id, user_account_id, role, created_at FROM members WHERE group_chat_id = ? AND user_account_id = ?",
       group_chat_id,
-      account_id
+      user_account_id
     )
     .fetch_one(&self.my_sql_pool)
     .await?;
     Ok(member)
   }
 
-  async fn get_members(&self, group_chat_id: String, account_id: String) -> Result<Vec<Member>> {
+  async fn get_members(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Member>> {
     let members = sqlx::query_as!(
       Member,
-      r#"SELECT id, group_chat_id, account_id, role, created_at
+      r#"SELECT id, group_chat_id, user_account_id, role, created_at
         FROM members
         WHERE group_chat_id = ?
-            AND EXISTS (SELECT 1 FROM members AS m2 WHERE m2.group_chat_id = members.group_chat_id AND m2.account_id = ?)"#,
+            AND EXISTS (SELECT 1 FROM members AS m2 WHERE m2.group_chat_id = members.group_chat_id AND m2.user_account_id = ?)"#,
       group_chat_id,
-      account_id
+      user_account_id
     )
             .fetch_all(&self.my_sql_pool)
             .await?;
@@ -171,7 +177,7 @@ pub struct Message {
   /// グループチャットID
   group_chat_id: String,
   /// アカウントID
-  account_id: String,
+  user_account_id: String,
   /// メッセージ本文
   text: String,
   /// 作成日時
@@ -179,11 +185,17 @@ pub struct Message {
 }
 
 impl Message {
-  pub fn new(id: String, group_chat_id: String, account_id: String, text: String, created_at: NaiveDateTime) -> Self {
+  pub fn new(
+    id: String,
+    group_chat_id: String,
+    user_account_id: String,
+    text: String,
+    created_at: NaiveDateTime,
+  ) -> Self {
     Self {
       id,
       group_chat_id,
-      account_id,
+      user_account_id,
       text,
       created_at,
     }
@@ -195,8 +207,8 @@ impl Message {
 /// メッセージを取得するためのインターフェース
 #[async_trait]
 pub trait MessageDao: Send + Sync {
-  async fn get_message(&self, message_id: String, account_id: String) -> Result<Message>;
-  async fn get_messages(&self, group_chat_id: String, account_id: String) -> Result<Vec<Message>>;
+  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message>;
+  async fn get_messages(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Message>>;
 }
 
 /// [MessageDao]の実装
@@ -212,28 +224,28 @@ impl MessageDaoImpl {
 
 #[async_trait]
 impl MessageDao for MessageDaoImpl {
-  async fn get_message(&self, message_id: String, account_id: String) -> Result<Message> {
+  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message> {
     let message = sqlx::query_as!(
       Message,
-      r#"SELECT m.id, m.group_chat_id, m.account_id, m.text, m.created_at
+      r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at
         FROM messages AS m WHERE m.id = ?
-            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.account_id = ?)"#,
+            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
       message_id,
-      account_id
+      user_account_id
     )
         .fetch_one(&self.my_sql_pool)
         .await?;
     Ok(message)
   }
 
-  async fn get_messages(&self, group_chat_id: String, account_id: String) -> Result<Vec<Message>> {
+  async fn get_messages(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Message>> {
     let messages = sqlx::query_as!(
       Message,
-      r#"SELECT m.id, m.group_chat_id, m.account_id, m.text, m.created_at
+      r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at
         FROM messages AS m WHERE m.group_chat_id = ?
-            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.account_id = ?)"#,
+            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
       group_chat_id,
-      account_id
+      user_account_id
     )
         .fetch_all(&self.my_sql_pool)
         .await?;
@@ -331,13 +343,13 @@ mod tests {
   async fn insert_member_read_model(
     update_dao: GroupChatReadModelUpdateDaoImpl,
     group_chat_id: GroupChatId,
-    account_id: UserAccountId,
+    user_account_id: UserAccountId,
     created_at: DateTime<Utc>,
   ) {
     let member_id = MemberId::new();
     let member_role = MemberRole::Admin;
     update_dao
-      .insert_member(group_chat_id, member_id, account_id, member_role, created_at)
+      .insert_member(group_chat_id, member_id, user_account_id, member_role, created_at)
       .await
       .unwrap();
   }
@@ -428,13 +440,13 @@ mod tests {
     let update_dao = GroupChatReadModelUpdateDaoImpl::new(pool.clone());
 
     let admin_id = UserAccountId::new();
-    let account_id = UserAccountId::new();
+    let user_account_id = UserAccountId::new();
     let group_chat_name = GroupChatName::new("test").unwrap();
     let created_at = Utc::now();
 
     let group_chat_id =
       insert_group_chat_and_member(&update_dao, group_chat_name.clone(), admin_id.clone(), created_at).await;
-    insert_member_read_model(update_dao, group_chat_id.clone(), account_id.clone(), created_at).await;
+    insert_member_read_model(update_dao, group_chat_id.clone(), user_account_id.clone(), created_at).await;
 
     let dao = MemberDaoImpl::new(pool);
     let members = dao
@@ -443,8 +455,8 @@ mod tests {
       .unwrap();
 
     assert_eq!(members.len(), 2);
-    assert!(members.iter().any(|e| e.account_id == admin_id.to_string()));
-    assert!(members.iter().any(|e| e.account_id == account_id.to_string()));
+    assert!(members.iter().any(|e| e.user_account_id == admin_id.to_string()));
+    assert!(members.iter().any(|e| e.user_account_id == user_account_id.to_string()));
   }
 
   #[tokio::test]
@@ -486,7 +498,7 @@ mod tests {
       .unwrap();
 
     assert_eq!(message.text, "test");
-    assert_eq!(message.account_id, admin_id.to_string());
+    assert_eq!(message.user_account_id, admin_id.to_string());
   }
 
   #[tokio::test]
@@ -541,7 +553,7 @@ mod tests {
     assert_eq!(messages.len(), 2);
     assert_eq!(messages[0].text, "test1");
     assert_eq!(messages[1].text, "test2");
-    assert_eq!(messages[0].account_id, admin_id.to_string());
-    assert_eq!(messages[1].account_id, admin_id.to_string());
+    assert_eq!(messages[0].user_account_id, admin_id.to_string());
+    assert_eq!(messages[1].user_account_id, admin_id.to_string());
   }
 }

@@ -80,7 +80,7 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
     created_at: DateTime<Utc>,
   ) -> Result<()> {
     sqlx::query!(
-      "INSERT INTO members (id, group_chat_id, account_id, role, created_at) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO members (id, group_chat_id, user_account_id, role, created_at) VALUES (?, ?, ?, ?, ?)",
       member_id.to_string(),
       aggregate_id.to_string(),
       account_id.to_string(),
@@ -108,7 +108,7 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
 
   async fn insert_message(&self, aggregate_id: GroupChatId, message: Message, created_at: DateTime<Utc>) -> Result<()> {
     sqlx::query!(
-      "INSERT INTO messages (id, group_chat_id, account_id, text, created_at) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO messages (id, group_chat_id, user_account_id, text, created_at) VALUES (?, ?, ?, ?, ?)",
       message.breach_encapsulation_of_id().to_string(),
       aggregate_id.to_string(),
       message.breach_encapsulation_of_sender_id().to_string(),

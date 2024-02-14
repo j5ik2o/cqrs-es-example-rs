@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT gc.id, gc.name, gc.owner_id, gc.created_at\n        FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n        WHERE m.group_chat_id = ? AND m.account_id = ?",
+  "query": "SELECT gc.id, gc.name, gc.owner_id, gc.created_at\n        FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n        WHERE m.user_account_id = ?",
   "describe": {
     "columns": [
       {
@@ -45,7 +45,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 1
     },
     "nullable": [
       false,
@@ -54,5 +54,5 @@
       false
     ]
   },
-  "hash": "b7aa039c354c167cfb1b080104e4e5d2996f1e262e8cfa3cfbfd78ecaa0e48e6"
+  "hash": "1561758e2a84b68f37e327a960025b7f1c1741d5ae1f1940c6ff73306acacf06"
 }

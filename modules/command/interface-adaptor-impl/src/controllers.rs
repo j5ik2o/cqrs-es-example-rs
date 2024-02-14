@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use utoipa::ToSchema;
 
-use command_domain::group_chat::GroupChatEvent;
+use command_domain::group_chat::{GroupChatEvent, Message};
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, MessageId};
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::{GroupChatPresenter, GroupChatRepository};
@@ -568,10 +568,86 @@ async fn remove_member<TR: GroupChatRepository>(
   )
 )]
 async fn post_message<TR: GroupChatRepository>(
-  State(_state): State<AppDate<TR>>,
-  Json(_payload): Json<PostMessageRequestBody>,
+  State(state): State<AppDate<TR>>,
+  Json(payload): Json<PostMessageRequestBody>,
 ) -> impl IntoResponse {
-  todo!() // 必須課題 難易度:高
+  let mut lock = state.write().await;
+  let mut command_processor = GroupChatCommandProcessor::new(&mut lock.group_chat_repository);
+  let mut group_chat_id_presenter = GroupChatIdPresenter::new();
+
+  let group_chat_id = match GroupChatId::from_str(&payload.group_chat_id) {
+    Ok(group_chat_id) => group_chat_id,
+    Err(error) => {
+      log::warn!("error = {}", error);
+      return (
+        StatusCode::BAD_REQUEST,
+        Json(CommandResponseFailureBody { msg: error.to_string() }),
+      )
+        .into_response();
+    }
+  };
+
+  let executor_id = match UserAccountId::from_str(&payload.executor_id) {
+    Ok(executor_id) => executor_id,
+    Err(error) => {
+      log::warn!("error = {}", error);
+      return (
+        StatusCode::BAD_REQUEST,
+        Json(CommandResponseFailureBody { msg: error.to_string() }),
+      )
+        .into_response();
+    }
+  };
+
+  let user_account_id = match UserAccountId::from_str(&payload.user_account_id) {
+    Ok(user_account_id) => user_account_id,
+    Err(error) => {
+      log::warn!("error = {}", error);
+      return (
+        StatusCode::BAD_REQUEST,
+        Json(CommandResponseFailureBody { msg: error.to_string() }),
+      )
+        .into_response();
+    }
+  };
+
+  let message = Message::new(payload.message.clone(), executor_id.clone());
+
+  if user_account_id != executor_id.clone() {
+    let error = "user_account_id and executor_id must be the same.";
+    log::warn!("error = {}", error);
+    return (
+      StatusCode::BAD_REQUEST,
+      Json(CommandResponseFailureBody { msg: error.to_string() }),
+    )
+      .into_response();
+  }
+
+  match command_processor
+    .post_message(
+      &mut group_chat_id_presenter,
+      group_chat_id.clone(),
+      message.clone(),
+      executor_id,
+    )
+    .await
+  {
+    Ok(_) => (
+      StatusCode::OK,
+      Json(MessageCommandResponseSuccessBody {
+        message_id: message.breach_encapsulation_of_id().to_string(),
+      }),
+    )
+      .into_response(),
+    Err(error) => {
+      log::error!("error = {}: group_chat_id = {}", error, group_chat_id);
+      (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(CommandResponseFailureBody { msg: error.to_string() }),
+      )
+        .into_response()
+    }
+  }
 }
 
 /// delete the message from the group chat.
