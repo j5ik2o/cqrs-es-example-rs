@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO messages (id, group_chat_id, user_account_id, text, created_at) VALUES (?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "9ee0b8a547388fb5086dbd623dd22774d2dcee18b524b7dc319e2726e15c7574"
+}

@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT m.id, m.group_chat_id, m.account_id, m.text, m.created_at\n        FROM messages AS m WHERE m.id = ?\n            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.account_id = ?)",
+  "query": "SELECT id, group_chat_id, user_account_id, role, created_at FROM members WHERE group_chat_id = ? AND user_account_id = ?",
   "describe": {
     "columns": [
       {
@@ -25,7 +25,7 @@
       },
       {
         "ordinal": 2,
-        "name": "account_id",
+        "name": "user_account_id",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
@@ -35,12 +35,12 @@
       },
       {
         "ordinal": 3,
-        "name": "text",
+        "name": "role",
         "type_info": {
-          "type": "Blob",
-          "flags": "NOT_NULL | BLOB | NO_DEFAULT_VALUE",
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
           "char_set": 224,
-          "max_size": 262140
+          "max_size": 256
         }
       },
       {
@@ -65,5 +65,5 @@
       false
     ]
   },
-  "hash": "8ff64fec3e39f61bd8f22d51547634b4c8ebc0e485e0470ee68d75114b2ae2c2"
+  "hash": "1bec2c6cb6c3d9a73e9b51f396321db24dade639af1e0ab7c6b6f431929ed756"
 }

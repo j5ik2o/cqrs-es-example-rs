@@ -52,7 +52,7 @@ impl QueryRoot {
   ///
   /// # 引数
   /// - `group_chat_id` - グループチャットID
-  /// - `account_id` - 閲覧アカウントID
+  /// - `user_account_id` - 閲覧アカウントID
   ///
   /// # 戻り値
   /// - `GroupChat` - グループチャット
@@ -60,23 +60,26 @@ impl QueryRoot {
     &self,
     ctx: &Context<'ctx>,
     group_chat_id: String,
-    account_id: String,
+    user_account_id: String,
   ) -> Result<GroupChat> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let group_chat = ctx.group_chat_dao.get_group_chat(group_chat_id, account_id).await?;
+    let group_chat = ctx
+      .group_chat_dao
+      .get_group_chat(group_chat_id, user_account_id)
+      .await?;
     Ok(group_chat)
   }
 
   /// 指定されたアカウントIDが参加するグループチャット一覧を取得する。
   ///
   /// # 引数
-  /// - `account_id` - 閲覧アカウントID
+  /// - `user_account_id` - 閲覧アカウントID
   ///
   /// # 戻り値
   /// - `Vec<GroupChat>` - グループチャット一覧
-  async fn get_group_chats<'ctx>(&self, ctx: &Context<'ctx>, account_id: String) -> Result<Vec<GroupChat>> {
+  async fn get_group_chats<'ctx>(&self, ctx: &Context<'ctx>, user_account_id: String) -> Result<Vec<GroupChat>> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let group_chats = ctx.group_chat_dao.get_group_chats(account_id).await?;
+    let group_chats = ctx.group_chat_dao.get_group_chats(user_account_id).await?;
     Ok(group_chats)
   }
 
@@ -84,13 +87,18 @@ impl QueryRoot {
   ///
   /// # 引数
   /// - `group_chat_id` - グループチャットID
-  /// - `account_id` - 閲覧アカウントID
+  /// - `user_account_id` - 閲覧アカウントID
   ///
   /// # 戻り値
   /// - `Member` - [Member]
-  async fn get_member<'ctx>(&self, ctx: &Context<'ctx>, group_chat_id: String, account_id: String) -> Result<Member> {
+  async fn get_member<'ctx>(
+    &self,
+    ctx: &Context<'ctx>,
+    group_chat_id: String,
+    user_account_id: String,
+  ) -> Result<Member> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let member = ctx.member_dao.get_member(group_chat_id, account_id).await?;
+    let member = ctx.member_dao.get_member(group_chat_id, user_account_id).await?;
     Ok(member)
   }
 
@@ -98,7 +106,7 @@ impl QueryRoot {
   ///
   /// # 引数
   /// - `group_chat_id` - グループチャットID
-  /// - `account_id` - 閲覧アカウントID
+  /// - `user_account_id` - 閲覧アカウントID
   ///
   /// # 戻り値
   /// - `Vec<Member>` - メンバー一覧
@@ -106,10 +114,10 @@ impl QueryRoot {
     &self,
     ctx: &Context<'ctx>,
     group_chat_id: String,
-    account_id: String,
+    user_account_id: String,
   ) -> Result<Vec<Member>> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let members = ctx.member_dao.get_members(group_chat_id, account_id).await?;
+    let members = ctx.member_dao.get_members(group_chat_id, user_account_id).await?;
     Ok(members)
   }
 
@@ -117,29 +125,38 @@ impl QueryRoot {
   ///
   /// # 引数
   /// - `message_id` - メッセージID
-  /// - `account_id` - 閲覧アカウントID
+  /// - `user_account_id` - 閲覧アカウントID
   ///
   /// # 戻り値
   /// - `Message` - メッセージ
-  async fn get_message<'ctx>(&self, _ctx: &Context<'ctx>, _message_id: String, _account_id: String) -> Result<Message> {
-    todo!() // 必須課題 難易度:中
+  async fn get_message<'ctx>(
+    &self,
+    ctx: &Context<'ctx>,
+    message_id: String,
+    user_account_id: String,
+  ) -> Result<Message> {
+    let ctx = ctx.data::<ServiceContext>().unwrap();
+    let message = ctx.message_dao.get_message(message_id, user_account_id).await?;
+    Ok(message)
   }
 
   /// 指定されたグループチャットIDのメッセージ一覧を取得する
   ///
   /// # 引数
   /// - `group_chat_id` - グループチャットID
-  /// - `account_id` - 閲覧アカウントID
+  /// - `user_account_id` - 閲覧アカウントID
   ///
   /// # 戻り値
   /// - `Vec<Message>` - メッセージ一覧
   async fn get_messages<'ctx>(
     &self,
-    _ctx: &Context<'ctx>,
-    _group_chat_id: String,
-    _account_id: String,
+    ctx: &Context<'ctx>,
+    group_chat_id: String,
+    user_account_id: String,
   ) -> Result<Vec<Message>> {
-    todo!() // 必須課題 難易度:中
+    let ctx = ctx.data::<ServiceContext>().unwrap();
+    let messages = ctx.message_dao.get_messages(group_chat_id, user_account_id).await?;
+    Ok(messages)
   }
 }
 
@@ -204,11 +221,11 @@ mod tests {
       Ok(t1)
     }
 
-    async fn get_group_chats(&self, account_id: String) -> Result<Vec<GroupChat>> {
+    async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>> {
       let t1 = GroupChat::new(
         "1".to_string(),
         "mock group chat".to_string(),
-        account_id,
+        user_account_id,
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
       Ok(vec![t1])
@@ -219,18 +236,18 @@ mod tests {
 
   #[async_trait]
   impl MemberDao for MockMemberDaoImpl {
-    async fn get_member(&self, group_chat_id: String, account_id: String) -> Result<Member> {
+    async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member> {
       let m1 = Member::new(
         "1".to_string(),
         group_chat_id,
-        account_id,
+        user_account_id,
         "mock member".to_string(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
       Ok(m1)
     }
 
-    async fn get_members(&self, group_chat_id: String, _account_id: String) -> Result<Vec<Member>> {
+    async fn get_members(&self, group_chat_id: String, _user_account_id: String) -> Result<Vec<Member>> {
       let m1 = Member::new(
         "1".to_string(),
         group_chat_id,
@@ -246,22 +263,22 @@ mod tests {
 
   #[async_trait]
   impl MessageDao for MockMessageDaoImpl {
-    async fn get_message(&self, message_id: String, _account_id: String) -> Result<Message> {
+    async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message> {
       let m1 = Message::new(
         message_id,
         "mock group chat".to_string(),
-        "mock member".to_string(),
+        user_account_id,
         "mock message".to_string(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
       Ok(m1)
     }
 
-    async fn get_messages(&self, group_chat_id: String, _account_id: String) -> Result<Vec<Message>> {
+    async fn get_messages(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Message>> {
       let m1 = Message::new(
         "1".to_string(),
         group_chat_id,
-        "mock member".to_string(),
+        user_account_id,
         "mock message".to_string(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
@@ -282,7 +299,7 @@ mod tests {
   #[tokio::test]
   async fn test_get_group_chat() {
     let result = create_schema_on_test()
-      .execute(r#"{ getGroupChat(groupChatId: "group_chat_id", accountId: "account_id") { id name } }"#)
+      .execute(r#"{ getGroupChat(groupChatId: "group_chat_id", userAccountId: "user_account_id") { id name } }"#)
       .await
       .into_result()
       .unwrap()
@@ -301,7 +318,7 @@ mod tests {
   #[tokio::test]
   async fn test_get_group_chats() {
     let result = create_schema_on_test()
-      .execute(r#"{ getGroupChats(accountId: "account_id") { id name } }"#)
+      .execute(r#"{ getGroupChats(userAccountId: "user_account_id") { id name } }"#)
       .await
       .into_result()
       .unwrap()
@@ -320,25 +337,95 @@ mod tests {
 
   #[tokio::test]
   async fn test_get_member() {
-    // TODO: 任意課題 難易度:低
-    assert!(true)
+    let result = create_schema_on_test()
+      .execute(
+        r#"{ getMember(groupChatId: "group_chat_id", userAccountId: "user_account_id") { id, groupChatId, userAccountId, role } }"#,
+      )
+      .await
+      .into_result()
+      .unwrap()
+      .data;
+
+    assert_eq!(
+      result,
+      async_graphql::value!({
+          "getMember": {
+              "id": "1",
+              "groupChatId": "group_chat_id",
+              "userAccountId": "user_account_id",
+              "role": "mock member"
+          }
+      })
+    );
   }
 
   #[tokio::test]
   async fn test_get_members() {
-    // TODO: 任意課題 難易度:低
-    assert!(true)
+    let result = create_schema_on_test()
+      .execute(
+        r#"{ getMembers(groupChatId: "group_chat_id", userAccountId: "user_account_id") { id, groupChatId, userAccountId, role } }"#,
+      )
+      .await
+      .into_result()
+      .unwrap()
+      .data;
+
+    assert_eq!(
+      result,
+      async_graphql::value!({
+          "getMembers": [{
+              "id": "1",
+              "groupChatId": "group_chat_id",
+              "userAccountId": "mock member",
+              "role": "mock member"
+          }]
+      })
+    );
   }
 
   #[tokio::test]
   async fn test_get_message() {
-    // TODO: 任意課題 難易度:低
-    assert!(true)
+    let result = create_schema_on_test()
+      .execute(
+        r#"{ getMessage(messageId: "message_id", userAccountId: "user_account_id") { id, groupChatId, text, userAccountId } }"#,
+      )
+      .await
+      .into_result()
+      .unwrap()
+      .data;
+
+    assert_eq!(
+      result,
+      async_graphql::value!({
+          "getMessage": {
+              "id": "message_id",
+              "groupChatId": "mock group chat",
+              "text": "mock message",
+              "userAccountId": "user_account_id"
+          }
+      })
+    );
   }
 
   #[tokio::test]
   async fn test_get_messages() {
-    // TODO: 任意課題 難易度:低
-    assert!(true)
+    let result = create_schema_on_test()
+        .execute(r#"{ getMessages(groupChatId: "group_chat_id", userAccountId: "user_account_id") { id, groupChatId, text, userAccountId } }"#)
+        .await
+        .into_result()
+        .unwrap()
+        .data;
+
+    assert_eq!(
+      result,
+      async_graphql::value!({
+          "getMessages": [{
+              "id": "1",
+              "groupChatId": "group_chat_id",
+              "text": "mock message",
+              "userAccountId": "user_account_id"
+          }]
+      })
+    );
   }
 }

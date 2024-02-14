@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT m.id, m.group_chat_id, m.account_id, m.text, m.created_at\n        FROM messages AS m WHERE m.group_chat_id = ?\n            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.account_id = ?)",
+  "query": "SELECT gc.id, gc.name, gc.owner_id, gc.created_at\n        FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n        WHERE m.group_chat_id = ? AND m.user_account_id = ?",
   "describe": {
     "columns": [
       {
@@ -15,17 +15,17 @@
       },
       {
         "ordinal": 1,
-        "name": "group_chat_id",
+        "name": "name",
         "type_info": {
           "type": "VarString",
-          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
           "char_set": 224,
           "max_size": 256
         }
       },
       {
         "ordinal": 2,
-        "name": "account_id",
+        "name": "owner_id",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
@@ -35,16 +35,6 @@
       },
       {
         "ordinal": 3,
-        "name": "text",
-        "type_info": {
-          "type": "Blob",
-          "flags": "NOT_NULL | BLOB | NO_DEFAULT_VALUE",
-          "char_set": 224,
-          "max_size": 262140
-        }
-      },
-      {
-        "ordinal": 4,
         "name": "created_at",
         "type_info": {
           "type": "Datetime",
@@ -61,9 +51,8 @@
       false,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "9fd6b0ea58060f8c49240d9955f56af0a36758bfa80d53e63bb2356f5e521072"
+  "hash": "6ed5b909305c5a92113786f86a7df893ea42b796c96829c394f07ed796792e77"
 }

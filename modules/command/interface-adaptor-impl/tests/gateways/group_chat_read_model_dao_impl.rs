@@ -216,6 +216,8 @@ async fn test_delete_member() {
   dao.delete_member(aggregate_id, user_account_id).await.unwrap();
 }
 
+#[tokio::test]
+#[serial]
 async fn test_post_message() {
   init_logger();
   let docker = DOCKER.get_or_init(Cli::default);
@@ -258,6 +260,48 @@ async fn test_post_message() {
   dao.insert_message(aggregate_id, message, Utc::now()).await.unwrap();
 }
 
-async fn test_delete_message(docker: &Cli) {
-  todo!() // 必須課題 難易度:中
+#[tokio::test]
+#[serial]
+async fn test_delete_message() {
+  init_logger();
+  let docker = DOCKER.get_or_init(Cli::default);
+  let mysql_node: Container<GenericImage> = docker.run(mysql_image());
+  let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+  refinery_migrate(mysql_port);
+
+  let url = make_database_url_for_application(mysql_port);
+  let pool = MySqlPool::connect(&url).await.unwrap();
+  let dao = GroupChatReadModelUpdateDaoImpl::new(pool);
+
+  let aggregate_id = GroupChatId::new();
+  let _seq_nr = 1;
+  let name = GroupChatName::new("test").unwrap();
+  let admin_id = UserAccountId::new();
+
+  dao
+      .insert_group_chat(aggregate_id.clone(), name, admin_id, Utc::now())
+      .await
+      .unwrap();
+
+  let member_id = MemberId::new();
+  let user_account_id = UserAccountId::new();
+  let role = MemberRole::Member;
+
+  dao
+      .insert_member(
+        aggregate_id.clone(),
+        member_id,
+        user_account_id.clone(),
+        role,
+        Utc::now(),
+      )
+      .await
+      .unwrap();
+
+  let message = Message::new("test".to_string(), user_account_id.clone());
+
+  dao.insert_message(aggregate_id.clone(), message.clone(), Utc::now()).await.unwrap();
+
+  dao.delete_message(aggregate_id, message.breach_encapsulation_of_id().clone()).await.unwrap();
 }
