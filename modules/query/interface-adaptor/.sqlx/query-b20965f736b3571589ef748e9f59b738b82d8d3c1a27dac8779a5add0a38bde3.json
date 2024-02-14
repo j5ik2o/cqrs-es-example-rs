@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT gc.id, gc.name, gc.owner_id, gc.created_at\n        FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n        WHERE m.user_account_id = ?",
+  "query": "SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at\n\t\t FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n\t\t WHERE gc.disabled = 'false' AND m.group_chat_id = ? AND m.user_account_id = ?",
   "describe": {
     "columns": [
       {
@@ -15,17 +15,17 @@
       },
       {
         "ordinal": 1,
-        "name": "name",
+        "name": "group_chat_id",
         "type_info": {
           "type": "VarString",
-          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
           "char_set": 224,
           "max_size": 256
         }
       },
       {
         "ordinal": 2,
-        "name": "owner_id",
+        "name": "user_account_id",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
@@ -35,7 +35,27 @@
       },
       {
         "ordinal": 3,
+        "name": "role",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 256
+        }
+      },
+      {
+        "ordinal": 4,
         "name": "created_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
         "type_info": {
           "type": "Datetime",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
@@ -45,14 +65,16 @@
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 2
     },
     "nullable": [
+      false,
+      false,
       false,
       false,
       false,
       false
     ]
   },
-  "hash": "1561758e2a84b68f37e327a960025b7f1c1741d5ae1f1940c6ff73306acacf06"
+  "hash": "b20965f736b3571589ef748e9f59b738b82d8d3c1a27dac8779a5add0a38bde3"
 }

@@ -15,3 +15,4 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 ulid-generator-rs = { workspace = true, features = ["uuid", "serde"] }
 event-store-adapter-rs ={ workspace = true }
+tracing = "0.1.40"

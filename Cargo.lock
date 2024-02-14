@@ -963,6 +963,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "tracing",
  "ulid-generator-rs",
 ]
 

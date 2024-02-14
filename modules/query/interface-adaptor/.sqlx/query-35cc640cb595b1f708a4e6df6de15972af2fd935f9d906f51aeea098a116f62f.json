@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at\n        FROM messages AS m WHERE m.id = ?\n            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)",
+  "query": "SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at, m.updated_at\n\t\t FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id\n         WHERE gc.disabled = 'false' AND m.disabled = 'false' AND m.group_chat_id = ?\n          AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)",
   "describe": {
     "columns": [
       {
@@ -52,6 +52,16 @@
           "char_set": 63,
           "max_size": 19
         }
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 19
+        }
       }
     ],
     "parameters": {
@@ -62,8 +72,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "191c8ec4279eceedd8baceed451867f7b53610df341b941c9bad71024949b102"
+  "hash": "35cc640cb595b1f708a4e6df6de15972af2fd935f9d906f51aeea098a116f62f"
 }

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE group_chats SET disabled = ?, updated_at = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "c62befcd423e2ebf9b0ede04e0e5854f72914de8dfe9a93cdfcd84c3aeab1d2e"
+}

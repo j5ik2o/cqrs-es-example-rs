@@ -13,6 +13,8 @@ use ulid_generator_rs::ULID;
 
 use crate::user_account::events::{UserAccountEvent, UserAccountEventCreatedBody, UserAccountEventDeletedBody};
 
+const USER_ACCOUNT_PREFIX: &str = "UserAccount";
+
 #[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct UserAccountId {
   value: ULID,
@@ -31,7 +33,7 @@ impl UserAccountId {
 
 impl AggregateId for UserAccountId {
   fn type_name(&self) -> String {
-    "user-account".to_string()
+    USER_ACCOUNT_PREFIX.to_string()
   }
 
   fn value(&self) -> String {
@@ -43,7 +45,12 @@ impl FromStr for UserAccountId {
   type Err = anyhow::Error;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
-    match ULID::from_str(s) {
+    let ss = if s.starts_with(USER_ACCOUNT_PREFIX) {
+      &s[(USER_ACCOUNT_PREFIX.len() + 1)..]
+    } else {
+      s
+    };
+    match ULID::from_str(ss) {
       Ok(value) => Ok(Self { value }),
       Err(err) => Err(anyhow!(err)),
     }
@@ -52,7 +59,7 @@ impl FromStr for UserAccountId {
 
 impl Display for UserAccountId {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.value)
+    write!(f, "{}-{}", self.type_name(), self.value)
   }
 }
 

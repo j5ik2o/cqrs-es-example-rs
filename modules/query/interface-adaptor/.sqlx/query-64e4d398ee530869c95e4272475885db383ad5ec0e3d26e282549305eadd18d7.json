@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT id, group_chat_id, user_account_id, role, created_at\n        FROM members\n        WHERE group_chat_id = ?\n            AND EXISTS (SELECT 1 FROM members AS m2 WHERE m2.group_chat_id = members.group_chat_id AND m2.user_account_id = ?)",
+  "query": "SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at\n\t\t FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n\t\t WHERE gc.disabled = 'false' AND m.group_chat_id = ? AND m.user_account_id = ?",
   "describe": {
     "columns": [
       {
@@ -15,17 +15,17 @@
       },
       {
         "ordinal": 1,
-        "name": "group_chat_id",
+        "name": "name",
         "type_info": {
           "type": "VarString",
-          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
           "char_set": 224,
           "max_size": 256
         }
       },
       {
         "ordinal": 2,
-        "name": "user_account_id",
+        "name": "owner_id",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
@@ -35,17 +35,17 @@
       },
       {
         "ordinal": 3,
-        "name": "role",
+        "name": "created_at",
         "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
-          "char_set": 224,
-          "max_size": 256
+          "type": "Datetime",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 19
         }
       },
       {
         "ordinal": 4,
-        "name": "created_at",
+        "name": "updated_at",
         "type_info": {
           "type": "Datetime",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
@@ -65,5 +65,5 @@
       false
     ]
   },
-  "hash": "7fdaa7524ae57afa85f487f713619c3111e868b3df1341575b971cbc9a0f67a7"
+  "hash": "64e4d398ee530869c95e4272475885db383ad5ec0e3d26e282549305eadd18d7"
 }

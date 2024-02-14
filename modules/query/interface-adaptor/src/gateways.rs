@@ -18,16 +18,19 @@ pub struct GroupChat {
   owner_id: String,
   /// 作成日時
   created_at: NaiveDateTime,
+  /// 更新日時
+  updated_at: NaiveDateTime,
 }
 
 impl GroupChat {
   /// コンストラクタ
-  pub fn new(id: String, name: String, owner_id: String, created_at: NaiveDateTime) -> Self {
+  pub fn new(id: String, name: String, owner_id: String, created_at: NaiveDateTime, updated_at: NaiveDateTime) -> Self {
     Self {
       id,
       name,
       owner_id,
       created_at,
+      updated_at,
     }
   }
 }
@@ -57,9 +60,9 @@ impl GroupChatDao for GroupChatDaoImpl {
   async fn get_group_chat(&self, group_chat_id: String, user_account_id: String) -> Result<GroupChat> {
     let group_chat = sqlx::query_as!(
       GroupChat,
-      r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at
-        FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
-        WHERE m.group_chat_id = ? AND m.user_account_id = ?"#,
+      r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at
+		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
+		 WHERE gc.disabled = 'false' AND m.group_chat_id = ? AND m.user_account_id = ?"#,
       group_chat_id,
       user_account_id
     )
@@ -71,9 +74,9 @@ impl GroupChatDao for GroupChatDaoImpl {
   async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>> {
     let group_chats = sqlx::query_as!(
       GroupChat,
-      r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at
-        FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
-        WHERE m.user_account_id = ?"#,
+      r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at
+		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
+         WHERE gc.disabled = 'false' AND m.user_account_id = ?"#,
       user_account_id
     )
     .fetch_all(&self.my_sql_pool)
@@ -97,6 +100,8 @@ pub struct Member {
   role: String,
   /// 作成日時
   created_at: NaiveDateTime,
+  /// 更新日時
+  updated_at: NaiveDateTime,
 }
 
 impl Member {
@@ -106,6 +111,7 @@ impl Member {
     user_account_id: String,
     role: String,
     created_at: NaiveDateTime,
+    updated_at: NaiveDateTime,
   ) -> Self {
     Self {
       id,
@@ -113,6 +119,7 @@ impl Member {
       user_account_id,
       role,
       created_at,
+      updated_at,
     }
   }
 }
@@ -142,7 +149,9 @@ impl MemberDao for MemberDaoImpl {
   async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member> {
     let member = sqlx::query_as!(
       Member,
-      "SELECT id, group_chat_id, user_account_id, role, created_at FROM members WHERE group_chat_id = ? AND user_account_id = ?",
+      r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at
+		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
+		 WHERE gc.disabled = 'false' AND m.group_chat_id = ? AND m.user_account_id = ?"#,
       group_chat_id,
       user_account_id
     )
@@ -154,15 +163,15 @@ impl MemberDao for MemberDaoImpl {
   async fn get_members(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Member>> {
     let members = sqlx::query_as!(
       Member,
-      r#"SELECT id, group_chat_id, user_account_id, role, created_at
-        FROM members
-        WHERE group_chat_id = ?
-            AND EXISTS (SELECT 1 FROM members AS m2 WHERE m2.group_chat_id = members.group_chat_id AND m2.user_account_id = ?)"#,
+      r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at
+         FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
+         WHERE gc.disabled = 'false' AND m.group_chat_id = ?
+			AND EXISTS (SELECT 1 FROM members AS m2 WHERE m2.group_chat_id = m.group_chat_id AND m2.user_account_id = ?)"#,
       group_chat_id,
       user_account_id
     )
-            .fetch_all(&self.my_sql_pool)
-            .await?;
+    .fetch_all(&self.my_sql_pool)
+    .await?;
     Ok(members)
   }
 }
@@ -182,6 +191,8 @@ pub struct Message {
   text: String,
   /// 作成日時
   created_at: NaiveDateTime,
+  /// 更新日時
+  updated_at: NaiveDateTime,
 }
 
 impl Message {
@@ -191,6 +202,7 @@ impl Message {
     user_account_id: String,
     text: String,
     created_at: NaiveDateTime,
+    updated_at: NaiveDateTime,
   ) -> Self {
     Self {
       id,
@@ -198,6 +210,7 @@ impl Message {
       user_account_id,
       text,
       created_at,
+      updated_at,
     }
   }
 }
@@ -227,9 +240,10 @@ impl MessageDao for MessageDaoImpl {
   async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message> {
     let message = sqlx::query_as!(
       Message,
-      r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at
-        FROM messages AS m WHERE m.id = ?
-            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
+      r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at, m.updated_at
+		 FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id
+         WHERE gc.disabled = 'false' AND m.disabled = 'false' AND m.id = ?
+           AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
       message_id,
       user_account_id
     )
@@ -241,9 +255,10 @@ impl MessageDao for MessageDaoImpl {
   async fn get_messages(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Message>> {
     let messages = sqlx::query_as!(
       Message,
-      r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at
-        FROM messages AS m WHERE m.group_chat_id = ?
-            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
+      r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at, m.updated_at
+		 FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id
+         WHERE gc.disabled = 'false' AND m.disabled = 'false' AND m.group_chat_id = ?
+          AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
       group_chat_id,
       user_account_id
     )

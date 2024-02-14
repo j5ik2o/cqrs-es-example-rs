@@ -108,7 +108,7 @@ async fn test_delete_group_chat() {
     .insert_group_chat(aggregate_id.clone(), name, admin_id, Utc::now())
     .await
     .unwrap();
-  dao.delete_group_chat(aggregate_id).await.unwrap();
+  dao.delete_group_chat(aggregate_id, Utc::now()).await.unwrap();
 }
 
 #[tokio::test]
@@ -136,7 +136,7 @@ async fn test_rename_group_chat() {
     .unwrap();
 
   let name = GroupChatName::new("test-2").unwrap();
-  dao.rename_group_chat(aggregate_id, name).await.unwrap();
+  dao.rename_group_chat(aggregate_id, name, Utc::now()).await.unwrap();
 }
 
 #[tokio::test]
@@ -307,7 +307,7 @@ async fn test_delete_message() {
     .unwrap();
 
   dao
-    .delete_message(aggregate_id, message.breach_encapsulation_of_id().clone())
+    .delete_message(aggregate_id, message.breach_encapsulation_of_id().clone(), Utc::now())
     .await
     .unwrap();
 }

@@ -204,7 +204,6 @@ async fn delete_message<TR: GroupChatRepository>(
 ) -> GroupChatId {
   let delete_message_body = DeleteMessageRequestBody {
     group_chat_id: group_chat_id.to_string(),
-    user_account_id: user_account_id.to_string(),
     message_id: message_id.to_string(),
     executor_id: executor_id.to_string(),
   };

@@ -18,9 +18,11 @@ pub struct GroupChatId {
   value: ULID,
 }
 
+const GROUP_CHAT_PREFIX: &str = "GroupChat";
+
 impl AggregateId for GroupChatId {
   fn type_name(&self) -> String {
-    "group-chat".to_string()
+    GROUP_CHAT_PREFIX.to_string()
   }
 
   fn value(&self) -> String {
@@ -37,7 +39,7 @@ impl GroupChatId {
 
 impl Display for GroupChatId {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.value)
+    write!(f, "{}-{}", self.type_name(), self.value)
   }
 }
 
@@ -50,8 +52,13 @@ impl From<ULID> for GroupChatId {
 impl FromStr for GroupChatId {
   type Err = anyhow::Error;
 
-  fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-    match ULID::from_str(s) {
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    let ss = if s.starts_with(GROUP_CHAT_PREFIX) {
+      &s[(GROUP_CHAT_PREFIX.len() + 1)..]
+    } else {
+      s
+    };
+    match ULID::from_str(ss) {
       Ok(value) => Ok(Self { value }),
       Err(err) => Err(anyhow!(err)),
     }
