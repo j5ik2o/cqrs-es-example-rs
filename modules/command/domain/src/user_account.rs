@@ -46,8 +46,10 @@ impl FromStr for UserAccountId {
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let ss = if s.starts_with(USER_ACCOUNT_PREFIX) {
-      &s[(USER_ACCOUNT_PREFIX.len()+1)..]
-    } else { s };
+      &s[(USER_ACCOUNT_PREFIX.len() + 1)..]
+    } else {
+      s
+    };
     match ULID::from_str(ss) {
       Ok(value) => Ok(Self { value }),
       Err(err) => Err(anyhow!(err)),

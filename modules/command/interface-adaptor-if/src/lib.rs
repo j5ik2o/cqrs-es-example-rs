@@ -46,7 +46,12 @@ pub trait GroupChatReadModelUpdateDao {
   /// グループチャットリードモデルを削除します。
   async fn delete_group_chat(&self, aggregate_id: GroupChatId, updated_at: DateTime<Utc>) -> Result<()>;
   /// グループチャットリードモデルの名前を変更します。
-  async fn rename_group_chat(&self, aggregate_id: GroupChatId, name: GroupChatName, updated_at: DateTime<Utc>) -> Result<()>;
+  async fn rename_group_chat(
+    &self,
+    aggregate_id: GroupChatId,
+    name: GroupChatName,
+    updated_at: DateTime<Utc>,
+  ) -> Result<()>;
   /// メンバーリードモデルを追加します。
   async fn insert_member(
     &self,
@@ -61,7 +66,12 @@ pub trait GroupChatReadModelUpdateDao {
   /// メッセージリードモデル追加します。
   async fn insert_message(&self, aggregate_id: GroupChatId, message: Message, created_at: DateTime<Utc>) -> Result<()>;
   /// メッセージリードモデルを削除します。
-  async fn delete_message(&self, aggregate_id: GroupChatId, message_id: MessageId, updated_at: DateTime<Utc>) -> Result<()>;
+  async fn delete_message(
+    &self,
+    aggregate_id: GroupChatId,
+    message_id: MessageId,
+    updated_at: DateTime<Utc>,
+  ) -> Result<()>;
 }
 
 pub trait GroupChatPresenter {

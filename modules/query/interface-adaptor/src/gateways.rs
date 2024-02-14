@@ -170,8 +170,8 @@ impl MemberDao for MemberDaoImpl {
       group_chat_id,
       user_account_id
     )
-            .fetch_all(&self.my_sql_pool)
-            .await?;
+    .fetch_all(&self.my_sql_pool)
+    .await?;
     Ok(members)
   }
 }

@@ -54,14 +54,24 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
   async fn delete_group_chat(&self, aggregate_id: GroupChatId, updated_at: DateTime<Utc>) -> Result<()> {
     // NOTE: 現状は物理削除になっている。論理削除変えたい場合はstatusフラグを導入しUPDATEに変更する。
     // もう一つの方法は履歴テーブルを作り、そちらに移動させる方法もある。
-    sqlx::query!("UPDATE group_chats SET disabled = ?, updated_at = ? WHERE id = ?", true, updated_at, aggregate_id.to_string())
-      .execute(&self.pool)
-      .await?;
+    sqlx::query!(
+      "UPDATE group_chats SET disabled = ?, updated_at = ? WHERE id = ?",
+      true,
+      updated_at,
+      aggregate_id.to_string()
+    )
+    .execute(&self.pool)
+    .await?;
 
     Ok(())
   }
 
-  async fn rename_group_chat(&self, aggregate_id: GroupChatId, name: GroupChatName, updated_at: DateTime<Utc>) -> Result<()> {
+  async fn rename_group_chat(
+    &self,
+    aggregate_id: GroupChatId,
+    name: GroupChatName,
+    updated_at: DateTime<Utc>,
+  ) -> Result<()> {
     sqlx::query!(
       "UPDATE group_chats SET name = ?, updated_at = ? WHERE id = ?",
       name.to_string(),
@@ -126,7 +136,12 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
     Ok(())
   }
 
-  async fn delete_message(&self, aggregate_id: GroupChatId, message_id: MessageId, updated_at: DateTime<Utc>) -> Result<()> {
+  async fn delete_message(
+    &self,
+    aggregate_id: GroupChatId,
+    message_id: MessageId,
+    updated_at: DateTime<Utc>,
+  ) -> Result<()> {
     // NOTE: 現状は物理削除になっている。論理削除変えたい場合はstatusフラグを導入しUPDATEに変更する。
     // もう一つの方法は履歴テーブルを作り、そちらに移動させる方法もある。
     sqlx::query!(

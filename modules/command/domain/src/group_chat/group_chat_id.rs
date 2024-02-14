@@ -54,8 +54,10 @@ impl FromStr for GroupChatId {
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let ss = if s.starts_with(GROUP_CHAT_PREFIX) {
-      &s[(GROUP_CHAT_PREFIX.len() +1)..]
-    } else { s };
+      &s[(GROUP_CHAT_PREFIX.len() + 1)..]
+    } else {
+      s
+    };
     match ULID::from_str(ss) {
       Ok(value) => Ok(Self { value }),
       Err(err) => Err(anyhow!(err)),
