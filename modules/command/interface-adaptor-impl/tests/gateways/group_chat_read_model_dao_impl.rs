@@ -280,28 +280,34 @@ async fn test_delete_message() {
   let admin_id = UserAccountId::new();
 
   dao
-      .insert_group_chat(aggregate_id.clone(), name, admin_id, Utc::now())
-      .await
-      .unwrap();
+    .insert_group_chat(aggregate_id.clone(), name, admin_id, Utc::now())
+    .await
+    .unwrap();
 
   let member_id = MemberId::new();
   let user_account_id = UserAccountId::new();
   let role = MemberRole::Member;
 
   dao
-      .insert_member(
-        aggregate_id.clone(),
-        member_id,
-        user_account_id.clone(),
-        role,
-        Utc::now(),
-      )
-      .await
-      .unwrap();
+    .insert_member(
+      aggregate_id.clone(),
+      member_id,
+      user_account_id.clone(),
+      role,
+      Utc::now(),
+    )
+    .await
+    .unwrap();
 
   let message = Message::new("test".to_string(), user_account_id.clone());
 
-  dao.insert_message(aggregate_id.clone(), message.clone(), Utc::now()).await.unwrap();
+  dao
+    .insert_message(aggregate_id.clone(), message.clone(), Utc::now())
+    .await
+    .unwrap();
 
-  dao.delete_message(aggregate_id, message.breach_encapsulation_of_id().clone()).await.unwrap();
+  dao
+    .delete_message(aggregate_id, message.breach_encapsulation_of_id().clone())
+    .await
+    .unwrap();
 }

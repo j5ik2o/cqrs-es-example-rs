@@ -583,7 +583,7 @@ async fn post_message<TR: GroupChatRepository>(
         StatusCode::BAD_REQUEST,
         Json(CommandResponseFailureBody { msg: error.to_string() }),
       )
-          .into_response();
+        .into_response();
     }
   };
 
@@ -595,7 +595,7 @@ async fn post_message<TR: GroupChatRepository>(
         StatusCode::BAD_REQUEST,
         Json(CommandResponseFailureBody { msg: error.to_string() }),
       )
-          .into_response();
+        .into_response();
     }
   };
 
@@ -607,7 +607,7 @@ async fn post_message<TR: GroupChatRepository>(
         StatusCode::BAD_REQUEST,
         Json(CommandResponseFailureBody { msg: error.to_string() }),
       )
-          .into_response();
+        .into_response();
     }
   };
 
@@ -620,17 +620,17 @@ async fn post_message<TR: GroupChatRepository>(
       StatusCode::BAD_REQUEST,
       Json(CommandResponseFailureBody { msg: error.to_string() }),
     )
-        .into_response();
+      .into_response();
   }
 
   match command_processor
-      .post_message(
-        &mut group_chat_id_presenter,
-        group_chat_id.clone(),
-        message.clone(),
-        executor_id,
-      )
-      .await
+    .post_message(
+      &mut group_chat_id_presenter,
+      group_chat_id.clone(),
+      message.clone(),
+      executor_id,
+    )
+    .await
   {
     Ok(_) => (
       StatusCode::OK,
@@ -638,14 +638,14 @@ async fn post_message<TR: GroupChatRepository>(
         message_id: message.breach_encapsulation_of_id().to_string(),
       }),
     )
-        .into_response(),
+      .into_response(),
     Err(error) => {
       log::error!("error = {}: group_chat_id = {}", error, group_chat_id);
       (
         StatusCode::INTERNAL_SERVER_ERROR,
         Json(CommandResponseFailureBody { msg: error.to_string() }),
       )
-          .into_response()
+        .into_response()
     }
   }
 }
