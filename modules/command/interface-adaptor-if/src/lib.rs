@@ -44,12 +44,10 @@ pub trait GroupChatReadModelUpdateDao {
     created_at: DateTime<Utc>,
   ) -> Result<()>;
   /// グループチャットリードモデルを削除します。
-  async fn delete_group_chat(&self, aggregate_id: GroupChatId) -> Result<()>;
+  async fn delete_group_chat(&self, aggregate_id: GroupChatId, updated_at: DateTime<Utc>) -> Result<()>;
   /// グループチャットリードモデルの名前を変更します。
-  async fn rename_group_chat(&self, aggregate_id: GroupChatId, name: GroupChatName) -> Result<()>;
+  async fn rename_group_chat(&self, aggregate_id: GroupChatId, name: GroupChatName, updated_at: DateTime<Utc>) -> Result<()>;
   /// メンバーリードモデルを追加します。
-  ///
-  /// TODO: 任意課題 このメソッドはMemberReadModelUpdateDaoを新設して移動する。
   async fn insert_member(
     &self,
     aggregate_id: GroupChatId,
@@ -59,17 +57,11 @@ pub trait GroupChatReadModelUpdateDao {
     created_at: DateTime<Utc>,
   ) -> Result<()>;
   /// メンバーリードモデルを削除します。
-  ///
-  /// TODO: 任意課題 このメソッドはMemberReadModelUpdateDaoを新設して移動する。
   async fn delete_member(&self, aggregate_id: GroupChatId, account_id: UserAccountId) -> Result<()>;
   /// メッセージリードモデル追加します。
-  ///
-  /// TODO: 任意課題 このメソッドはMessageReadModelUpdateDaoを新設して移動する。
   async fn insert_message(&self, aggregate_id: GroupChatId, message: Message, created_at: DateTime<Utc>) -> Result<()>;
   /// メッセージリードモデルを削除します。
-  ///
-  /// TODO: 任意課題 このメソッドはMessageReadModelUpdateDaoを新設して移動する。
-  async fn delete_message(&self, aggregate_id: GroupChatId, message_id: MessageId) -> Result<()>;
+  async fn delete_message(&self, aggregate_id: GroupChatId, message_id: MessageId, updated_at: DateTime<Utc>) -> Result<()>;
 }
 
 pub trait GroupChatPresenter {

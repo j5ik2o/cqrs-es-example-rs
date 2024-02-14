@@ -217,6 +217,7 @@ mod tests {
         "mock group chat".to_string(),
         "mock owner".to_string(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
       Ok(t1)
     }
@@ -226,6 +227,7 @@ mod tests {
         "1".to_string(),
         "mock group chat".to_string(),
         user_account_id,
+        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
       Ok(vec![t1])
@@ -243,6 +245,7 @@ mod tests {
         user_account_id,
         "mock member".to_string(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
       Ok(m1)
     }
@@ -253,6 +256,7 @@ mod tests {
         group_chat_id,
         "mock member".to_string(),
         "mock member".to_string(),
+        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
       Ok(vec![m1])
@@ -270,6 +274,7 @@ mod tests {
         user_account_id,
         "mock message".to_string(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
       Ok(m1)
     }
@@ -280,6 +285,7 @@ mod tests {
         group_chat_id,
         user_account_id,
         "mock message".to_string(),
+        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
       Ok(vec![m1])

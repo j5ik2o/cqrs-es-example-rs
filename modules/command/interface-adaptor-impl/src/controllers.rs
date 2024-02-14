@@ -116,9 +116,6 @@ pub struct DeleteMessageRequestBody {
   /// target group chat id
   #[schema(example = "01H7C6927YNHXQZFTJKZK6Y9A7", required = true)]
   pub group_chat_id: String,
-  /// user account id to delete this message
-  #[schema(example = "01H7C6DWMK1BKS1JYH1XZE529V", required = true)]
-  pub user_account_id: String,
   /// message id to be deleted
   #[schema(example = "test message-1", required = true)]
   pub message_id: String,
@@ -187,7 +184,7 @@ impl GroupChatPresenter for MessageIdPresenter {
 /// create group chat.
 #[utoipa::path(
   post,
-  path = "/group-chats/create",
+  path = "/v1/group-chats/create",
   responses(
     (status = 200, description = "Group chat successfully created.", body = GroupChatCommandResponseSuccessBody),
     (status = 500, description = "Group chat creation failed.", body = CommandResponseFailureBody),
@@ -250,7 +247,7 @@ pub async fn create_group_chat<TR: GroupChatRepository>(
 /// delete group chat.
 #[utoipa::path(
   post,
-  path = "/group-chats/delete",
+  path = "/v1/group-chats/delete",
   responses(
     (status = 200, description = "Group chat successfully deleted.", body = GroupChatCommandResponseSuccessBody),
     (status = 500, description = "Group chat deletion failed.", body = CommandResponseFailureBody),
@@ -313,7 +310,7 @@ async fn delete_group_chat<TR: GroupChatRepository>(
 /// rename group chat.
 #[utoipa::path(
   post,
-  path = "/group-chats/rename",
+  path = "/v1/group-chats/rename",
   responses(
     (status = 200, description = "Group chat successfully renamed.", body = GroupChatCommandResponseSuccessBody),
     (status = 500, description = "Group chat rename failed.", body = CommandResponseFailureBody),
@@ -388,7 +385,7 @@ async fn rename_group_chat<TR: GroupChatRepository>(
 /// add a member to the group chat.
 #[utoipa::path(
   post,
-  path = "/group-chats/add-member",
+  path = "/v1/group-chats/add-member",
   responses(
     (status = 200, description = "Group chat member successfully added.", body = GroupChatCommandResponseSuccessBody),
     (status = 500, description = "Group chat member addition failed.", body = CommandResponseFailureBody),
@@ -481,7 +478,7 @@ async fn add_member<TR: GroupChatRepository>(
 /// remove the member from the group chat.
 #[utoipa::path(
   post,
-  path = "/group-chats/remove-member",
+  path = "/v1/group-chats/remove-member",
   responses(
     (status = 200, description = "Group chat member successfully removed.", body = GroupChatCommandResponseSuccessBody),
     (status = 500, description = "Group chat member remove failed.", body = CommandResponseFailureBody),
@@ -561,7 +558,7 @@ async fn remove_member<TR: GroupChatRepository>(
 /// post a message to the group chat.
 #[utoipa::path(
   post,
-  path = "/group-chats/post-message",
+  path = "/v1/group-chats/post-message",
   responses(
     (status = 200, description = "Group chat message successfully posted.", body = MessageCommandResponseSuccessBody),
     (status = 500, description = "Group chat message post failed.", body = CommandResponseFailureBody),
@@ -653,7 +650,7 @@ async fn post_message<TR: GroupChatRepository>(
 /// delete the message from the group chat.
 #[utoipa::path(
   post,
-  path = "/group-chats/delete-message",
+  path = "/v1/group-chats/delete-message",
   responses(
     (status = 200, description = "Group chat message successfully deleted.", body = GroupChatCommandResponseSuccessBody),
     (status = 500, description = "Group chat message deletion failed.", body = CommandResponseFailureBody),
@@ -749,13 +746,13 @@ impl EndpointPaths {
       EndpointPaths::Root => "/",
       EndpointPaths::HealthAlive => "/health/alive",
       EndpointPaths::HealthReady => "/health/ready",
-      EndpointPaths::CreateGroupChat => "/group-chats/create",
-      EndpointPaths::DeleteGroupChat => "/group-chats/delete",
-      EndpointPaths::RenameGroupChat => "/group-chats/rename",
-      EndpointPaths::AddMember => "/group-chats/add-member",
-      EndpointPaths::RemoveMember => "/group-chats/remove-member",
-      EndpointPaths::PostMessage => "/group-chats/post-message",
-      EndpointPaths::DeleteMessage => "/group-chats/delete-message",
+      EndpointPaths::CreateGroupChat => "/v1/group-chats/create",
+      EndpointPaths::DeleteGroupChat => "/v1/group-chats/delete",
+      EndpointPaths::RenameGroupChat => "/v1/group-chats/rename",
+      EndpointPaths::AddMember => "/v1/group-chats/add-member",
+      EndpointPaths::RemoveMember => "/v1/group-chats/remove-member",
+      EndpointPaths::PostMessage => "/v1/group-chats/post-message",
+      EndpointPaths::DeleteMessage => "/v1/group-chats/delete-message",
     }
   }
 }

@@ -54,7 +54,7 @@ impl EndpointPaths {
       EndpointPaths::Assets => "/assets",
       EndpointPaths::HealthAlive => "/health/alive",
       EndpointPaths::HealthReady => "/health/ready",
-      EndpointPaths::GraphQL => "/graphql",
+      EndpointPaths::GraphQL => "/query",
     }
   }
 }

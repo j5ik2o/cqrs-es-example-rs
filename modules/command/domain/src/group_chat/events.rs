@@ -195,7 +195,7 @@ pub struct GroupChatventMessageDeletedBody {
   pub(crate) seq_nr: usize,
   pub message_id: MessageId,
   pub(crate) executor_id: UserAccountId,
-  pub(crate) occurred_at: DateTime<Utc>,
+  pub occurred_at: DateTime<Utc>,
 }
 
 impl GroupChatventMessageDeletedBody {

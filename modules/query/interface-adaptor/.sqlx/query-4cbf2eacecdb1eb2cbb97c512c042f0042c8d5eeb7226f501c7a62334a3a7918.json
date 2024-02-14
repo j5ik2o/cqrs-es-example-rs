@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT gc.id, gc.name, gc.owner_id, gc.created_at\n        FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n        WHERE m.group_chat_id = ? AND m.user_account_id = ?",
+  "query": "SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at\n\t\t FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n         WHERE gc.disabled = 'false' AND m.user_account_id = ?",
   "describe": {
     "columns": [
       {
@@ -42,17 +42,28 @@
           "char_set": 63,
           "max_size": 19
         }
+      },
+      {
+        "ordinal": 4,
+        "name": "updated_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 19
+        }
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 1
     },
     "nullable": [
+      false,
       false,
       false,
       false,
       false
     ]
   },
-  "hash": "6ed5b909305c5a92113786f86a7df893ea42b796c96829c394f07ed796792e77"
+  "hash": "4cbf2eacecdb1eb2cbb97c512c042f0042c8d5eeb7226f501c7a62334a3a7918"
 }
