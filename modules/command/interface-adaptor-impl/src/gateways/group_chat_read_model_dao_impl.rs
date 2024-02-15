@@ -43,7 +43,7 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
       name.to_string(),
       administrator_id.to_string(),
       created_at.clone(),
-      created_at
+      created_at.clone(),
     )
     .execute(&self.pool)
     .await?;
@@ -57,7 +57,7 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
     sqlx::query!(
       "UPDATE group_chats SET disabled = ?, updated_at = ? WHERE id = ?",
       true,
-      updated_at,
+      updated_at.clone(),
       aggregate_id.to_string()
     )
     .execute(&self.pool)
@@ -75,7 +75,7 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
     sqlx::query!(
       "UPDATE group_chats SET name = ?, updated_at = ? WHERE id = ?",
       name.to_string(),
-      updated_at,
+      updated_at.clone(),
       aggregate_id.to_string()
     )
     .execute(&self.pool)
@@ -99,7 +99,7 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
       account_id.to_string(),
       role.to_string().to_lowercase(),
       created_at.clone(),
-      created_at
+      created_at.clone()
     )
     .execute(&self.pool)
     .await?;
@@ -129,7 +129,7 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
       message.breach_encapsulation_of_sender_id().to_string(),
       message.breach_encapsulation_of_text(),
       created_at.clone(),
-      created_at
+      created_at.clone()
     )
     .execute(&self.pool)
     .await?;
@@ -147,7 +147,7 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
     sqlx::query!(
       "UPDATE messages SET disabled = ?, updated_at = ? WHERE id = ?",
       true,
-      updated_at,
+      updated_at.clone(),
       message_id.to_string()
     )
     .execute(&self.pool)

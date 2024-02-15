@@ -63,8 +63,8 @@ impl GroupChatDao for GroupChatDaoImpl {
       r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at
 		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
 		 WHERE gc.disabled = 'false' AND m.group_chat_id = ? AND m.user_account_id = ?"#,
-      group_chat_id,
-      user_account_id
+      group_chat_id.clone(),
+      user_account_id.clone()
     )
     .fetch_one(&self.my_sql_pool)
     .await?;
@@ -77,7 +77,7 @@ impl GroupChatDao for GroupChatDaoImpl {
       r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at
 		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
          WHERE gc.disabled = 'false' AND m.user_account_id = ?"#,
-      user_account_id
+      user_account_id.clone()
     )
     .fetch_all(&self.my_sql_pool)
     .await?;
@@ -152,8 +152,8 @@ impl MemberDao for MemberDaoImpl {
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at
 		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
 		 WHERE gc.disabled = 'false' AND m.group_chat_id = ? AND m.user_account_id = ?"#,
-      group_chat_id,
-      user_account_id
+      group_chat_id.clone(),
+      user_account_id.clone()
     )
     .fetch_one(&self.my_sql_pool)
     .await?;
@@ -244,8 +244,8 @@ impl MessageDao for MessageDaoImpl {
 		 FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id
          WHERE gc.disabled = 'false' AND m.disabled = 'false' AND m.id = ?
            AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
-      message_id,
-      user_account_id
+      message_id.clone(),
+      user_account_id.clone()
     )
         .fetch_one(&self.my_sql_pool)
         .await?;
@@ -259,8 +259,8 @@ impl MessageDao for MessageDaoImpl {
 		 FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id
          WHERE gc.disabled = 'false' AND m.disabled = 'false' AND m.group_chat_id = ?
           AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
-      group_chat_id,
-      user_account_id
+      group_chat_id.clone(),
+      user_account_id.clone()
     )
         .fetch_all(&self.my_sql_pool)
         .await?;
