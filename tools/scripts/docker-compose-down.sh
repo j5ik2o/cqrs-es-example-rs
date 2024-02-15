@@ -25,4 +25,4 @@ while getopts d OPT; do
   esac
 done
 
-docker compose -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} down -v --remove-orphans
+docker compose -p cqrs-es-example-rs -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} down -v --remove-orphans
