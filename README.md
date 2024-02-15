@@ -18,11 +18,11 @@ It uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-ad
 
 ### Component Composition
 
-- Write API (WIP)
+- Write API Server
     - Write-only Web API
 - Read Model Updater
     - Lambda to build read models based on journals
-- Read API
+- Read API Server
     - GraphQL server (Query, Subscription)
 
 ### System Architecture Diagram
