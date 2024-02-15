@@ -11,11 +11,11 @@ PREFIXは`pwgen -A`で生成することを推奨する。
 $ pwgen -A
 ```
 
-pwgenがない場合は`brew install pwgen`でインストールしてください。
+`pwgen`がない場合は`brew install pwgen`でインストールしてください。
 
 ## ビルド方法
 
-ビルドを行う前に、Docker for Macを必ず起動してください。
+ビルドを行う前に、Dockerを必ず起動してください。
 
 ビルドを行う前に以下のコマンドでDBだけを起動します。(sqlxがDBに接続できるようにするため)
 
@@ -32,7 +32,7 @@ $ makers build
 
 ## テスト方法
 
-テストを実行する前に、Docker for Macを必ず起動してください。
+テストを実行する前に、Dockerを必ず起動してください。
 
 ```shell
 $ makers test

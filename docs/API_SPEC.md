@@ -31,10 +31,6 @@ $ makers docker-compose-up
 $ makers view-swagger-ui
 ```
 
-### OpenAPI定義からTypeScriptクライアントを生成する
-
-参照: [frontend/README.md](../../frontend/README.md#openapi-の-typescirpt-クライアントを自動生成する)
-
 ## Read API Server: GraphQLのSDLを確認する方法
 
 ```shell
@@ -43,7 +39,3 @@ $ makers view-sdl
 # ファイルに出力する場合
 $ makers export-sdl ./schema.sdl
 ```
-
-### SDLからTypeScriptクライアントを生成する
-
-参照 [frontend/README.md](../../frontend/README.md#graphql-の-typescirpt-クライアントを自動生成する)
