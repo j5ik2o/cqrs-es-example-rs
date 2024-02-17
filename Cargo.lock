@@ -1475,19 +1475,19 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "event-store-adapter-rs"
-version = "1.0.14"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e39e35b2cf839132f09581fe5ae04cef7eca37abe9c74ad0e52d59c51db0a3ec"
+checksum = "5a6cee46a35219dcc7842f1585b5fd258a55d2b412d0c4a97db91376f79394a9"
 dependencies = [
  "async-trait",
  "aws-config",
  "aws-http",
  "aws-sdk-dynamodb",
  "chrono",
- "log",
  "serde",
  "serde_json",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
