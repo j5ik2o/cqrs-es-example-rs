@@ -38,7 +38,7 @@ async fn test_group_chat_rename() {
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
   let _members = Members::new(admin_id.clone());
-  let mut command_processor = GroupChatCommandProcessor::new(repository);
+  let mut command_processor = GroupChatCommandProcessor::new(repository.clone());
 
   let id = command_processor
     .create_group_chat(name.clone(), admin_id.clone())
@@ -62,13 +62,13 @@ async fn test_group_chat_rename() {
 async fn test_group_chat_add_member() {
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let (mut repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository(docker).await;
   // with_repository(|mut repository| async move {
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
   let _members = Members::new(admin_id.clone());
-  let mut command_processor = GroupChatCommandProcessor::new(repository);
+  let mut command_processor = GroupChatCommandProcessor::new(repository.clone());
   let id = command_processor
     .create_group_chat(name.clone(), admin_id.clone())
     .await
@@ -93,14 +93,14 @@ async fn test_group_chat_add_member() {
 async fn test_group_chat_remove_member() {
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let (mut repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository(docker).await;
   let user_account_id = UserAccountId::new();
   let admin_id = UserAccountId::new();
 
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let _members = Members::new(admin_id.clone());
-  let mut command_processor = GroupChatCommandProcessor::new(repository);
+  let mut command_processor = GroupChatCommandProcessor::new(repository.clone());
   let id = command_processor
     .create_group_chat(name.clone(), admin_id.clone())
     .await
@@ -132,12 +132,12 @@ async fn test_group_chat_remove_member() {
 async fn test_group_chat_post_message() {
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let (mut repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository(docker).await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
   let _members = Members::new(admin_id.clone());
-  let mut command_processor = GroupChatCommandProcessor::new(repository);
+  let mut command_processor = GroupChatCommandProcessor::new(repository.clone());
   let id = command_processor
     .create_group_chat(name.clone(), admin_id.clone())
     .await
@@ -171,12 +171,12 @@ async fn test_group_chat_post_message() {
 async fn test_group_chat_delete_message() {
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let (mut repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository(docker).await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
   let _members = Members::new(admin_id.clone());
-  let mut command_processor = GroupChatCommandProcessor::new(repository);
+  let mut command_processor = GroupChatCommandProcessor::new(repository.clone());
   let id = command_processor
     .create_group_chat(name.clone(), admin_id.clone())
     .await
@@ -215,12 +215,12 @@ async fn test_group_chat_destroy() {
   init_logger();
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let (mut repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository(docker).await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
   let _members = Members::new(admin_id.clone());
-  let mut command_processor = GroupChatCommandProcessor::new(repository);
+  let mut command_processor = GroupChatCommandProcessor::new(repository.clone());
   let id = command_processor
     .create_group_chat(name, admin_id.clone())
     .await
