@@ -6,7 +6,7 @@ GraphQLのクエリを試したい場合は以下の手順でGraphQL IDEを開�
 
 ```shell
 # read-api-serverを起動した状態で
-$ makers open-graphql-ide
+$ makers open-query-graphql-ide
 ```
 
 上段の入力欄にクエリを貼り付け、下段の入力欄(Variables)に以下を参考に貼り付け、再生ボタンを押してください。

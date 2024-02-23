@@ -26,7 +26,7 @@ RUST_TEST_THREADS = 1
 # KEEP_CONTAINERS = true
 WRITE_API_SERVER_PORT = 18080
 READ_API_SERVER_PORT = 18082
-WRITE_API_SERVER_BASE_URL = "http://localhost:${WRITE_API_SERVER_PORT}/v1"
+WRITE_API_SERVER_BASE_URL = "http://localhost:${WRITE_API_SERVER_PORT}"
 READ_API_SERVER_BASE_URL = "http://localhost:${READ_API_SERVER_PORT}"
 WRITE_API_SERVER_NAME = "write-api-server"
 READ_API_SERVER_NAME = "read-api-server"
@@ -110,26 +110,27 @@ script = '''
 cargo run -p ${WRITE_API_SERVER_NAME} --bin export-openapi-yaml
 '''
 
-[tasks.export-openapi]
-description = "Write API Server: OpenAPI定義内容をエクスポートします"
+[tasks.view-command-sdl]
+description = "Write API Server: GraphQLのSDLをエクスポートします"
+workspace = false
+script = '''
+#!/usr/bin/env bash
+cargo run -p ${WRITE_API_SERVER_NAME} --bin export-sdl
+'''
+
+[tasks.export-command-sdl]
+description = "Write API Server: GraphQLのSDLをエクスポートします"
 workspace = false
 script = '''
 #!/usr/bin/env bash
 if [ -z "$1" ]; then
-    echo "usage: makers export-openapi <output-file>"
+    echo "usage: makers export-sdl <output-file>"
     exit 1
 fi
-cargo run -p ${WRITE_API_SERVER_NAME} --bin export-openapi-yaml > $1
+cargo run -p ${WRITE_API_SERVER_NAME} --bin export-sdl > $1
 '''
 
-[tasks.view-swagger-ui]
-workspace = false
-script = '''
-#!/usr/bin/env bash
-open ${WRITE_API_SERVER_BASE_URL}/swagger-ui
-'''
-
-[tasks.view-sdl]
+[tasks.view-query-sdl]
 description = "Read API Server: GraphQLのSDLをエクスポートします"
 workspace = false
 script = '''
@@ -137,7 +138,7 @@ script = '''
 cargo run -p ${READ_API_SERVER_NAME} --bin export-sdl
 '''
 
-[tasks.export-sdl]
+[tasks.export-query-sdl]
 description = "Read API Server: GraphQLのSDLをエクスポートします"
 workspace = false
 script = '''
@@ -148,6 +149,7 @@ if [ -z "$1" ]; then
 fi
 cargo run -p ${READ_API_SERVER_NAME} --bin export-sdl > $1
 '''
+
 # --- terraform
 
 [tasks.terraform-create-lock-table]
@@ -628,7 +630,15 @@ description = "Write/Read API Serverのルートにアクセスします"
 workspace = false
 dependencies = ["curl-get-root-write-api-server", "curl-get-root-read-api-server"]
 
-[tasks.open-graphql-ide]
+[tasks.open-command-graphql-ide]
+description = "GraphQL IDEを開きます"
+workspace = false
+script = '''
+#!/usr/bin/env bash
+open ${WRITE_API_SERVER_BASE_URL}/query
+'''
+
+[tasks.open-query-graphql-ide]
 description = "GraphQL IDEを開きます"
 workspace = false
 script = '''
