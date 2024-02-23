@@ -25,7 +25,6 @@ async fn main() -> Result<()> {
   let router = create_router(pool).layer(create_cors_layer(&app_settings));
 
   let socket_addr = SocketAddr::new(IpAddr::from_str(&app_settings.api.host).unwrap(), app_settings.api.port);
-
   tracing::info!("Server listening on http://{}", socket_addr);
   axum::Server::bind(&socket_addr)
     .serve(router.into_make_service())

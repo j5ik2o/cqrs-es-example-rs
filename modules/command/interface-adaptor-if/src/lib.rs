@@ -73,7 +73,3 @@ pub trait GroupChatReadModelUpdateDao {
     updated_at: DateTime<Utc>,
   ) -> Result<()>;
 }
-
-pub trait GroupChatPresenter {
-  fn present(&mut self, group_chat_event: GroupChatEvent);
-}

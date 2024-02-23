@@ -12,14 +12,9 @@ use event_store_adapter_rs::EventStoreForDynamoDB;
 use hyper::header::CONTENT_TYPE;
 use serde::Deserialize;
 use tower_http::cors::{AllowMethods, CorsLayer};
-use utoipa::OpenApi;
-
-use utoipa_redoc::{Redoc, Servable};
-use utoipa_swagger_ui::SwaggerUi;
 
 use command_interface_adaptor_impl::controllers::create_router;
 use command_interface_adaptor_impl::gateways::group_chat_repository::GroupChatRepositoryImpl;
-use write_api_server::ApiDoc;
 
 #[derive(Deserialize, Debug)]
 struct AppSettings {
@@ -74,10 +69,7 @@ async fn main() -> Result<()> {
   );
   let repository = GroupChatRepositoryImpl::new(egg, app_settings.persistence.snapshot_interval);
 
-  let route = create_router(repository)
-    .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-    .merge(Redoc::with_url("/redoc", ApiDoc::openapi()))
-    .layer(create_cors_layer(&app_settings));
+  let route = create_router(repository).layer(create_cors_layer(&app_settings));
 
   let socket_addr = SocketAddr::new(IpAddr::from_str(&app_settings.api.host).unwrap(), app_settings.api.port);
   tracing::info!("Server listening on http://{}", socket_addr);
