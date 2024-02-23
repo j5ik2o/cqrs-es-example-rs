@@ -33,7 +33,7 @@ async fn test_group_chat_create() {
 async fn test_group_chat_rename() {
   let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let (mut repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository(docker).await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();

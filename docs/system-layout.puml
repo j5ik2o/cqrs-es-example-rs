@@ -4,7 +4,8 @@
 node "Client" as client {
 }
 
-node "Write API Server\n(HTTP/Web API)" as writeAPI {
+node "Write API Server\n(GraphQL Server)" as writeAPI {
+    [Mutation] as mutation
     [Group Chat Aggregate] as groupChatAggregate
 }
 
@@ -30,7 +31,8 @@ journal -[hidden]- snapshot
 groupChat -[hidden]- member
 query -[hidden]- subscripton
 
-writeAPI -d-> groupChatAggregate
+writeAPI -d-> mutation
+mutation -d-> groupChatAggregate
 
 groupChatAggregate -d-> journal: Put Item
 groupChatAggregate -d-> snapshot: Put/Update Item
