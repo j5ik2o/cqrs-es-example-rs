@@ -46,7 +46,6 @@ It uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-ad
 - [AWS Setup](docs/AWS_SETUP.md)
 - [Deploying to EKS](docs/DEPLOY_TO_EKS.md)
 
-
 ## Links
 
 - [Go Version](https://github.com/j5ik2o/cqrs-es-example-go)
