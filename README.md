@@ -23,6 +23,7 @@ This project uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/even
     - Event Sourced Aggregate is implemented by [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs)
 - Read Model Updater
     - Lambda to build read models based on journals
+    - Locally, run code that emulates Lambda behavior (local-rmu)
 - Read API Server
     - API is implemented by GraphQL (Query)
 
