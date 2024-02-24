@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-ADMIN_ID=${ADMIN_ID:-01H42K4ABWQ5V2XQEP3A48VE0Z}
-USER_ACCOUNT_ID=${USER_ACCOUNT_ID:-01H7C6DWMK1BKS1JYH1XZE529M}
+ADMIN_ID=${ADMIN_ID:-UserAccount-01H42K4ABWQ5V2XQEP3A48VE0Z}
+USER_ACCOUNT_ID=${USER_ACCOUNT_ID:-UserAccount-01H7C6DWMK1BKS1JYH1XZE529M}
 WRITE_API_SERVER_BASE_URL=${WRITE_API_SERVER_BASE_URL:-http://localhost:18080}
 READ_API_SERVER_BASE_URL=${READ_API_SERVER_BASE_URL:-http://localhost:18082}
 
@@ -68,7 +68,7 @@ sleep 2
 group_chat=$(curl -s -X POST -H "Content-Type: application/json" \
 	${READ_API_SERVER_BASE_URL}/query \
 	-d @- <<EOS
-{ "query": "{ getGroupChat(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"UserAccount-${ADMIN_ID}\") { id, name, ownerId, createdAt, updatedAt } }" }
+{ "query": "{ getGroupChat(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"${ADMIN_ID}\") { id, name, ownerId, createdAt, updatedAt } }" }
 EOS)
 
 echo -e "\nGet GroupChat(${GROUP_CHAT_ID}, ${ADMIN_ID}):"
@@ -78,7 +78,7 @@ echo $group_chat | jq .
 group_list_chat=$(curl -s -X POST -H "Content-Type: application/json" \
 	${READ_API_SERVER_BASE_URL}/query \
 	-d @- <<EOS
-{ "query": "{ getGroupChats(userAccountId: \"UserAccount-${ADMIN_ID}\") { id, name, ownerId, createdAt, updatedAt } }" }
+{ "query": "{ getGroupChats(userAccountId: \"${ADMIN_ID}\") { id, name, ownerId, createdAt, updatedAt } }" }
 EOS)
 
 echo -e "\nGet GroupChats(${ADMIN_ID}):"
@@ -107,7 +107,7 @@ sleep 1
 group_chat=$(curl -s -X POST -H "Content-Type: application/json" \
 	${READ_API_SERVER_BASE_URL}/query \
 	-d @- <<EOS
-{ "query": "{ getGroupChat(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"UserAccount-${ADMIN_ID}\") { id, name, ownerId, createdAt, updatedAt } }" }
+{ "query": "{ getGroupChat(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"${ADMIN_ID}\") { id, name, ownerId, createdAt, updatedAt } }" }
 EOS)
 
 echo -e "\nGet GroupChat(${GROUP_CHAT_ID}, ${ADMIN_ID}):"
@@ -117,7 +117,7 @@ echo $group_chat | jq .
 member=$(curl -s -X POST -H "Content-Type: application/json" \
 	${READ_API_SERVER_BASE_URL}/query \
 	-d @- <<EOS1
-{ "query": "{ getMember(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"UserAccount-${USER_ACCOUNT_ID}\") { id, groupChatId, userAccountId, role, createdAt, updatedAt } }" }
+{ "query": "{ getMember(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"${USER_ACCOUNT_ID}\") { id, groupChatId, userAccountId, role, createdAt, updatedAt } }" }
 EOS1)
 
 echo -e "\nGet Member(${GROUP_CHAT_ID}, ${USER_ACCOUNT_ID}):"
@@ -127,7 +127,7 @@ echo $member | jq .
 member_list=$(curl -s -X POST -H "Content-Type: application/json" \
 	${READ_API_SERVER_BASE_URL}/query \
 	-d @- <<EOS3
-{ "query": "{ getMembers(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"UserAccount-${USER_ACCOUNT_ID}\") { id, groupChatId, userAccountId, role, createdAt, updatedAt } }" }
+{ "query": "{ getMembers(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"${USER_ACCOUNT_ID}\") { id, groupChatId, userAccountId, role, createdAt, updatedAt } }" }
 EOS3)
 
 echo -e "\nGet Members(${GROUP_CHAT_ID}, ${USER_ACCOUNT_ID}):"
@@ -137,7 +137,7 @@ echo $member_list | jq .
 message=$(curl -s -X POST -H "Content-Type: application/json" \
 	${READ_API_SERVER_BASE_URL}/query \
 	-d @- <<EOS2
-{ "query": "{ getMessage(messageId: \"${MESSAGE_ID}\", userAccountId: \"UserAccount-${USER_ACCOUNT_ID}\") { id, groupChatId, text, createdAt, updatedAt } }" }
+{ "query": "{ getMessage(messageId: \"${MESSAGE_ID}\", userAccountId: \"${USER_ACCOUNT_ID}\") { id, groupChatId, text, createdAt, updatedAt } }" }
 EOS2)
 
 echo -e "\nGet Message(${MESSAGE_ID}, ${USER_ACCOUNT_ID}):"
@@ -147,7 +147,7 @@ echo $message | jq .
 message_list=$(curl -s -X POST -H "Content-Type: application/json" \
 	${READ_API_SERVER_BASE_URL}/query \
 	-d @- <<EOS3
-{ "query": "{ getMessages(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"UserAccount-${USER_ACCOUNT_ID}\") { id, groupChatId, text, createdAt, updatedAt } }" }
+{ "query": "{ getMessages(groupChatId: \"${GROUP_CHAT_ID}\", userAccountId: \"${USER_ACCOUNT_ID}\") { id, groupChatId, text, createdAt, updatedAt } }" }
 EOS3)
 
 echo -e "\nGet Messages(${GROUP_CHAT_ID}, ${USER_ACCOUNT_ID}):"
