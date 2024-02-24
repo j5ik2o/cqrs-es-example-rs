@@ -82,7 +82,6 @@ struct RemoveMemberInput {
 #[derive(Debug, Clone, InputObject)]
 struct PostMessageInput {
   group_chat_id: String,
-  user_account_id: String,
   content: String,
   executor_id: String,
 }
@@ -91,7 +90,6 @@ struct PostMessageInput {
 struct DeleteMessageInput {
   group_chat_id: String,
   message_id: String,
-  user_account_id: String,
   executor_id: String,
 }
 
@@ -300,13 +298,6 @@ impl MutationRoot {
         return Err(Error::new(error.to_string()));
       }
     };
-    let user_account_id = match UserAccountId::from_str(&input.user_account_id) {
-      Ok(user_account_id) => user_account_id,
-      Err(error) => {
-        log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
-      }
-    };
     let content = input.content.clone();
     let executor_id = match UserAccountId::from_str(&input.executor_id) {
       Ok(executor_id) => executor_id,
@@ -316,7 +307,7 @@ impl MutationRoot {
       }
     };
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
-    let message = Message::new(content, user_account_id.clone());
+    let message = Message::new(content, executor_id.clone());
     match processor.post_message(group_chat_id, message, executor_id).await {
       Ok((group_chat_id, message_id)) => Ok(MessageResult {
         group_chat_id: group_chat_id.to_string(),
@@ -340,13 +331,6 @@ impl MutationRoot {
     };
     let message_id = match MessageId::from_str(&input.message_id) {
       Ok(message_id) => message_id,
-      Err(error) => {
-        log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
-      }
-    };
-    let user_account_id = match UserAccountId::from_str(&input.user_account_id) {
-      Ok(user_account_id) => user_account_id,
       Err(error) => {
         log::warn!("error = {}", error);
         return Err(Error::new(error.to_string()));

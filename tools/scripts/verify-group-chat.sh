@@ -15,7 +15,7 @@ CREATE_GROUP_CHAT_RESULT=$(curl -s -X POST -H "Content-Type: application/json" \
   "variables": {
     "input": {
       "name": "group-chat-example",
-      "executorId": "UserAccount-01H42K4ABWQ5V2XQEP3A48VE0Z"
+      "executorId": "${ADMIN_ID}"
     }
   }
 }
@@ -53,7 +53,6 @@ POST_MESSAGE_RESULT=$(curl -s -X POST -H "Content-Type: application/json" \
     "input": {
       "groupChatId": "${GROUP_CHAT_ID}",
       "content": "Text1",
-      "userAccountId": "${USER_ACCOUNT_ID}",
       "executorId": "${USER_ACCOUNT_ID}"
     }
   }
@@ -165,7 +164,6 @@ curl -s -X POST -H "Content-Type: application/json" \
     "input": {
       "groupChatId": "${GROUP_CHAT_ID}",
       "messageId": "${MESSAGE_ID}",
-      "userAccountId": "${USER_ACCOUNT_ID}",
       "executorId": "${USER_ACCOUNT_ID}"
     }
   }
