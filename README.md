@@ -19,11 +19,12 @@ It uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-ad
 ### Component Composition
 
 - Write API Server
-    - GraphQL server (Mutation)
+    - API is implemented by GraphQL (Mutation)
+    - Event Sourced Aggregate is implemented by [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs)
 - Read Model Updater
     - Lambda to build read models based on journals
 - Read API Server
-    - GraphQL server (Query, Subscription)
+    - API is implemented by GraphQL (Query)
 
 ### System Architecture Diagram
 
