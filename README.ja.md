@@ -17,11 +17,12 @@ Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5i
 ### コンポーネント構成
 
 - Write API (WIP)
-    - 書き込み専用のWeb API
+    - GraphQLサーバ(Mutation)
 - Read Model Updater
     - ジャーナルを基にリードモデル構築するLambda
+    - ローカルではLambdaの動作をエミュレーションするコードを実行する(local-rmu)
 - Read API
-    - GraphQLサーバ(Query,Subscription)
+    - GraphQLサーバ(Query)
 
 ### システム構成図
 
