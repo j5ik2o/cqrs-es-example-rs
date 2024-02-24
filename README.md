@@ -8,7 +8,7 @@
 
 Status: In Implementation
 
-This is an example of CQRS/Event Sourcing and GraphQL implemented in TypeScript.
+This is an example of CQRS/Event Sourcing and GraphQL implemented in Rust.
 
 This project uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs) for Event Sourcing.
 
