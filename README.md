@@ -8,7 +8,7 @@
 
 Status: In Implementation
 
-This repository is a sample implementation of CQRS/ES in Rust.
+This repository is a sample implementation of CQRS/Event Sourcing and GraphQL in Rust.
 
 It uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs) for Event Sourcing.
 
