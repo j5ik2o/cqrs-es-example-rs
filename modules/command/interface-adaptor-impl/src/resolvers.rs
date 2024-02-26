@@ -328,7 +328,7 @@ impl MutationRoot {
               .extend_with(|_, e| e.set("cause", cause.to_string())),
           )
         } else {
-          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
+          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
         }
       }
     }
@@ -367,7 +367,7 @@ impl MutationRoot {
               .extend_with(|_, e| e.set("cause", cause.to_string())),
           )
         } else {
-          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
+          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
         }
       }
     }
