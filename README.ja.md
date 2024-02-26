@@ -48,4 +48,5 @@ Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5i
 ## リンク
 
 - [Go版](https://github.com/j5ik2o/cqrs-es-example-go)
+- [TypeScript版](https://github.com/j5ik2o/cqrs-es-example-js)
 - [共通ドキュメント](https://github.com/j5ik2o/cqrs-es-example-docs)
