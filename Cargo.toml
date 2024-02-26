@@ -64,5 +64,5 @@ serial_test = "3.0.0"
 
 opentelemetry = "0.21"
 opentelemetry_sdk = "0.21"
-opentelemetry-stdout = { version = "0.2.0", features = ["trace"] }
+opentelemetry-stdout = { version = "0.3.0", features = ["trace"] }
 tracing-opentelemetry = "0.22"
