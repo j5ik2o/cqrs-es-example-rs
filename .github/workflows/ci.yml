@@ -55,7 +55,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo test --verbose --release
+      - run: KEEP_CONTAINERS=true cargo test --verbose --release
   e2e:
     runs-on: ubuntu-latest
     needs: test
