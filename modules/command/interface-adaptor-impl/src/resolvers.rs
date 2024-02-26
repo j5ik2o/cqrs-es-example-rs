@@ -1,17 +1,22 @@
-use crate::gateways::group_chat_repository::GroupChatRepositoryImpl;
+use std::str::FromStr;
+use std::sync::Arc;
+
 use async_graphql::{
-  Context, EmptySubscription, Error, FieldResult, InputObject, Object, Schema, SchemaBuilder, SimpleObject,
+  Context, EmptySubscription, Error, ErrorExtensions, FieldResult, InputObject, Object, Schema, SchemaBuilder,
+  SimpleObject,
 };
+use event_store_adapter_rs::types::EventStoreWriteError;
+use event_store_adapter_rs::EventStoreForDynamoDB;
+use tokio::sync::Mutex;
+
 use command_domain::group_chat::{
   GroupChat, GroupChatEvent, GroupChatId, GroupChatName, MemberRole, Message, MessageId,
 };
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatRepository;
 use command_processor::command_processor::GroupChatCommandProcessor;
-use event_store_adapter_rs::EventStoreForDynamoDB;
-use std::str::FromStr;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+
+use crate::gateways::group_chat_repository::GroupChatRepositoryImpl;
 
 pub struct ServiceContext<TR: GroupChatRepository> {
   group_chat_command_processor: Arc<Mutex<GroupChatCommandProcessor<TR>>>,
@@ -110,14 +115,14 @@ impl MutationRoot {
       Ok(group_chat) => group_chat,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let executor_id = match UserAccountId::from_str(&input.executor_id) {
       Ok(executor_id) => executor_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
@@ -127,7 +132,15 @@ impl MutationRoot {
       }),
       Err(error) => {
         log::warn!("error = {}", error);
-        Err(Error::new(error.to_string()))
+        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
+          Err(
+            Error::new(error.to_string())
+              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("cause", cause.to_string())),
+          )
+        } else {
+          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
+        }
       }
     }
   }
@@ -142,14 +155,14 @@ impl MutationRoot {
       Ok(group_chat_id) => group_chat_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let executor_id = match UserAccountId::from_str(&input.executor_id) {
       Ok(executor_id) => executor_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
@@ -159,7 +172,15 @@ impl MutationRoot {
       }),
       Err(error) => {
         log::warn!("error = {}", error);
-        Err(Error::new(error.to_string()))
+        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
+          Err(
+            Error::new(error.to_string())
+              .extend_with(|_, e| e.set("code", "OPTIMISTIC_LOCK_ERROR"))
+              .extend_with(|_, e| e.set("cause", cause.to_string())),
+          )
+        } else {
+          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
+        }
       }
     }
   }
@@ -174,21 +195,21 @@ impl MutationRoot {
       Ok(group_chat_id) => group_chat_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let group_chat_name = match GroupChatName::from_str(&input.name) {
       Ok(group_chat_name) => group_chat_name,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let executor_id = match UserAccountId::from_str(&input.executor_id) {
       Ok(executor_id) => executor_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
@@ -201,7 +222,15 @@ impl MutationRoot {
       }),
       Err(error) => {
         log::warn!("error = {}", error);
-        Err(Error::new(error.to_string()))
+        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
+          Err(
+            Error::new(error.to_string())
+              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("cause", cause.to_string())),
+          )
+        } else {
+          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
+        }
       }
     }
   }
@@ -212,28 +241,28 @@ impl MutationRoot {
       Ok(group_chat_id) => group_chat_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let user_account_id = match UserAccountId::from_str(&input.user_account_id) {
       Ok(user_account_id) => user_account_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let role = match MemberRole::from_str(&input.role) {
       Ok(role) => role,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let executor_id = match UserAccountId::from_str(&input.executor_id) {
       Ok(executor_id) => executor_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
@@ -246,7 +275,15 @@ impl MutationRoot {
       }),
       Err(error) => {
         log::warn!("error = {}", error);
-        Err(Error::new(error.to_string()))
+        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
+          Err(
+            Error::new(error.to_string())
+              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("cause", cause.to_string())),
+          )
+        } else {
+          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
+        }
       }
     }
   }
@@ -257,21 +294,21 @@ impl MutationRoot {
       Ok(group_chat_id) => group_chat_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let user_account_id = match UserAccountId::from_str(&input.user_account_id) {
       Ok(user_account_id) => user_account_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let executor_id = match UserAccountId::from_str(&input.executor_id) {
       Ok(executor_id) => executor_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
@@ -284,7 +321,15 @@ impl MutationRoot {
       }),
       Err(error) => {
         log::warn!("error = {}", error);
-        Err(Error::new(error.to_string()))
+        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
+          Err(
+            Error::new(error.to_string())
+              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("cause", cause.to_string())),
+          )
+        } else {
+          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
+        }
       }
     }
   }
@@ -295,7 +340,7 @@ impl MutationRoot {
       Ok(group_chat_id) => group_chat_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let content = input.content.clone();
@@ -303,7 +348,7 @@ impl MutationRoot {
       Ok(executor_id) => executor_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
@@ -315,7 +360,15 @@ impl MutationRoot {
       }),
       Err(error) => {
         log::warn!("error = {}", error);
-        Err(Error::new(error.to_string()))
+        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
+          Err(
+            Error::new(error.to_string())
+              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("cause", cause.to_string())),
+          )
+        } else {
+          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
+        }
       }
     }
   }
@@ -326,21 +379,21 @@ impl MutationRoot {
       Ok(group_chat_id) => group_chat_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let message_id = match MessageId::from_str(&input.message_id) {
       Ok(message_id) => message_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let executor_id = match UserAccountId::from_str(&input.executor_id) {
       Ok(executor_id) => executor_id,
       Err(error) => {
         log::warn!("error = {}", error);
-        return Err(Error::new(error.to_string()));
+        return Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")));
       }
     };
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
@@ -350,7 +403,15 @@ impl MutationRoot {
       }),
       Err(error) => {
         log::warn!("error = {}", error);
-        Err(Error::new(error.to_string()))
+        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
+          Err(
+            Error::new(error.to_string())
+              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("cause", cause.to_string())),
+          )
+        } else {
+          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
+        }
       }
     }
   }
