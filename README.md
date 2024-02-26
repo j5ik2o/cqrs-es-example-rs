@@ -49,6 +49,4 @@ This project uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/even
 
 ## Links
 
-- [Go Version](https://github.com/j5ik2o/cqrs-es-example-go)
-- [TypeScript Version](https://github.com/j5ik2o/cqrs-es-example-js)
-- [Common Documents](https://github.com/j5ik2o/cqrs-es-example-docs)
+- [Common Documents](https://github.com/j5ik2o/cqrs-es-example)
