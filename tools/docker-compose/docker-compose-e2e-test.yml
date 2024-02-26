@@ -1,0 +1,12 @@
+version: '3.6'
+services:
+  e2e-test:
+    image: e2e-test-rs:latest
+    environment:
+      WRITE_API_SERVER_BASE_URL: http://write-api-server-1:8080
+      READ_API_SERVER_BASE_URL: http://read-api-server-1:8080
+    depends_on:
+      write-api-server-1:
+        condition: service_started
+      read-api-server-1:
+        condition: service_started

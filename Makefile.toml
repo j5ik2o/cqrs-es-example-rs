@@ -692,6 +692,18 @@ description = "グループチャットを作成・メンバー追加・メッ�
 workspace = false
 script = '''
 #!/usr/bin/env bash
-./tools/scripts/verify-group-chat.sh
+./tools/e2e-test/verify-group-chat.sh
 '''
 
+[tasks.docker-build-e2e-test]
+workspace = false
+script = '''
+#!/usr/bin/env bash
+cd ./tools/e2e-test
+make build
+'''
+
+[tasks.docker-compose-e2e-test]
+description = "Docker Composeを起動します"
+workspace = false
+command = "./tools/scripts/docker-compose-e2e-test.sh"
