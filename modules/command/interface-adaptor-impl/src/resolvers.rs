@@ -135,7 +135,7 @@ impl MutationRoot {
         if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
           Err(
             Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("code", "409"))
               .extend_with(|_, e| e.set("cause", cause.to_string())),
           )
         } else {
@@ -175,7 +175,7 @@ impl MutationRoot {
         if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
           Err(
             Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "OPTIMISTIC_LOCK_ERROR"))
+              .extend_with(|_, e| e.set("code", "409"))
               .extend_with(|_, e| e.set("cause", cause.to_string())),
           )
         } else {
@@ -225,7 +225,7 @@ impl MutationRoot {
         if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
           Err(
             Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("code", "409"))
               .extend_with(|_, e| e.set("cause", cause.to_string())),
           )
         } else {
@@ -278,7 +278,7 @@ impl MutationRoot {
         if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
           Err(
             Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("code", "409"))
               .extend_with(|_, e| e.set("cause", cause.to_string())),
           )
         } else {
@@ -324,7 +324,7 @@ impl MutationRoot {
         if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
           Err(
             Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("code", "409"))
               .extend_with(|_, e| e.set("cause", cause.to_string())),
           )
         } else {
@@ -363,7 +363,7 @@ impl MutationRoot {
         if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
           Err(
             Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("code", "409"))
               .extend_with(|_, e| e.set("cause", cause.to_string())),
           )
         } else {
@@ -406,7 +406,7 @@ impl MutationRoot {
         if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
           Err(
             Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "400"))
+              .extend_with(|_, e| e.set("code", "409"))
               .extend_with(|_, e| e.set("cause", cause.to_string())),
           )
         } else {
