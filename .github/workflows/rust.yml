@@ -58,7 +58,7 @@ jobs:
       - run: cargo test --verbose --release -p infrastructure
   test-command-domain:
     runs-on: ubuntu-latest
-    needs: [lint, test-infrastructure]
+    needs: lint
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -75,7 +75,7 @@ jobs:
   test-command-interface-adaptor-impl:
     runs-on: ubuntu-latest
     needs:
-      [lint, test-infrastructure, test-command-processor, test-command-domain]
+      lint
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -91,7 +91,7 @@ jobs:
       - run: KEEP_CONTAINERS=true cargo test --verbose --release -p command-interface-adaptor-impl
   test-command-processor:
     runs-on: ubuntu-latest
-    needs: [lint, test-command-domain]
+    needs: lint
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -107,7 +107,7 @@ jobs:
       - run: cargo test --verbose --release -p command-processor
   test-query-interface-adaptor:
     runs-on: ubuntu-latest
-    needs: [lint, test-infrastructure]
+    needs: lint
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -120,10 +120,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo test --verbose --release -p query-interface-adaptor
+      - run: KEEP_CONTAINERS=true cargo test --verbose --release -p query-interface-adaptor
   test-write-api-server:
     runs-on: ubuntu-latest
-    needs: [ test-infrastructure, test-command-domain, test-command-interface-adaptor-impl, test-command-processor ]
+    needs: lint
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -139,7 +139,7 @@ jobs:
       - run: cargo test --verbose --release -p write-api-server
   test-read-model-updater:
     runs-on: ubuntu-latest
-    needs: [test-infrastructure, test-command-domain]
+    needs: lint
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -155,7 +155,7 @@ jobs:
       - run: cargo test --verbose --release -p read-model-updater
   test-read-api-server:
     runs-on: ubuntu-latest
-    needs: [test-infrastructure, test-query-interface-adaptor]
+    needs: lint
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
