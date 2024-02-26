@@ -167,8 +167,8 @@ impl MemberDao for MemberDaoImpl {
          FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
          WHERE gc.disabled = 'false' AND m.group_chat_id = ?
 			AND EXISTS (SELECT 1 FROM members AS m2 WHERE m2.group_chat_id = m.group_chat_id AND m2.user_account_id = ?)"#,
-      group_chat_id,
-      user_account_id
+      group_chat_id.clone(),
+      user_account_id.clone()
     )
     .fetch_all(&self.my_sql_pool)
     .await?;
