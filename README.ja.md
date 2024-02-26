@@ -8,7 +8,7 @@
 
 ステータス:実装中
 
-このリポジトリは、RustでのCQRS/ESのサンプル実装です。
+このリポジトリは、RustでのCQRS/Event Sourcing + GraphQLのサンプル実装です。
 
 Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs)を利用しています。
 
