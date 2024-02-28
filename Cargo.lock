@@ -1034,6 +1034,7 @@ dependencies = [
  "downcast-rs",
  "event-store-adapter-rs",
  "log",
+ "thiserror",
  "tokio",
 ]
 

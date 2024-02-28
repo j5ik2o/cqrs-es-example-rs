@@ -12,9 +12,10 @@ use tokio::sync::Mutex;
 use command_domain::group_chat::{
   GroupChat, GroupChatEvent, GroupChatId, GroupChatName, MemberRole, Message, MessageId,
 };
+use command_domain::group_chat_error::GroupChatError;
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatRepository;
-use command_processor::command_processor::GroupChatCommandProcessor;
+use command_processor::command_processor::{CommandProcessError, GroupChatCommandProcessor};
 
 use crate::gateways::group_chat_repository::GroupChatRepositoryImpl;
 
@@ -102,6 +103,21 @@ pub struct MutationRoot;
 
 pub type ES = EventStoreForDynamoDB<GroupChatId, GroupChat, GroupChatEvent>;
 
+fn error_handling(error: &anyhow::Error) -> Error {
+  if let Some(CommandProcessError::NotFoundError) = error.downcast_ref::<CommandProcessError>() {
+    return Error::new(error.to_string()).extend_with(|_, e| e.set("code", "404"));
+  }
+  if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
+    return Error::new(error.to_string())
+      .extend_with(|_, e| e.set("code", "409"))
+      .extend_with(|_, e| e.set("cause", cause.to_string()));
+  }
+  if let Some(group_chat_error) = error.downcast_ref::<GroupChatError>() {
+    return Error::new(group_chat_error.to_string()).extend_with(|_, e| e.set("code", "422"));
+  }
+  return Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500"));
+}
+
 #[Object]
 impl MutationRoot {
   async fn create_group_chat<'ctx>(
@@ -110,7 +126,6 @@ impl MutationRoot {
     input: CreateGroupChatInput,
   ) -> FieldResult<GroupChatResult> {
     let service_ctx = ctx.data::<ServiceContext<GroupChatRepositoryImpl<ES>>>().unwrap();
-
     let group_chat_name = match GroupChatName::from_str(&input.name) {
       Ok(group_chat) => group_chat,
       Err(error) => {
@@ -130,18 +145,7 @@ impl MutationRoot {
       Ok(group_chat_id) => Ok(GroupChatResult {
         group_chat_id: group_chat_id.to_string(),
       }),
-      Err(error) => {
-        log::warn!("error = {}", error);
-        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
-          Err(
-            Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "409"))
-              .extend_with(|_, e| e.set("cause", cause.to_string())),
-          )
-        } else {
-          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
-        }
-      }
+      Err(error) => Err(error_handling(&error)),
     }
   }
 
@@ -170,18 +174,7 @@ impl MutationRoot {
       Ok(group_chat_id) => Ok(GroupChatResult {
         group_chat_id: group_chat_id.to_string(),
       }),
-      Err(error) => {
-        log::warn!("error = {}", error);
-        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
-          Err(
-            Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "409"))
-              .extend_with(|_, e| e.set("cause", cause.to_string())),
-          )
-        } else {
-          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
-        }
-      }
+      Err(error) => Err(error_handling(&error)),
     }
   }
 
@@ -220,18 +213,7 @@ impl MutationRoot {
       Ok(group_chat_id) => Ok(GroupChatResult {
         group_chat_id: group_chat_id.to_string(),
       }),
-      Err(error) => {
-        log::warn!("error = {}", error);
-        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
-          Err(
-            Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "409"))
-              .extend_with(|_, e| e.set("cause", cause.to_string())),
-          )
-        } else {
-          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
-        }
-      }
+      Err(error) => Err(error_handling(&error)),
     }
   }
 
@@ -273,18 +255,7 @@ impl MutationRoot {
       Ok(group_chat_id) => Ok(GroupChatResult {
         group_chat_id: group_chat_id.to_string(),
       }),
-      Err(error) => {
-        log::warn!("error = {}", error);
-        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
-          Err(
-            Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "409"))
-              .extend_with(|_, e| e.set("cause", cause.to_string())),
-          )
-        } else {
-          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
-        }
-      }
+      Err(error) => Err(error_handling(&error)),
     }
   }
 
@@ -319,18 +290,7 @@ impl MutationRoot {
       Ok(group_chat_id) => Ok(GroupChatResult {
         group_chat_id: group_chat_id.to_string(),
       }),
-      Err(error) => {
-        log::warn!("error = {}", error);
-        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
-          Err(
-            Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "409"))
-              .extend_with(|_, e| e.set("cause", cause.to_string())),
-          )
-        } else {
-          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
-        }
-      }
+      Err(error) => Err(error_handling(&error)),
     }
   }
 
@@ -358,18 +318,7 @@ impl MutationRoot {
         group_chat_id: group_chat_id.to_string(),
         message_id: message_id.to_string(),
       }),
-      Err(error) => {
-        log::warn!("error = {}", error);
-        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
-          Err(
-            Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "409"))
-              .extend_with(|_, e| e.set("cause", cause.to_string())),
-          )
-        } else {
-          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
-        }
-      }
+      Err(error) => Err(error_handling(&error)),
     }
   }
 
@@ -401,18 +350,7 @@ impl MutationRoot {
       Ok(group_chat_id) => Ok(GroupChatResult {
         group_chat_id: group_chat_id.to_string(),
       }),
-      Err(error) => {
-        log::warn!("error = {}", error);
-        if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
-          Err(
-            Error::new(error.to_string())
-              .extend_with(|_, e| e.set("code", "409"))
-              .extend_with(|_, e| e.set("cause", cause.to_string())),
-          )
-        } else {
-          Err(Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")))
-        }
-      }
+      Err(error) => Err(error_handling(&error)),
     }
   }
 }
