@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true, features = ["backtrace"] }
+thiserror = { workspace = true }
 async-trait = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 command-interface-adaptor-if = { path = "../interface-adaptor-if" }

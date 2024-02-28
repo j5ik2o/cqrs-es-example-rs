@@ -1,11 +1,18 @@
 use anyhow::Result;
 use event_store_adapter_rs::types::{Aggregate, Event};
 use std::sync::Arc;
+use thiserror::Error;
 use tokio::sync::Mutex;
 
 use command_domain::group_chat::*;
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatRepository;
+
+#[derive(Error, Debug)]
+pub enum CommandProcessError {
+  #[error("GroupChat not found.")]
+  NotFoundError,
+}
 
 /// グループチャットへのコマンドを処理するユースケース実装。
 ///
@@ -65,7 +72,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
         rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
         Ok(event.aggregate_id().clone())
       }
-      None => Err(anyhow::anyhow!("GroupChat not found.")),
+      None => Err(CommandProcessError::NotFoundError.into()),
     }
   }
 
@@ -96,7 +103,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
         rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
         Ok(event.aggregate_id().clone())
       }
-      None => Err(anyhow::anyhow!("GroupChat not found.")),
+      None => Err(CommandProcessError::NotFoundError.into()),
     }
   }
 
@@ -124,7 +131,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
         rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
         Ok(event.aggregate_id().clone())
       }
-      None => Err(anyhow::anyhow!("GroupChat not found.")),
+      None => Err(CommandProcessError::NotFoundError.into()),
     }
   }
 
@@ -146,7 +153,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
         rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
         Ok(event.aggregate_id().clone())
       }
-      None => Err(anyhow::anyhow!("GroupChat not found.")),
+      None => Err(CommandProcessError::NotFoundError.into()),
     }
   }
 
@@ -177,7 +184,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
           message.breach_encapsulation_of_id().clone(),
         ))
       }
-      None => Err(anyhow::anyhow!("GroupChat not found.")),
+      None => Err(CommandProcessError::NotFoundError.into()),
     }
   }
 
@@ -205,7 +212,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
         rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
         Ok(event.aggregate_id().clone())
       }
-      None => Err(anyhow::anyhow!("GroupChat not found.")),
+      None => Err(CommandProcessError::NotFoundError.into()),
     }
   }
 }
