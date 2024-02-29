@@ -34,6 +34,7 @@ This project uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/even
 ## Development Environment
 
 - [Tool Setup](docs/TOOLS_INSTALLATION.md)
+- [Build and Test](docs/BUILD_AND_TEST.md)
 
 ### Local Environment
 
