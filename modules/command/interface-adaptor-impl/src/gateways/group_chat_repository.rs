@@ -23,7 +23,7 @@ impl MockGroupChatRepository {
 
 #[async_trait::async_trait]
 impl GroupChatRepository for MockGroupChatRepository {
-  async fn store(&mut self, event: &GroupChatEvent, _version: usize, snapshot: Option<&GroupChat>) -> Result<()> {
+  async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<()> {
     self
       .events
       .entry(event.aggregate_id().clone())
@@ -32,7 +32,7 @@ impl GroupChatRepository for MockGroupChatRepository {
     *self
       .snapshot
       .entry(event.aggregate_id().clone())
-      .or_insert(snapshot.cloned()) = snapshot.cloned();
+      .or_insert(Some(snapshot.clone())) = Some(snapshot.clone());
     Ok(())
   }
 
@@ -85,17 +85,11 @@ impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> Gro
   ///
   /// # 戻り値
   /// スナップショットを永続化する場合は `Some` 、そうでない場合は `None` 。
-  fn resolve_snapshot(snapshot_interval: usize, created: bool, group_chat: Option<&GroupChat>) -> Option<&GroupChat> {
-    match group_chat {
-      Some(gc) if created => Some(gc),
-      Some(gc) => {
-        if gc.seq_nr() % snapshot_interval == 0 {
-          Some(gc)
-        } else {
-          None
-        }
-      }
-      None => None,
+  fn resolve_snapshot(snapshot_interval: usize, created: bool, group_chat: &GroupChat) -> Option<&GroupChat> {
+    if created || group_chat.seq_nr() % snapshot_interval == 0 {
+      Some(group_chat)
+    } else {
+      None
     }
   }
 }
@@ -104,10 +98,10 @@ impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> Gro
 impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> GroupChatRepository
   for GroupChatRepositoryImpl<ES>
 {
-  async fn store(&mut self, event: &GroupChatEvent, version: usize, snapshot: Option<&GroupChat>) -> Result<()> {
+  async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<()> {
     match Self::resolve_snapshot(self.snapshot_interval, event.is_created(), snapshot) {
       Some(snapshot) => self.event_store.persist_event_and_snapshot(event, snapshot).await?,
-      None => self.event_store.persist_event(event, version).await?,
+      None => self.event_store.persist_event(event, snapshot.version()).await?,
     }
     Ok(())
   }

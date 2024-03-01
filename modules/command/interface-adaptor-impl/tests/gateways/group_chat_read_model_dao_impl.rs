@@ -307,7 +307,7 @@ async fn test_delete_message() {
     .unwrap();
 
   dao
-    .delete_message(aggregate_id, message.breach_encapsulation_of_id().clone(), Utc::now())
+    .delete_message(message.breach_encapsulation_of_id().clone(), Utc::now())
     .await
     .unwrap();
 }
