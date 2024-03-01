@@ -18,7 +18,7 @@ pub trait GroupChatRepository: Debug + Clone + Sync + Send + 'static {
   ///
   /// # 戻り値
   /// - 成功した場合はOk, 失敗した場合はErrを返す。
-  async fn store(&mut self, event: &GroupChatEvent, version: usize, snapshot: Option<&GroupChat>) -> Result<()>;
+  async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<()>;
 
   /// 指定したグループチャットIDに該当するグループチャットを取得する。
   ///
@@ -66,10 +66,5 @@ pub trait GroupChatReadModelUpdateDao {
   /// メッセージリードモデル追加します。
   async fn insert_message(&self, aggregate_id: GroupChatId, message: Message, created_at: DateTime<Utc>) -> Result<()>;
   /// メッセージリードモデルを削除します。
-  async fn delete_message(
-    &self,
-    aggregate_id: GroupChatId,
-    message_id: MessageId,
-    updated_at: DateTime<Utc>,
-  ) -> Result<()>;
+  async fn delete_message(&self, message_id: MessageId, updated_at: DateTime<Utc>) -> Result<()>;
 }

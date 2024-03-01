@@ -136,12 +136,7 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
     Ok(())
   }
 
-  async fn delete_message(
-    &self,
-    aggregate_id: GroupChatId,
-    message_id: MessageId,
-    updated_at: DateTime<Utc>,
-  ) -> Result<()> {
+  async fn delete_message(&self, message_id: MessageId, updated_at: DateTime<Utc>) -> Result<()> {
     // NOTE: 現状は物理削除になっている。論理削除変えたい場合はstatusフラグを導入しUPDATEに変更する。
     // もう一つの方法は履歴テーブルを作り、そちらに移動させる方法もある。
     sqlx::query!(
@@ -203,7 +198,7 @@ impl GroupChatReadModelUpdateDao for MockGroupChatReadModelUpdateDao {
     Ok(())
   }
 
-  async fn delete_message(&self, _aggregate_id: GroupChatId, _message_id: MessageId, _: DateTime<Utc>) -> Result<()> {
+  async fn delete_message(&self, _message_id: MessageId, _: DateTime<Utc>) -> Result<()> {
     Ok(())
   }
 }

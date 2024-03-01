@@ -21,7 +21,7 @@ async fn test_group_chat_create() {
 
   // When
   let (group_chat, create_event) = GroupChat::new(name, members);
-  let result = repository.store(&create_event, 1, Some(&group_chat)).await;
+  let result = repository.store(&create_event, &group_chat).await;
   assert!(result.is_ok());
 
   let actual = repository.find_by_id(group_chat.id()).await.unwrap().unwrap();
@@ -46,7 +46,7 @@ async fn test_group_chat_add_member() {
   let members = Members::new(admin_user_account_id.clone());
 
   let (actual, create_event) = GroupChat::new(name, members);
-  let result = repository.store(&create_event, 1, Some(&actual)).await;
+  let result = repository.store(&create_event, &actual).await;
   assert!(result.is_ok());
 
   let mut actual = repository.find_by_id(actual.id()).await.unwrap().unwrap();
@@ -59,7 +59,7 @@ async fn test_group_chat_add_member() {
       admin_user_account_id.clone(),
     )
     .unwrap();
-  let result = repository.store(&add_member_event, actual.version(), None).await;
+  let result = repository.store(&add_member_event, &actual).await;
   assert!(result.is_ok());
 
   let mut actual = repository.find_by_id(actual.id()).await.unwrap().unwrap();
@@ -74,7 +74,7 @@ async fn test_group_chat_add_member() {
     )
     .unwrap();
 
-  let result = repository.store(&add_member_event, actual.version(), None).await;
+  let result = repository.store(&add_member_event, &actual).await;
   assert!(result.is_ok());
 
   let actual = repository.find_by_id(actual.id()).await.unwrap().unwrap();

@@ -93,11 +93,7 @@ pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
             .await
             .unwrap(),
           GroupChatEvent::GroupChatMessageDeleted(body) => group_chat_read_model_dao
-            .delete_message(
-              body.aggregate_id.clone(),
-              body.message_id.clone(),
-              body.occurred_at.clone(),
-            )
+            .delete_message(body.message_id.clone(), body.occurred_at.clone())
             .await
             .unwrap(),
         }

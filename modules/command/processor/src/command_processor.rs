@@ -1,5 +1,5 @@
 use anyhow::Result;
-use event_store_adapter_rs::types::{Aggregate, Event};
+use event_store_adapter_rs::types::Event;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex;
@@ -45,7 +45,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     let members = Members::new(executor_id);
     let (t, te) = GroupChat::new(name, members);
     let mut rg = self.group_chat_repository.lock().await;
-    rg.store(&te, 1, Some(&t)).await?;
+    rg.store(&te, &t).await?;
     Ok(te.aggregate_id().clone())
   }
 
@@ -69,7 +69,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     match &mut group_chat_opt {
       Some(group_chat) => {
         let event = group_chat.rename(name, executor_id)?;
-        rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
+        rg.store(&event, &group_chat).await?;
         Ok(event.aggregate_id().clone())
       }
       None => Err(CommandProcessError::NotFoundError.into()),
@@ -100,7 +100,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
       Some(group_chat) => {
         let member_id = MemberId::new();
         let event = group_chat.add_member(member_id, user_account_id, role, executor_id)?;
-        rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
+        rg.store(&event, &group_chat).await?;
         Ok(event.aggregate_id().clone())
       }
       None => Err(CommandProcessError::NotFoundError.into()),
@@ -128,7 +128,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     match &mut group_chat_opt {
       Some(group_chat) => {
         let event = group_chat.remove_member(user_account_id, executor_id)?;
-        rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
+        rg.store(&event, &group_chat).await?;
         Ok(event.aggregate_id().clone())
       }
       None => Err(CommandProcessError::NotFoundError.into()),
@@ -150,7 +150,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     match &mut group_chat_opt {
       Some(group_chat) => {
         let event = group_chat.delete(executor_id)?;
-        rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
+        rg.store(&event, &group_chat).await?;
         Ok(event.aggregate_id().clone())
       }
       None => Err(CommandProcessError::NotFoundError.into()),
@@ -178,7 +178,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     match group_chat_opt.as_mut() {
       Some(group_chat) => {
         let event = group_chat.post_message(message.clone(), executor_id)?;
-        rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
+        rg.store(&event, &group_chat).await?;
         Ok((
           event.aggregate_id().clone(),
           message.breach_encapsulation_of_id().clone(),
@@ -209,7 +209,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     match &mut group_chat_opt {
       Some(group_chat) => {
         let event = group_chat.delete_message(message_id, executor_id)?;
-        rg.store(&event, group_chat.version(), Some(&group_chat)).await?;
+        rg.store(&event, &group_chat).await?;
         Ok(event.aggregate_id().clone())
       }
       None => Err(CommandProcessError::NotFoundError.into()),
