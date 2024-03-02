@@ -42,10 +42,12 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
   /// # 戻り値
   /// - 成功した場合はOk, 失敗した場合はErrを返す。
   pub async fn create_group_chat(&mut self, name: GroupChatName, executor_id: UserAccountId) -> Result<GroupChatId> {
+    let mut rg = self.group_chat_repository.lock().await;
+
     let members = Members::new(executor_id);
     let (t, te) = GroupChat::new(name, members);
-    let mut rg = self.group_chat_repository.lock().await;
     rg.store(&te, &t).await?;
+
     Ok(te.aggregate_id().clone())
   }
 
@@ -65,15 +67,13 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     executor_id: UserAccountId,
   ) -> Result<GroupChatId> {
     let mut rg = self.group_chat_repository.lock().await;
-    let mut group_chat_opt = rg.find_by_id(&id).await?;
-    match &mut group_chat_opt {
-      Some(group_chat) => {
-        let event = group_chat.rename(name, executor_id)?;
-        rg.store(&event, &group_chat).await?;
-        Ok(event.aggregate_id().clone())
-      }
-      None => Err(CommandProcessError::NotFoundError.into()),
-    }
+
+    let mut group_chat = rg.find_by_id(&id).await?.ok_or(CommandProcessError::NotFoundError)?;
+
+    let event = group_chat.rename(name, executor_id)?;
+    rg.store(&event, &group_chat).await?;
+
+    Ok(event.aggregate_id().clone())
   }
 
   /// グループチャットにメンバーを追加する。
@@ -95,16 +95,15 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     executor_id: UserAccountId,
   ) -> Result<GroupChatId> {
     let mut rg = self.group_chat_repository.lock().await;
-    let mut group_chat_opt = rg.find_by_id(&id).await?;
-    match &mut group_chat_opt {
-      Some(group_chat) => {
-        let member_id = MemberId::new();
-        let event = group_chat.add_member(member_id, user_account_id, role, executor_id)?;
-        rg.store(&event, &group_chat).await?;
-        Ok(event.aggregate_id().clone())
-      }
-      None => Err(CommandProcessError::NotFoundError.into()),
-    }
+
+    let mut group_chat = rg.find_by_id(&id).await?.ok_or(CommandProcessError::NotFoundError)?;
+
+    let member_id = MemberId::new();
+    let event = group_chat.add_member(member_id, user_account_id, role, executor_id)?;
+
+    rg.store(&event, &group_chat).await?;
+
+    Ok(event.aggregate_id().clone())
   }
 
   /// グループチャットからメンバーを削除する。
@@ -124,15 +123,14 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     executor_id: UserAccountId,
   ) -> Result<GroupChatId> {
     let mut rg = self.group_chat_repository.lock().await;
-    let mut group_chat_opt = rg.find_by_id(&id).await?;
-    match &mut group_chat_opt {
-      Some(group_chat) => {
-        let event = group_chat.remove_member(user_account_id, executor_id)?;
-        rg.store(&event, &group_chat).await?;
-        Ok(event.aggregate_id().clone())
-      }
-      None => Err(CommandProcessError::NotFoundError.into()),
-    }
+
+    let mut group_chat = rg.find_by_id(&id).await?.ok_or(CommandProcessError::NotFoundError)?;
+
+    let event = group_chat.remove_member(user_account_id, executor_id)?;
+
+    rg.store(&event, &group_chat).await?;
+
+    Ok(event.aggregate_id().clone())
   }
 
   /// グループチャットを削除する。
@@ -146,15 +144,14 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
   /// - 成功した場合はOk, 失敗した場合はErrを返す。
   pub async fn delete_group_chat(&mut self, id: GroupChatId, executor_id: UserAccountId) -> Result<GroupChatId> {
     let mut rg = self.group_chat_repository.lock().await;
-    let mut group_chat_opt = rg.find_by_id(&id).await?;
-    match &mut group_chat_opt {
-      Some(group_chat) => {
-        let event = group_chat.delete(executor_id)?;
-        rg.store(&event, &group_chat).await?;
-        Ok(event.aggregate_id().clone())
-      }
-      None => Err(CommandProcessError::NotFoundError.into()),
-    }
+
+    let mut group_chat = rg.find_by_id(&id).await?.ok_or(CommandProcessError::NotFoundError)?;
+
+    let event = group_chat.delete(executor_id)?;
+
+    rg.store(&event, &group_chat).await?;
+
+    Ok(event.aggregate_id().clone())
   }
 
   /// グループチャットにメッセージを投稿する。
@@ -174,18 +171,17 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     executor_id: UserAccountId,
   ) -> Result<(GroupChatId, MessageId)> {
     let mut rg = self.group_chat_repository.lock().await;
-    let mut group_chat_opt = rg.find_by_id(&id).await?;
-    match group_chat_opt.as_mut() {
-      Some(group_chat) => {
-        let event = group_chat.post_message(message.clone(), executor_id)?;
-        rg.store(&event, &group_chat).await?;
-        Ok((
-          event.aggregate_id().clone(),
-          message.breach_encapsulation_of_id().clone(),
-        ))
-      }
-      None => Err(CommandProcessError::NotFoundError.into()),
-    }
+
+    let mut group_chat = rg.find_by_id(&id).await?.ok_or(CommandProcessError::NotFoundError)?;
+
+    let event = group_chat.post_message(message.clone(), executor_id)?;
+
+    rg.store(&event, &group_chat).await?;
+
+    Ok((
+      event.aggregate_id().clone(),
+      message.breach_encapsulation_of_id().clone(),
+    ))
   }
 
   /// グループチャットのメッセージを削除する。
@@ -205,14 +201,13 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     executor_id: UserAccountId,
   ) -> Result<GroupChatId> {
     let mut rg = self.group_chat_repository.lock().await;
-    let mut group_chat_opt = rg.find_by_id(&id).await?;
-    match &mut group_chat_opt {
-      Some(group_chat) => {
-        let event = group_chat.delete_message(message_id, executor_id)?;
-        rg.store(&event, &group_chat).await?;
-        Ok(event.aggregate_id().clone())
-      }
-      None => Err(CommandProcessError::NotFoundError.into()),
-    }
+
+    let mut group_chat = rg.find_by_id(&id).await?.ok_or(CommandProcessError::NotFoundError)?;
+
+    let event = group_chat.delete_message(message_id, executor_id)?;
+
+    rg.store(&event, &group_chat).await?;
+
+    Ok(event.aggregate_id().clone())
   }
 }
