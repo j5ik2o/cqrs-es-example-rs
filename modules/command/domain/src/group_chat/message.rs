@@ -27,4 +27,14 @@ impl Message {
     let id = MessageId::new();
     Self { id, text, sender_id }
   }
+
+  pub fn validate(text: &str, sender_id: UserAccountId) -> anyhow::Result<Self> {
+    if text.is_empty() {
+      return Err(anyhow::anyhow!("text is empty"));
+    }
+    if text.len() > 1000 {
+      return Err(anyhow::anyhow!("text is too long"));
+    }
+    Ok(Message::new(text.to_string(), sender_id))
+  }
 }
