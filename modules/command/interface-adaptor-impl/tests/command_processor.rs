@@ -5,7 +5,7 @@ use command_domain::group_chat::Members;
 use command_domain::group_chat::{GroupChatName, MemberRole, Message};
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::*;
-use command_processor::command_processor::GroupChatCommandProcessor;
+use command_processor::group_chat_command_processor::GroupChatCommandProcessor;
 use common::*;
 
 mod common;
