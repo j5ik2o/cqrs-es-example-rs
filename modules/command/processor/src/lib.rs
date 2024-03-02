@@ -1,1 +1,1 @@
-pub mod command_processor;
+pub mod group_chat_command_processor;

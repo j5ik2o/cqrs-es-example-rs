@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use command_interface_adaptor_impl::resolvers::create_schema_builder;
+use command_interface_adaptor_impl::graphql::create_schema_builder;
 
 #[tokio::main]
 async fn main() -> Result<()> {

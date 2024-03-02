@@ -7,7 +7,7 @@ use axum::{response, Extension, Router};
 
 use crate::gateways::group_chat_repository::GroupChatRepositoryImpl;
 
-use crate::resolvers::{create_schema, ApiSchema, ES};
+use crate::graphql::{create_schema, ApiSchema, ES};
 
 pub enum EndpointPaths {
   Root,
