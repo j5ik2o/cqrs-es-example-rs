@@ -108,9 +108,8 @@ impl MutationRoot {
     let service_ctx = ctx.data::<ServiceContext<GroupChatRepositoryImpl<ES>>>().unwrap();
 
     let group_chat_id = validate_group_chat_id(&input.group_chat_id)?;
-    let content = input.content.clone();
     let executor_id = validate_user_account_id(&input.executor_id)?;
-    let message = Message::new(content, executor_id.clone());
+    let message = validate_message(&input.content, executor_id.clone())?;
 
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
     processor
@@ -165,6 +164,11 @@ fn validate_member_role(value: &str) -> Result<MemberRole, Error> {
 
 fn validate_message_id(value: &str) -> Result<MessageId, Error> {
   MessageId::from_str(value).map_err(|error| Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
+}
+
+fn validate_message(value: &str, sender_id: UserAccountId) -> Result<Message, Error> {
+  Message::validate(&value, sender_id.clone())
+    .map_err(|error| Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
 }
 
 fn validate_user_account_id(value: &str) -> Result<UserAccountId, Error> {
