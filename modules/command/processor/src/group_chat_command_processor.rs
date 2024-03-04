@@ -35,12 +35,11 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
   /// グループチャットを作成する。
   ///
   /// # 引数
-  /// - `group_chat_presenter` - グループチャットプレゼンター
   /// - `name` - グループチャット名
   /// - `executor_id` - 実行者のユーザーアカウントID
   ///
   /// # 戻り値
-  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  /// - 成功した場合はOk([GroupChatId]), 失敗した場合はErrを返す。
   pub async fn create_group_chat(&mut self, name: GroupChatName, executor_id: UserAccountId) -> Result<GroupChatId> {
     let mut repository_mg = self.group_chat_repository.lock().await;
 
@@ -55,12 +54,11 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
   /// グループチャットの名前を変更する。
   ///
   /// # 引数
-  /// - `group_chat_presenter` - グループチャットプレゼンター
   /// - `id` - グループチャットID
   /// - `name` - グループチャット名
   ///
   /// # 戻り値
-  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  /// - 成功した場合はOk([GroupChatId]), 失敗した場合はErrを返す。
   pub async fn rename_group_chat(
     &mut self,
     id: GroupChatId,
@@ -80,14 +78,13 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
   /// グループチャットにメンバーを追加する。
   ///
   /// # 引数
-  /// - `group_chat_presenter` - グループチャットプレゼンター
   /// - `id` - グループチャットID
   /// - `user_account_id` - ユーザーアカウントID
   /// - `role` - メンバーの役割
   /// - `executor_id` - 実行者のユーザーアカウントID
   ///
   /// # 戻り値
-  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  /// - 成功した場合はOk([GroupChatId]), 失敗した場合はErrを返す。
   pub async fn add_member(
     &mut self,
     id: GroupChatId,
@@ -113,13 +110,12 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
   /// グループチャットからメンバーを削除する。
   ///
   /// # 引数
-  /// - `group_chat_presenter` - グループチャットプレゼンター
   /// - `id` - グループチャットID
   /// - `user_account_id` - ユーザーアカウントID
   /// - `executor_id` - 実行者のユーザーアカウントID
   ///
   /// # 戻り値
-  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  /// - 成功した場合はOk([GroupChatId]), 失敗した場合はErrを返す。
   pub async fn remove_member(
     &mut self,
     id: GroupChatId,
@@ -143,12 +139,11 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
   /// グループチャットを削除する。
   ///
   /// # 引数
-  /// - `group_chat_presenter` - グループチャットプレゼンター
   /// - `id` - グループチャットID
   /// - `executor_id` - 実行者のユーザーアカウントID
   ///
   /// # 戻り値
-  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  /// - 成功した場合はOk([GroupChatId]), 失敗した場合はErrを返す。
   pub async fn delete_group_chat(&mut self, id: GroupChatId, executor_id: UserAccountId) -> Result<GroupChatId> {
     let mut repository_mg = self.group_chat_repository.lock().await;
 
@@ -167,13 +162,12 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
   /// グループチャットにメッセージを投稿する。
   ///
   /// # 引数
-  /// - `group_chat_presenter` - グループチャットプレゼンター
   /// - `id` - グループチャットID
   /// - `message` - メッセージ
   /// - `executor_id` - 実行者のユーザーアカウントID
   ///
   /// # 戻り値
-  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  /// - 成功した場合はOk([GroupChatId, MessageId]), 失敗した場合はErrを返す。
   pub async fn post_message(
     &mut self,
     id: GroupChatId,
@@ -200,13 +194,12 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
   /// グループチャットのメッセージを削除する。
   ///
   /// # 引数
-  /// - `group_chat_presenter` - グループチャットプレゼンター
   /// - `id` - グループチャットID
   /// - `message_id` - メッセージID
   /// - `executor_id` - 実行者のユーザーアカウントID
   ///
   /// # 戻り値
-  /// - 成功した場合はOk, 失敗した場合はErrを返す。
+  /// - 成功した場合はOk([GroupChatId]), 失敗した場合はErrを返す。
   pub async fn delete_message(
     &mut self,
     id: GroupChatId,
