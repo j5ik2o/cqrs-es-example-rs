@@ -652,7 +652,7 @@ workspace = false
 script = '''
 #!/usr/bin/env bash
 echo "WRITE_API_SERVER_BASE_URL=${WRITE_API_SERVER_BASE_URL}"
-./tools/scripts/curl-post-create-group-chat.sh | jq .
+./tools/scripts/curl-create-group-chat.sh | jq .
 '''
 
 [tasks.create-and-get-group-chat]
@@ -661,7 +661,7 @@ workspace = false
 script = '''
 #!/usr/bin/env bash
 
-export GROUP_CHAT_ID=$(./tools/scripts/curl-post-create-group-chat.sh | jq -r .data.createGroupChat.groupChatId)
+export GROUP_CHAT_ID=$(./tools/scripts/curl-create-group-chat.sh | jq -r .data.createGroupChat.groupChatId)
 echo "create-group-chat: GROUP_CHAT_ID=${GROUP_CHAT_ID}"
 
 # トライの最大回数
@@ -670,7 +670,7 @@ MAX_RETRIES=10
 SLEEP_TIME=1
 
 for i in $(seq 1 $MAX_RETRIES); do
-    ACTUAL_ID=$(./tools/scripts/curl-post-get-group-chat.sh | jq -r .data.getGroupChat.id)
+    ACTUAL_ID=$(./tools/scripts/curl-get-group-chat.sh | jq -r .data.getGroupChat.id)
     echo "get-group-chat (attempt ${i}): ACTUAL_GROUP_CHAT_ID=${ACTUAL_ID}"
 
     if [ "${GROUP_CHAT_ID}" = "${ACTUAL_ID}" ]; then
