@@ -27,7 +27,7 @@ async-graphql = { workspace = true, features = ["chrono"] }
 async-graphql-axum = { workspace = true }
 
 [dev-dependencies]
-env_logger = "0.11.2"
+env_logger = "0.11.3"
 mime = "0.3.17"
 refinery = { version = "0.8", features = ["mysql"] }
 refinery-core = "0.8"
