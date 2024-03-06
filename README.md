@@ -38,7 +38,7 @@ This OSS repository mainly utilizes the following technology stack.
 - [launchbadge/sqlx](https://github.com/launchbadge/sqlx)
 - [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs)
 
-### System Architecture Diagram
+## System Architecture Diagram
 
 ![](docs/images/system-layout.png)
 
