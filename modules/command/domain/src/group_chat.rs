@@ -3,10 +3,11 @@ use chrono::{DateTime, Utc};
 use event_store_adapter_rs::types::Aggregate;
 use serde::{Deserialize, Serialize};
 
+use crate::group_chat::events::GroupChatEventMessageEditedBody;
 pub use crate::group_chat::events::{
   GroupChatEvent, GroupChatEventCreatedBody, GroupChatEventDeletedBody, GroupChatEventMemberAddedBody,
-  GroupChatEventMemberRemovedBody, GroupChatEventMessagePostedBody, GroupChatEventRenamedBody,
-  GroupChatventMessageDeletedBody,
+  GroupChatEventMemberRemovedBody, GroupChatEventMessageDeletedBody, GroupChatEventMessagePostedBody,
+  GroupChatEventRenamedBody,
 };
 pub use crate::group_chat::group_chat_id::GroupChatId;
 pub use crate::group_chat::group_chat_name::GroupChatName;
@@ -174,6 +175,9 @@ impl GroupChat {
         self
           .post_message(body.message.clone(), body.executor_id.clone())
           .unwrap();
+      }
+      GroupChatEvent::GroupChatMessagePosted(body) => {
+        todo!()
       }
       GroupChatEvent::GroupChatMessageDeleted(body) => {
         self
@@ -350,6 +354,22 @@ impl GroupChat {
     ))
   }
 
+  /// グループチャットのメッセージを編集する
+  ///
+  /// # 引数
+  /// - message: メッセージ
+  /// - executor_id: 実行者のユーザアカウントID
+  ///
+  /// # 戻り値
+  /// - グループチャットが削除されている場合はエラーを返す。
+  /// - 実行者がメッセージの送信者でない場合はエラーを返す。
+  /// - 実行者がメンバーでない場合はエラーを返す。
+  /// - メッセージIDが既に存在する場合はエラーを返す。
+  /// - 成功した場合は、GroupChatMessagePostedイベントを返す。
+  pub fn edit_message(&mut self, _message: Message, _executor_id: UserAccountId) -> Result<GroupChatEvent> {
+    todo!()
+  }
+
   /// メッセージを削除する
   ///
   /// # 引数
@@ -369,7 +389,7 @@ impl GroupChat {
     if !self.members.is_member(&executor_id) {
       return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id).into());
     }
-    let result = self.messages.get(&message_id);
+    let result = self.messages.find_by_id(&message_id);
     match result {
       None => Err(GroupChatError::NotFoundMessageError(message_id).into()),
       Some(message) => {
@@ -383,7 +403,7 @@ impl GroupChat {
         self.messages.remove(&message_id).unwrap();
         self.seq_nr_counter += 1;
         Ok(GroupChatEvent::GroupChatMessageDeleted(
-          GroupChatventMessageDeletedBody::new(self.id.clone(), self.seq_nr_counter, message_id, executor_id),
+          GroupChatEventMessageDeletedBody::new(self.id.clone(), self.seq_nr_counter, message_id, executor_id),
         ))
       }
     }
@@ -537,6 +557,48 @@ mod tests {
       .unwrap();
 
     assert!(group_chat.messages().contains(message.breach_encapsulation_of_id()));
+  }
+
+  #[ignore]
+  fn _test_edit_message() {
+    let group_chat_name = GroupChatName::new("test").unwrap();
+    let admin_user_account_id = UserAccountId::new();
+    let members = Members::new(admin_user_account_id.clone());
+    let (mut group_chat, _) = GroupChat::new(group_chat_name.clone(), members);
+    assert_eq!(group_chat.name, group_chat_name);
+
+    let user_account_id = UserAccountId::new();
+    let member_id = MemberId::new();
+    let _ = group_chat
+      .add_member(
+        member_id,
+        user_account_id.clone(),
+        MemberRole::Member,
+        admin_user_account_id.clone(),
+      )
+      .unwrap();
+
+    let message = Message::new("test1".to_string(), user_account_id.clone());
+    let _ = group_chat
+      .post_message(message.clone(), user_account_id.clone())
+      .unwrap();
+    assert!(group_chat.messages().contains(message.breach_encapsulation_of_id()));
+    let m = group_chat
+      .messages()
+      .find_by_id(message.breach_encapsulation_of_id())
+      .unwrap();
+    assert_eq!(m.breach_encapsulation_of_text(), "test1");
+
+    let message = message.with_text("test2".to_string());
+    group_chat
+      .edit_message(message.clone(), user_account_id.clone())
+      .unwrap();
+    assert!(group_chat.messages().contains(message.breach_encapsulation_of_id()));
+    let m = group_chat
+      .messages()
+      .find_by_id(message.breach_encapsulation_of_id())
+      .unwrap();
+    assert_eq!(m.breach_encapsulation_of_text(), "test2");
   }
 
   #[test]

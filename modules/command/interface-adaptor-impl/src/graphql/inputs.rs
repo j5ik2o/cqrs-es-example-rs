@@ -42,6 +42,13 @@ pub struct PostMessageInput {
 }
 
 #[derive(Debug, Clone, InputObject)]
+pub struct EditMessageInput {
+  pub group_chat_id: String,
+  pub content: String,
+  pub executor_id: String,
+}
+
+#[derive(Debug, Clone, InputObject)]
 pub struct DeleteMessageInput {
   pub group_chat_id: String,
   pub message_id: String,

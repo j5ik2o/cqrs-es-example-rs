@@ -19,6 +19,11 @@ impl Message {
     &self.text
   }
 
+  pub fn with_text(mut self, text: String) -> Self {
+    self.text = text;
+    self
+  }
+
   pub fn breach_encapsulation_of_sender_id(&self) -> &UserAccountId {
     &self.sender_id
   }
