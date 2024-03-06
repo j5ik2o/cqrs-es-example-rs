@@ -9,8 +9,8 @@ use command_processor::group_chat_command_processor::CommandProcessError;
 
 use crate::gateways::group_chat_repository::GroupChatRepositoryImpl;
 use crate::graphql::inputs::{
-  AddMemberInput, CreateGroupChatInput, DeleteGroupChatInput, DeleteMessageInput, PostMessageInput, RemoveMemberInput,
-  RenameGroupChatInput,
+  AddMemberInput, CreateGroupChatInput, DeleteGroupChatInput, DeleteMessageInput, EditMessageInput, PostMessageInput,
+  RemoveMemberInput, RenameGroupChatInput,
 };
 use crate::graphql::outputs::{GroupChatOut, MessageOut};
 use crate::graphql::{MutationRoot, ServiceContext, ES};
@@ -117,6 +117,10 @@ impl MutationRoot {
       .await
       .map(|(group_chat_id, message_id)| MessageOut::new(group_chat_id.to_string(), message_id.to_string()))
       .map_err(error_handling)
+  }
+
+  async fn edit_message<'ctx>(&self, ctx: &Context<'ctx>, input: EditMessageInput) -> FieldResult<MessageOut> {
+    todo!()
   }
 
   async fn delete_message<'ctx>(&self, ctx: &Context<'ctx>, input: DeleteMessageInput) -> FieldResult<GroupChatOut> {

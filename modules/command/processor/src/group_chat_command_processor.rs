@@ -191,6 +191,15 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     ))
   }
 
+  pub async fn edit_message(
+    &mut self,
+    _id: GroupChatId,
+    _message: Message,
+    _executor_id: UserAccountId,
+  ) -> Result<GroupChatId> {
+    todo!()
+  }
+
   /// グループチャットのメッセージを削除する。
   ///
   /// # 引数

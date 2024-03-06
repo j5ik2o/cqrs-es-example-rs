@@ -166,6 +166,51 @@ async fn test_group_chat_post_message() {
   );
 }
 
+#[ignore]
+#[tokio::test]
+#[serial]
+async fn test_group_chat_edit_message() {
+  let docker = DOCKER.get_or_init(clients::Cli::default);
+
+  let (repository, container, client) = get_repository(docker).await;
+  // Given
+  let name = GroupChatName::new("ABC").unwrap();
+  let admin_id = UserAccountId::new();
+  let _members = Members::new(admin_id.clone());
+  let mut command_processor = GroupChatCommandProcessor::new(repository.clone());
+  let id = command_processor
+    .create_group_chat(name.clone(), admin_id.clone())
+    .await
+    .unwrap();
+  let user_account_id = UserAccountId::new();
+  let role = MemberRole::Member;
+  command_processor
+    .add_member(id.clone(), user_account_id.clone(), role, admin_id.clone())
+    .await
+    .unwrap();
+  let text = "ABC".to_string();
+  let message = Message::new(text.clone(), user_account_id.clone());
+
+  let _ = command_processor
+    .post_message(id.clone(), message.clone(), user_account_id.clone())
+    .await;
+
+  let text2 = "DEF".to_string();
+  let message = message.with_text(text2.clone());
+  let result = command_processor
+    .edit_message(id.clone(), message.clone(), user_account_id.clone())
+    .await;
+
+  // Then
+  assert!(result.is_ok());
+  let group_chat = repository.find_by_id(&id).await.unwrap().unwrap();
+  assert_eq!(group_chat.messages().len(), 1);
+  assert_eq!(
+    group_chat.messages().get_at(0).unwrap().breach_encapsulation_of_text(),
+    text2
+  );
+}
+
 #[tokio::test]
 #[serial]
 async fn test_group_chat_delete_message() {

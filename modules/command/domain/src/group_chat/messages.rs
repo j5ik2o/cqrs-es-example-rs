@@ -1,5 +1,6 @@
 use crate::group_chat::message::Message;
 use crate::group_chat::message_id::MessageId;
+use crate::group_chat_error::GroupChatError::{NotFoundMessageError, NotSenderError};
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 
@@ -55,7 +56,7 @@ impl Messages {
   ///
   /// # 戻り値
   /// - 指定した[MessageId]を持つ[Message]が含まれている場合は[Message]への参照を返す。
-  pub fn get(&self, message_id: &MessageId) -> Option<&Message> {
+  pub fn find_by_id(&self, message_id: &MessageId) -> Option<&Message> {
     self
       .0
       .iter()
@@ -68,6 +69,33 @@ impl Messages {
   /// - `message` - 追加する[Message]
   pub fn add(&mut self, message: Message) {
     self.0.push(message);
+  }
+
+  /// [Message]を編集する。
+  ///
+  /// # 引数
+  /// - `message` - 編集する[Message]
+  pub fn edit(&mut self, message: Message) -> Result<()> {
+    let index = self
+      .0
+      .iter()
+      .position(|m| *m.breach_encapsulation_of_id() == *message.breach_encapsulation_of_id());
+    match index {
+      Some(i) => {
+        if self.0[i].breach_encapsulation_of_sender_id() != message.breach_encapsulation_of_sender_id() {
+          return Err(
+            NotSenderError(
+              "message.sender_id".to_string(),
+              message.breach_encapsulation_of_sender_id().clone(),
+            )
+            .into(),
+          );
+        }
+        self.0[i] = message;
+        Ok(())
+      }
+      None => Err(NotFoundMessageError(message.breach_encapsulation_of_id().clone()).into()),
+    }
   }
 
   /// 指定した[MessageId]を持つ[Message]を削除する。

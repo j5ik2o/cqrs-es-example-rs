@@ -20,14 +20,16 @@ pub enum GroupChatEvent {
   GroupChatDeleted(GroupChatEventDeletedBody),
   /// グループチャットがリネームされた
   GroupChatRenamed(GroupChatEventRenamedBody),
-  /// グループチャットにメッセージが投稿された
-  GroupChatMessagePosted(GroupChatEventMessagePostedBody),
-  /// グループチャットのメッセージが削除された
-  GroupChatMessageDeleted(GroupChatventMessageDeletedBody),
   /// グループチャットにメンバーが追加された
   GroupChatMemberAdded(GroupChatEventMemberAddedBody),
   /// グループチャットのメンバーが削除された
   GroupChatMemberRemoved(GroupChatEventMemberRemovedBody),
+  /// グループチャットにメッセージが投稿された
+  GroupChatMessagePosted(GroupChatEventMessagePostedBody),
+  /// グループチャットにメッセージが編集された
+  GroupChatMessageEdited(GroupChatEventMessageEditedBody),
+  /// グループチャットのメッセージが削除された
+  GroupChatMessageDeleted(GroupChatEventMessageDeletedBody),
 }
 
 impl Event for GroupChatEvent {
@@ -39,10 +41,11 @@ impl Event for GroupChatEvent {
       GroupChatEvent::GroupChatCreated(event) => &event.id,
       GroupChatEvent::GroupChatDeleted(event) => &event.id,
       GroupChatEvent::GroupChatRenamed(event) => &event.id,
-      GroupChatEvent::GroupChatMessagePosted(event) => &event.id,
-      GroupChatEvent::GroupChatMessageDeleted(event) => &event.id,
       GroupChatEvent::GroupChatMemberAdded(event) => &event.id,
       GroupChatEvent::GroupChatMemberRemoved(event) => &event.id,
+      GroupChatEvent::GroupChatMessagePosted(event) => &event.id,
+      GroupChatEvent::GroupChatMessageEdited(event) => &event.id,
+      GroupChatEvent::GroupChatMessageDeleted(event) => &event.id,
     }
   }
 
@@ -51,10 +54,11 @@ impl Event for GroupChatEvent {
       GroupChatEvent::GroupChatCreated(event) => event.seq_nr,
       GroupChatEvent::GroupChatDeleted(event) => event.seq_nr,
       GroupChatEvent::GroupChatRenamed(event) => event.seq_nr,
-      GroupChatEvent::GroupChatMessagePosted(event) => event.seq_nr,
-      GroupChatEvent::GroupChatMessageDeleted(event) => event.seq_nr,
       GroupChatEvent::GroupChatMemberAdded(event) => event.seq_nr,
       GroupChatEvent::GroupChatMemberRemoved(event) => event.seq_nr,
+      GroupChatEvent::GroupChatMessagePosted(event) => event.seq_nr,
+      GroupChatEvent::GroupChatMessageEdited(event) => event.seq_nr,
+      GroupChatEvent::GroupChatMessageDeleted(event) => event.seq_nr,
     }
   }
 
@@ -63,10 +67,11 @@ impl Event for GroupChatEvent {
       GroupChatEvent::GroupChatCreated(event) => &event.aggregate_id,
       GroupChatEvent::GroupChatDeleted(event) => &event.aggregate_id,
       GroupChatEvent::GroupChatRenamed(event) => &event.aggregate_id,
-      GroupChatEvent::GroupChatMessagePosted(event) => &event.aggregate_id,
-      GroupChatEvent::GroupChatMessageDeleted(event) => &event.aggregate_id,
       GroupChatEvent::GroupChatMemberAdded(event) => &event.aggregate_id,
       GroupChatEvent::GroupChatMemberRemoved(event) => &event.aggregate_id,
+      GroupChatEvent::GroupChatMessagePosted(event) => &event.aggregate_id,
+      GroupChatEvent::GroupChatMessageEdited(event) => &event.aggregate_id,
+      GroupChatEvent::GroupChatMessageDeleted(event) => &event.aggregate_id,
     }
   }
 
@@ -75,10 +80,11 @@ impl Event for GroupChatEvent {
       GroupChatEvent::GroupChatCreated(event) => &event.occurred_at,
       GroupChatEvent::GroupChatDeleted(event) => &event.occurred_at,
       GroupChatEvent::GroupChatRenamed(event) => &event.occurred_at,
-      GroupChatEvent::GroupChatMessagePosted(event) => &event.occurred_at,
-      GroupChatEvent::GroupChatMessageDeleted(event) => &event.occurred_at,
       GroupChatEvent::GroupChatMemberAdded(event) => &event.occurred_at,
       GroupChatEvent::GroupChatMemberRemoved(event) => &event.occurred_at,
+      GroupChatEvent::GroupChatMessagePosted(event) => &event.occurred_at,
+      GroupChatEvent::GroupChatMessageEdited(event) => &event.occurred_at,
+      GroupChatEvent::GroupChatMessageDeleted(event) => &event.occurred_at,
     }
   }
 
@@ -189,7 +195,32 @@ impl GroupChatEventMessagePostedBody {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GroupChatventMessageDeletedBody {
+pub struct GroupChatEventMessageEditedBody {
+  pub(crate) id: GroupChatEventId,
+  pub aggregate_id: GroupChatId,
+  pub(crate) seq_nr: usize,
+  pub message: Message,
+  pub(crate) executor_id: UserAccountId,
+  pub occurred_at: DateTime<Utc>,
+}
+
+impl GroupChatEventMessageEditedBody {
+  pub fn new(aggregate_id: GroupChatId, seq_nr: usize, message: Message, executor_id: UserAccountId) -> Self {
+    let id = id_generate();
+    let occurred_at = Utc::now();
+    Self {
+      id,
+      aggregate_id,
+      seq_nr,
+      message,
+      executor_id,
+      occurred_at,
+    }
+  }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GroupChatEventMessageDeletedBody {
   pub(crate) id: GroupChatEventId,
   pub aggregate_id: GroupChatId,
   pub(crate) seq_nr: usize,
@@ -198,7 +229,7 @@ pub struct GroupChatventMessageDeletedBody {
   pub occurred_at: DateTime<Utc>,
 }
 
-impl GroupChatventMessageDeletedBody {
+impl GroupChatEventMessageDeletedBody {
   pub fn new(aggregate_id: GroupChatId, seq_nr: usize, message_id: MessageId, executor_id: UserAccountId) -> Self {
     let mut idgen = ULIDGenerator::new();
     let id = idgen.generate().unwrap();
