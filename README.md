@@ -12,6 +12,8 @@ This is an example of CQRS/Event Sourcing and GraphQL implemented in Rust.
 
 This project uses [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs) for Event Sourcing.
 
+Please refer to [here](https://github.com/j5ik2o/cqrs-es-example) for implementation examples in other languages.
+
 [日本語](./README.ja.md)
 
 ## Overview
