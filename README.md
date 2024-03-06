@@ -28,6 +28,15 @@ Please refer to [here](https://github.com/j5ik2o/cqrs-es-example) for implementa
     - Locally, run code that emulates Lambda behavior (local-rmu)
 - Read API Server
     - API is implemented by GraphQL (Query)
+ 
+## Stack
+
+This OSS repository mainly utilizes the following technology stack.
+
+- [tokio-rs/axum](https://github.com/tokio-rs/axum)
+- [async-graphql/async-graphql](https://github.com/async-graphql/async-graphql)
+- [launchbadge/sqlx](https://github.com/launchbadge/sqlx)
+- [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs)
 
 ### System Architecture Diagram
 
