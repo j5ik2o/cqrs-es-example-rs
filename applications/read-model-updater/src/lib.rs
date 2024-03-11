@@ -1,29 +1,48 @@
-use anyhow::Result;
 use aws_lambda_events::dynamodb;
-use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
-use config::Environment;
+use command_interface_adaptor_if::{GroupChatReadModelUpdateDao, GroupChatReadModelUpdateDaoError};
+use config::{ConfigError, Environment};
 use lambda_runtime::LambdaEvent;
 use serde::Deserialize;
 use serde_dynamo::AttributeValue;
 use serde_json::Value;
+use std::string::FromUtf8Error;
+use thiserror::Error;
 
 use command_domain::group_chat::GroupChatEvent;
 use command_domain::group_chat::MemberRole;
+
+#[derive(Debug, Error)]
+pub enum UpdateReadModelError {
+  #[error("Payload not found.")]
+  PayloadNotFound,
+  #[error("Payload parse error: {0:?}")]
+  PayloadParseError(FromUtf8Error),
+  #[error("Unexpected type: {0:?}")]
+  UnexpectedType(Option<AttributeValue>),
+  #[error("GroupChatReadModelUpdateError: {0:?}")]
+  GroupChatReadModelUpdateError(GroupChatReadModelUpdateDaoError),
+}
 
 // NOTE: イベントのシーケンス番号とリードモデルのシーケンス番号がズレないことを前提にしているため
 // DynamoDBを初期化した際は、必ずAurora側のデータベースも初期化すること
 pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
   group_chat_read_model_dao: &D,
   event: LambdaEvent<dynamodb::Event>,
-) -> Result<()> {
+) -> Result<(), UpdateReadModelError> {
   tracing::info!("Rust function invoked: event = {:?}", event);
   for record in event.payload.records {
     let attribute_values = record.change.new_image.clone().into_inner();
     tracing::info!("attribute_values = {:?}", attribute_values);
-    let payload_str = match attribute_values.get("payload").unwrap() {
-      AttributeValue::S(v) => v.clone(),
-      AttributeValue::B(v) => String::from_utf8(v.clone()).unwrap(),
-      _ => panic!("unexpected type"),
+    let payload_str = match attribute_values.get("payload") {
+      None => return Err(UpdateReadModelError::PayloadNotFound),
+      Some(AttributeValue::S(v)) => v.clone(),
+      Some(AttributeValue::B(v)) => match String::from_utf8(v.clone()) {
+        Ok(s) => s,
+        Err(error) => {
+          return Err(UpdateReadModelError::PayloadParseError(error));
+        }
+      },
+      unexpectedType => return Err(UpdateReadModelError::UnexpectedType(unexpectedType.cloned())),
     };
     tracing::info!("payload_str = {}", payload_str);
     let type_value_str = get_type_string(&payload_str);
@@ -46,7 +65,7 @@ pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
                 body.occurred_at,
               )
               .await
-              .unwrap();
+              .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?;
             group_chat_read_model_dao
               .insert_member(
                 body.aggregate_id.clone(),
@@ -60,16 +79,16 @@ pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
                 body.occurred_at,
               )
               .await
-              .unwrap();
+              .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?;
           }
           GroupChatEvent::GroupChatDeleted(body) => group_chat_read_model_dao
             .delete_group_chat(body.aggregate_id.clone(), body.occurred_at.clone())
             .await
-            .unwrap(),
+            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
           GroupChatEvent::GroupChatRenamed(body) => group_chat_read_model_dao
             .rename_group_chat(body.aggregate_id.clone(), body.name.clone(), body.occurred_at.clone())
             .await
-            .unwrap(),
+            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
           GroupChatEvent::GroupChatMemberAdded(body) => group_chat_read_model_dao
             .insert_member(
               body.aggregate_id.clone(),
@@ -79,11 +98,11 @@ pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
               body.occurred_at,
             )
             .await
-            .unwrap(),
+            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
           GroupChatEvent::GroupChatMemberRemoved(body) => group_chat_read_model_dao
             .delete_member(body.aggregate_id.clone(), body.user_account_id.clone())
             .await
-            .unwrap(),
+            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
           GroupChatEvent::GroupChatMessagePosted(body) => group_chat_read_model_dao
             .insert_message(
               body.aggregate_id.clone(),
@@ -91,12 +110,12 @@ pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
               body.occurred_at.clone(),
             )
             .await
-            .unwrap(),
+            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
           GroupChatEvent::GroupChatMessageEdited(body) => todo!(),
           GroupChatEvent::GroupChatMessageDeleted(body) => group_chat_read_model_dao
             .delete_message(body.message_id.clone(), body.occurred_at.clone())
             .await
-            .unwrap(),
+            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
         }
       }
       _ => {}
@@ -154,7 +173,7 @@ pub struct AppSettings {
 
 // ---
 
-pub fn load_app_config() -> Result<AppSettings> {
+pub fn load_app_config() -> Result<AppSettings, ConfigError> {
   let config = config::Config::builder()
     .add_source(config::File::with_name("config/read-model-updater").required(false))
     .add_source(Environment::with_prefix("APP").try_parsing(true).separator("__"))

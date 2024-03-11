@@ -3,8 +3,8 @@ use event_store_adapter_rs::types::EventStoreWriteError;
 use std::str::FromStr;
 
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message, MessageId};
-use command_domain::group_chat_error::GroupChatError;
 use command_domain::user_account::UserAccountId;
+use command_interface_adaptor_if::GroupChatRepositoryError;
 use command_processor::group_chat_command_processor::CommandProcessError;
 
 use crate::gateways::group_chat_repository::GroupChatRepositoryImpl;
@@ -139,19 +139,30 @@ impl MutationRoot {
   }
 }
 
-fn error_handling(error: anyhow::Error) -> Error {
-  if let Some(CommandProcessError::NotFoundError) = error.downcast_ref::<CommandProcessError>() {
-    return Error::new(error.to_string()).extend_with(|_, e| e.set("code", "404"));
+fn error_handling_repository_error(error: &CommandProcessError, cause: &GroupChatRepositoryError) -> Error {
+  match cause {
+    GroupChatRepositoryError::StoreError(_, EventStoreWriteError::OptimisticLockError(_)) => {
+      Error::new(error.to_string())
+        .extend_with(|_, e| e.set("code", "409"))
+        .extend_with(|_, e| e.set("cause", cause.to_string()))
+    }
+    GroupChatRepositoryError::StoreError(_, _) => Error::new(error.to_string())
+      .extend_with(|_, e| e.set("code", "500"))
+      .extend_with(|_, e| e.set("cause", cause.to_string())),
+    GroupChatRepositoryError::FindByIdError(_, _) => Error::new(error.to_string())
+      .extend_with(|_, e| e.set("code", "500"))
+      .extend_with(|_, e| e.set("cause", cause.to_string())),
   }
-  if let Some(EventStoreWriteError::OptimisticLockError(cause)) = error.downcast_ref::<EventStoreWriteError>() {
-    return Error::new(error.to_string())
-      .extend_with(|_, e| e.set("code", "409"))
-      .extend_with(|_, e| e.set("cause", cause.to_string()));
+}
+
+fn error_handling(error: CommandProcessError) -> Error {
+  match error {
+    CommandProcessError::DomainLogicError(ref cause) => Error::new(error.to_string())
+      .extend_with(|_, e| e.set("code", "422"))
+      .extend_with(|_, e| e.set("cause", cause.to_string())),
+    CommandProcessError::NotFoundError => Error::new(error.to_string()).extend_with(|_, e| e.set("code", "404")),
+    CommandProcessError::RepositoryError(ref cause) => error_handling_repository_error(&error, cause),
   }
-  if let Some(group_chat_error) = error.downcast_ref::<GroupChatError>() {
-    return Error::new(group_chat_error.to_string()).extend_with(|_, e| e.set("code", "422"));
-  }
-  return Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500"));
 }
 
 fn validate_group_chat_id(value: &str) -> Result<GroupChatId, Error> {

@@ -1,14 +1,17 @@
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_graphql::futures_util::Stream;
 use async_graphql::futures_util::StreamExt;
-use async_graphql::{Context, EmptyMutation, Object, Schema, SchemaBuilder, Subscription};
+use async_graphql::{
+  Context, EmptyMutation, Error, ErrorExtensions, FieldResult, Object, Schema, SchemaBuilder, Subscription,
+};
 use redis::Client;
 use sqlx::MySqlPool;
+use thiserror::Error;
 
 use crate::gateways::{
-  GroupChat, GroupChatDao, GroupChatDaoImpl, Member, MemberDao, MemberDaoImpl, Message, MessageDao, MessageDaoImpl,
+  GroupChat, GroupChatDao, GroupChatDaoError, GroupChatDaoImpl, Member, MemberDao, MemberDaoError, MemberDaoImpl,
+  Message, MessageDao, MessageDaoError, MessageDaoImpl,
 };
 
 pub struct ServiceContext {
@@ -61,13 +64,13 @@ impl QueryRoot {
     ctx: &Context<'ctx>,
     group_chat_id: String,
     user_account_id: String,
-  ) -> Result<GroupChat> {
+  ) -> FieldResult<Option<GroupChat>> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let group_chat = ctx
+    ctx
       .group_chat_dao
       .get_group_chat(group_chat_id, user_account_id)
-      .await?;
-    Ok(group_chat)
+      .await
+      .map_err(group_chat_dao_error_handling)
   }
 
   /// 指定されたアカウントIDが参加するグループチャット一覧を取得する。
@@ -77,10 +80,13 @@ impl QueryRoot {
   ///
   /// # 戻り値
   /// - `Vec<GroupChat>` - グループチャット一覧
-  async fn get_group_chats<'ctx>(&self, ctx: &Context<'ctx>, user_account_id: String) -> Result<Vec<GroupChat>> {
+  async fn get_group_chats<'ctx>(&self, ctx: &Context<'ctx>, user_account_id: String) -> FieldResult<Vec<GroupChat>> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let group_chats = ctx.group_chat_dao.get_group_chats(user_account_id).await?;
-    Ok(group_chats)
+    ctx
+      .group_chat_dao
+      .get_group_chats(user_account_id)
+      .await
+      .map_err(group_chat_dao_error_handling)
   }
 
   /// 指定されたアカウントIDのメンバーを取得する
@@ -96,10 +102,13 @@ impl QueryRoot {
     ctx: &Context<'ctx>,
     group_chat_id: String,
     user_account_id: String,
-  ) -> Result<Member> {
+  ) -> FieldResult<Option<Member>> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let member = ctx.member_dao.get_member(group_chat_id, user_account_id).await?;
-    Ok(member)
+    ctx
+      .member_dao
+      .get_member(group_chat_id, user_account_id)
+      .await
+      .map_err(member_dao_error_handling)
   }
 
   /// 指定されたグループチャットIDのメンバー一覧を取得する
@@ -115,10 +124,13 @@ impl QueryRoot {
     ctx: &Context<'ctx>,
     group_chat_id: String,
     user_account_id: String,
-  ) -> Result<Vec<Member>> {
+  ) -> FieldResult<Vec<Member>> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let members = ctx.member_dao.get_members(group_chat_id, user_account_id).await?;
-    Ok(members)
+    ctx
+      .member_dao
+      .get_members(group_chat_id, user_account_id)
+      .await
+      .map_err(member_dao_error_handling)
   }
 
   /// 指定されたメッセージIDのメッセージを取得する
@@ -134,10 +146,13 @@ impl QueryRoot {
     ctx: &Context<'ctx>,
     message_id: String,
     user_account_id: String,
-  ) -> Result<Message> {
+  ) -> FieldResult<Option<Message>> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let message = ctx.message_dao.get_message(message_id, user_account_id).await?;
-    Ok(message)
+    ctx
+      .message_dao
+      .get_message(message_id, user_account_id)
+      .await
+      .map_err(message_dao_error_handling)
   }
 
   /// 指定されたグループチャットIDのメッセージ一覧を取得する
@@ -153,10 +168,34 @@ impl QueryRoot {
     ctx: &Context<'ctx>,
     group_chat_id: String,
     user_account_id: String,
-  ) -> Result<Vec<Message>> {
+  ) -> FieldResult<Vec<Message>> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
-    let messages = ctx.message_dao.get_messages(group_chat_id, user_account_id).await?;
-    Ok(messages)
+    ctx
+      .message_dao
+      .get_messages(group_chat_id, user_account_id)
+      .await
+      .map_err(message_dao_error_handling)
+  }
+}
+
+fn group_chat_dao_error_handling(error: GroupChatDaoError) -> Error {
+  match error {
+    GroupChatDaoError::NotFoundError(_) => Error::new(error.to_string()).extend_with(|_, e| e.set("code", "404")),
+    GroupChatDaoError::OtherError(_) => Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")),
+  }
+}
+
+fn member_dao_error_handling(error: MemberDaoError) -> Error {
+  match error {
+    MemberDaoError::NotFoundError(_) => Error::new(error.to_string()).extend_with(|_, e| e.set("code", "404")),
+    MemberDaoError::OtherError(_) => Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")),
+  }
+}
+
+fn message_dao_error_handling(error: MessageDaoError) -> Error {
+  match error {
+    MessageDaoError::NotFoundError(_) => Error::new(error.to_string()).extend_with(|_, e| e.set("code", "404")),
+    MessageDaoError::OtherError(_) => Error::new(error.to_string()).extend_with(|_, e| e.set("code", "500")),
   }
 }
 
@@ -166,7 +205,11 @@ pub struct SubscriptionRoot;
 /// https://github.com/async-graphql/examples/blob/c8219078a4b7aa6d84d22e9b79f033088897be4b/poem/subscription-redis/src/main.rs
 #[Subscription]
 impl SubscriptionRoot {
-  async fn group_chats<'ctx>(&self, ctx: &Context<'ctx>, group_chat_id: String) -> Result<impl Stream<Item = String>> {
+  async fn group_chats<'ctx>(
+    &self,
+    ctx: &Context<'ctx>,
+    group_chat_id: String,
+  ) -> anyhow::Result<impl Stream<Item = String>> {
     let client = ctx.data_unchecked::<Client>();
     let mut conn = client.get_async_connection().await?.into_pubsub();
     conn.subscribe(format!("group_chat_id={}", group_chat_id)).await?;
@@ -211,7 +254,11 @@ mod tests {
 
   #[async_trait]
   impl GroupChatDao for MockGroupChatDaoImpl {
-    async fn get_group_chat(&self, group_chat_id: String, _account_id: String) -> Result<GroupChat> {
+    async fn get_group_chat(
+      &self,
+      group_chat_id: String,
+      _account_id: String,
+    ) -> Result<Option<GroupChat>, GroupChatDaoError> {
       let t1 = GroupChat::new(
         group_chat_id,
         "mock group chat".to_string(),
@@ -219,10 +266,10 @@ mod tests {
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
-      Ok(t1)
+      Ok(Some(t1))
     }
 
-    async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>> {
+    async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>, GroupChatDaoError> {
       let t1 = GroupChat::new(
         "1".to_string(),
         "mock group chat".to_string(),
@@ -238,7 +285,11 @@ mod tests {
 
   #[async_trait]
   impl MemberDao for MockMemberDaoImpl {
-    async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member> {
+    async fn get_member(
+      &self,
+      group_chat_id: String,
+      user_account_id: String,
+    ) -> Result<Option<Member>, MemberDaoError> {
       let m1 = Member::new(
         "1".to_string(),
         group_chat_id,
@@ -247,10 +298,14 @@ mod tests {
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
-      Ok(m1)
+      Ok(Some(m1))
     }
 
-    async fn get_members(&self, group_chat_id: String, _user_account_id: String) -> Result<Vec<Member>> {
+    async fn get_members(
+      &self,
+      group_chat_id: String,
+      _user_account_id: String,
+    ) -> Result<Vec<Member>, MemberDaoError> {
       let m1 = Member::new(
         "1".to_string(),
         group_chat_id,
@@ -267,7 +322,11 @@ mod tests {
 
   #[async_trait]
   impl MessageDao for MockMessageDaoImpl {
-    async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message> {
+    async fn get_message(
+      &self,
+      message_id: String,
+      user_account_id: String,
+    ) -> Result<Option<Message>, MessageDaoError> {
       let m1 = Message::new(
         message_id,
         "mock group chat".to_string(),
@@ -276,10 +335,14 @@ mod tests {
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
-      Ok(m1)
+      Ok(Some(m1))
     }
 
-    async fn get_messages(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Message>> {
+    async fn get_messages(
+      &self,
+      group_chat_id: String,
+      user_account_id: String,
+    ) -> Result<Vec<Message>, MessageDaoError> {
       let m1 = Message::new(
         "1".to_string(),
         group_chat_id,

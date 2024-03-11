@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use crate::group_chat::ParseError;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -22,13 +22,13 @@ impl Display for MemberRole {
 }
 
 impl FromStr for MemberRole {
-  type Err = anyhow::Error;
+  type Err = ParseError;
 
   fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
     match s.to_lowercase().as_str() {
       "admin" => Ok(Self::Admin),
       "member" => Ok(Self::Member),
-      _ => Err(anyhow!("invalid role")),
+      _ => Err(ParseError::InvalidRole(s.to_string())),
     }
   }
 }

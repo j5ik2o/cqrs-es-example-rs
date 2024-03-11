@@ -1,6 +1,7 @@
 use crate::group_chat::MessageId;
 use crate::user_account::UserAccountId;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// メッセージを表すローカルエンティティ。
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -33,13 +34,21 @@ impl Message {
     Self { id, text, sender_id }
   }
 
-  pub fn validate(text: &str, sender_id: UserAccountId) -> anyhow::Result<Self> {
+  pub fn validate(text: &str, sender_id: UserAccountId) -> Result<Self, MessageError> {
     if text.is_empty() {
-      return Err(anyhow::anyhow!("text is empty"));
+      return Err(MessageError::Empty);
     }
     if text.len() > 1000 {
-      return Err(anyhow::anyhow!("text is too long"));
+      return Err(MessageError::TooLong);
     }
     Ok(Message::new(text.to_string(), sender_id))
   }
+}
+
+#[derive(Debug, Clone, Error)]
+pub enum MessageError {
+  #[error("the message is empty")]
+  Empty,
+  #[error("the message is too long")]
+  TooLong,
 }

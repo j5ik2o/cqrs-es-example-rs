@@ -1,5 +1,4 @@
-use anyhow::Result;
-use config::Environment;
+use config::{ConfigError, Environment};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -26,7 +25,7 @@ pub struct AppSettings {
   // pub redis: RedisSettings,
 }
 
-pub fn load_app_config() -> Result<AppSettings> {
+pub fn load_app_config() -> Result<AppSettings, ConfigError> {
   let source = Environment::with_prefix("APP")
     .try_parsing(true)
     .separator("__")

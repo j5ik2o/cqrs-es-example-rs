@@ -1,8 +1,8 @@
-use anyhow::Result;
 use async_graphql::async_trait::async_trait;
 use async_graphql::SimpleObject;
 use chrono::NaiveDateTime;
 use sqlx::MySqlPool;
+use thiserror::Error;
 
 /// グループチャットリードモデル
 ///
@@ -20,6 +20,30 @@ pub struct GroupChat {
   created_at: NaiveDateTime,
   /// 更新日時
   updated_at: NaiveDateTime,
+}
+
+#[derive(Debug, Error)]
+pub enum GroupChatDaoError {
+  #[error("GroupChat not found.: {0}")]
+  NotFoundError(String),
+  #[error("OtherError: {0}")]
+  OtherError(#[from] sqlx::Error),
+}
+
+#[derive(Debug, Error)]
+pub enum MemberDaoError {
+  #[error("Member not found.: {0}")]
+  NotFoundError(String),
+  #[error("OtherError: {0}")]
+  OtherError(#[from] sqlx::Error),
+}
+
+#[derive(Debug, Error)]
+pub enum MessageDaoError {
+  #[error("Message not found.: {0}")]
+  NotFoundError(String),
+  #[error("OtherError: {0}")]
+  OtherError(#[from] sqlx::Error),
 }
 
 impl GroupChat {
@@ -40,8 +64,12 @@ impl GroupChat {
 /// グループチャットを取得するためのインターフェース
 #[async_trait]
 pub trait GroupChatDao: Send + Sync {
-  async fn get_group_chat(&self, group_chat_id: String, user_account_id: String) -> Result<GroupChat>;
-  async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>>;
+  async fn get_group_chat(
+    &self,
+    group_chat_id: String,
+    user_account_id: String,
+  ) -> Result<Option<GroupChat>, GroupChatDaoError>;
+  async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>, GroupChatDaoError>;
 }
 
 /// [GroupChatDao]の実装
@@ -57,8 +85,12 @@ impl GroupChatDaoImpl {
 
 #[async_trait]
 impl GroupChatDao for GroupChatDaoImpl {
-  async fn get_group_chat(&self, group_chat_id: String, user_account_id: String) -> Result<GroupChat> {
-    let group_chat = sqlx::query_as!(
+  async fn get_group_chat(
+    &self,
+    group_chat_id: String,
+    user_account_id: String,
+  ) -> Result<Option<GroupChat>, GroupChatDaoError> {
+    sqlx::query_as!(
       GroupChat,
       r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at
 		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
@@ -66,13 +98,13 @@ impl GroupChatDao for GroupChatDaoImpl {
       group_chat_id.clone(),
       user_account_id.clone()
     )
-    .fetch_one(&self.my_sql_pool)
-    .await?;
-    Ok(group_chat)
+    .fetch_optional(&self.my_sql_pool)
+    .await
+    .map_err(|e| GroupChatDaoError::OtherError(e))
   }
 
-  async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>> {
-    let group_chats = sqlx::query_as!(
+  async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>, GroupChatDaoError> {
+    sqlx::query_as!(
       GroupChat,
       r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at
 		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
@@ -80,8 +112,8 @@ impl GroupChatDao for GroupChatDaoImpl {
       user_account_id.clone()
     )
     .fetch_all(&self.my_sql_pool)
-    .await?;
-    Ok(group_chats)
+    .await
+    .map_err(|e| GroupChatDaoError::OtherError(e))
   }
 }
 
@@ -129,8 +161,8 @@ impl Member {
 /// メンバーを取得するためのインターフェース
 #[async_trait]
 pub trait MemberDao: Send + Sync {
-  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member>;
-  async fn get_members(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Member>>;
+  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Option<Member>, MemberDaoError>;
+  async fn get_members(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Member>, MemberDaoError>;
 }
 
 /// [MemberDao]の実装
@@ -146,8 +178,8 @@ impl MemberDaoImpl {
 
 #[async_trait]
 impl MemberDao for MemberDaoImpl {
-  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member> {
-    let member = sqlx::query_as!(
+  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Option<Member>, MemberDaoError> {
+    sqlx::query_as!(
       Member,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at
 		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
@@ -155,13 +187,13 @@ impl MemberDao for MemberDaoImpl {
       group_chat_id.clone(),
       user_account_id.clone()
     )
-    .fetch_one(&self.my_sql_pool)
-    .await?;
-    Ok(member)
+    .fetch_optional(&self.my_sql_pool)
+    .await
+    .map_err(|e| MemberDaoError::OtherError(e))
   }
 
-  async fn get_members(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Member>> {
-    let members = sqlx::query_as!(
+  async fn get_members(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Member>, MemberDaoError> {
+    sqlx::query_as!(
       Member,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at
          FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
@@ -171,8 +203,8 @@ impl MemberDao for MemberDaoImpl {
       user_account_id.clone()
     )
     .fetch_all(&self.my_sql_pool)
-    .await?;
-    Ok(members)
+    .await
+    .map_err(|e| MemberDaoError::OtherError(e))
   }
 }
 
@@ -220,8 +252,9 @@ impl Message {
 /// メッセージを取得するためのインターフェース
 #[async_trait]
 pub trait MessageDao: Send + Sync {
-  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message>;
-  async fn get_messages(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Message>>;
+  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Option<Message>, MessageDaoError>;
+  async fn get_messages(&self, group_chat_id: String, user_account_id: String)
+    -> Result<Vec<Message>, MessageDaoError>;
 }
 
 /// [MessageDao]の実装
@@ -237,8 +270,8 @@ impl MessageDaoImpl {
 
 #[async_trait]
 impl MessageDao for MessageDaoImpl {
-  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message> {
-    let message = sqlx::query_as!(
+  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Option<Message>, MessageDaoError> {
+    sqlx::query_as!(
       Message,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at, m.updated_at
 		 FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id
@@ -247,13 +280,17 @@ impl MessageDao for MessageDaoImpl {
       message_id.clone(),
       user_account_id.clone()
     )
-        .fetch_one(&self.my_sql_pool)
-        .await?;
-    Ok(message)
+        .fetch_optional(&self.my_sql_pool)
+        .await
+        .map_err(|e| MessageDaoError::OtherError(e))
   }
 
-  async fn get_messages(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Message>> {
-    let messages = sqlx::query_as!(
+  async fn get_messages(
+    &self,
+    group_chat_id: String,
+    user_account_id: String,
+  ) -> Result<Vec<Message>, MessageDaoError> {
+    sqlx::query_as!(
       Message,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at, m.updated_at
 		 FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id
@@ -263,8 +300,8 @@ impl MessageDao for MessageDaoImpl {
       user_account_id.clone()
     )
         .fetch_all(&self.my_sql_pool)
-        .await?;
-    Ok(messages)
+        .await
+        .map_err(|e| MessageDaoError::OtherError(e))
   }
 }
 
@@ -396,6 +433,7 @@ mod tests {
     let group_chat_read_model = dao
       .get_group_chat(group_chat_id.to_string(), admin_id.to_string())
       .await
+      .unwrap()
       .unwrap();
     assert_eq!(group_chat_read_model.id, group_chat_id.to_string());
     assert_eq!(group_chat_read_model.name, group_chat_name.to_string());
@@ -510,6 +548,7 @@ mod tests {
         admin_id.clone().to_string(),
       )
       .await
+      .unwrap()
       .unwrap();
 
     assert_eq!(message.text, "test");

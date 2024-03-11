@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true, features = ["backtrace"] }
+thiserror = { workspace = true }
 async-trait = { workspace = true }
 aws-config = { workspace = true, features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = { workspace = true }
@@ -16,6 +17,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tower = { workspace = true }
+event-store-adapter-rs = { workspace = true }
 
 [dev-dependencies]
 env_logger = "0.11.3"
