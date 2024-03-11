@@ -5,5 +5,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true, features = ["backtrace"] }
+thiserror = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 downcast-rs = { workspace = true }

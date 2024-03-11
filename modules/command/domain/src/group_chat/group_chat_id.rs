@@ -1,5 +1,5 @@
+use crate::group_chat::ParseError;
 use crate::id_generate;
-use anyhow::anyhow;
 use event_store_adapter_rs::types::AggregateId;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -50,7 +50,7 @@ impl From<ULID> for GroupChatId {
 }
 
 impl FromStr for GroupChatId {
-  type Err = anyhow::Error;
+  type Err = ParseError;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let ss = if s.starts_with(GROUP_CHAT_PREFIX) {
@@ -60,7 +60,7 @@ impl FromStr for GroupChatId {
     };
     match ULID::from_str(ss) {
       Ok(value) => Ok(Self { value }),
-      Err(err) => Err(anyhow!(err)),
+      Err(err) => Err(ParseError::InvalidULID(err)),
     }
   }
 }

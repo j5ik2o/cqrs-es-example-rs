@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -18,11 +17,11 @@ pub enum GroupChatNameError {
 }
 
 impl GroupChatName {
-  pub fn new(name: &str) -> Result<Self> {
+  pub fn new(name: &str) -> Result<Self, GroupChatNameError> {
     if name.is_empty() {
-      Err(GroupChatNameError::Empty.into())
+      Err(GroupChatNameError::Empty)
     } else if name.len() > 100 {
-      Err(GroupChatNameError::TooLong.into())
+      Err(GroupChatNameError::TooLong)
     } else {
       Ok(Self(name.to_string()))
     }
@@ -30,7 +29,7 @@ impl GroupChatName {
 }
 
 impl FromStr for GroupChatName {
-  type Err = anyhow::Error;
+  type Err = GroupChatNameError;
 
   fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
     Self::new(s)

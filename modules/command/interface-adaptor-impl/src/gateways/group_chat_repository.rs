@@ -1,10 +1,9 @@
-use anyhow::Result;
 use event_store_adapter_rs::types::{Aggregate, Event, EventStore};
 use std::collections::{HashMap, VecDeque};
 
 use command_domain::group_chat::GroupChatEvent;
 use command_domain::group_chat::{GroupChat, GroupChatId};
-use command_interface_adaptor_if::GroupChatRepository;
+use command_interface_adaptor_if::{GroupChatRepository, GroupChatRepositoryError};
 
 #[derive(Debug, Clone)]
 pub struct MockGroupChatRepository {
@@ -23,7 +22,7 @@ impl MockGroupChatRepository {
 
 #[async_trait::async_trait]
 impl GroupChatRepository for MockGroupChatRepository {
-  async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<()> {
+  async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<(), GroupChatRepositoryError> {
     self
       .events
       .entry(event.aggregate_id().clone())
@@ -36,7 +35,7 @@ impl GroupChatRepository for MockGroupChatRepository {
     Ok(())
   }
 
-  async fn find_by_id(&self, id: &GroupChatId) -> Result<Option<GroupChat>> {
+  async fn find_by_id(&self, id: &GroupChatId) -> Result<Option<GroupChat>, GroupChatRepositoryError> {
     let events = self.events.get(id).unwrap().clone();
     let snapshot_opt = self.snapshot.get(id).unwrap().clone();
     if let Some(snapshot) = snapshot_opt {
@@ -98,26 +97,35 @@ impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> Gro
 impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> GroupChatRepository
   for GroupChatRepositoryImpl<ES>
 {
-  async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<()> {
-    match Self::resolve_snapshot(self.snapshot_interval, event.is_created(), snapshot) {
-      Some(snapshot) => self.event_store.persist_event_and_snapshot(event, snapshot).await?,
-      None => self.event_store.persist_event(event, snapshot.version()).await?,
+  async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<(), GroupChatRepositoryError> {
+    let result = match Self::resolve_snapshot(self.snapshot_interval, event.is_created(), snapshot) {
+      Some(snapshot) => self.event_store.persist_event_and_snapshot(event, snapshot).await,
+      None => self.event_store.persist_event(event, snapshot.version()).await,
+    };
+    match result {
+      Ok(_) => Ok(()),
+      Err(error) => Err(GroupChatRepositoryError::StoreError(snapshot.clone(), error)),
     }
-    Ok(())
   }
 
-  async fn find_by_id(&self, id: &GroupChatId) -> Result<Option<GroupChat>> {
-    let snapshot_opt = self.event_store.get_latest_snapshot_by_id(id).await?;
+  async fn find_by_id(&self, id: &GroupChatId) -> Result<Option<GroupChat>, GroupChatRepositoryError> {
+    let snapshot_opt = self.event_store.get_latest_snapshot_by_id(id).await;
     match snapshot_opt {
-      None => Ok(None),
-      Some(snapshot) => {
+      Ok(None) => Ok(None),
+      Ok(Some(snapshot)) => {
         let events = self
           .event_store
           .get_events_by_id_since_seq_nr(id, snapshot.seq_nr())
-          .await?;
-        let result = GroupChat::replay(events, snapshot.clone());
-        Ok(Some(result))
+          .await;
+        match events {
+          Ok(events) => {
+            let result = GroupChat::replay(events, snapshot.clone());
+            Ok(Some(result))
+          }
+          Err(error) => Err(GroupChatRepositoryError::FindByIdError(id.clone(), error)),
+        }
       }
+      Err(error) => Err(GroupChatRepositoryError::FindByIdError(id.clone(), error)),
     }
   }
 }

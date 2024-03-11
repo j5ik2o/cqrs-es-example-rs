@@ -1,16 +1,16 @@
-use crate::group_chat::MessageId;
+use crate::group_chat::{GroupChatId, GroupChatName, MessageId};
 use crate::user_account::UserAccountId;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum GroupChatError {
-  #[error("The group chat is deleted")]
-  AlreadyDeletedError,
-  #[error("The {0} is not an administrator of the group chat")]
+  #[error("The group chat is deleted: {0:?}")]
+  AlreadyDeletedError(GroupChatId),
+  #[error("The {0} is not an administrator of the group chat: {1:?}")]
   NotAdministratorError(String, UserAccountId),
-  #[error("The {0} is not a member of the group chat")]
+  #[error("The {0} is not a member of the group chat: {1:?}")]
   NotMemberError(String, UserAccountId),
-  #[error("The {0} is already a member of the group chat")]
+  #[error("The {0} is already a member of the group chat: {1:?}")]
   AlreadyMemberError(String, UserAccountId),
   #[error("Both {0} and {1} are not mismatched")]
   MismatchedError(String, String),
@@ -20,4 +20,6 @@ pub enum GroupChatError {
   NotFoundMessageError(MessageId),
   #[error("This {0} is not the sender of the message: {1:?}")]
   NotSenderError(String, UserAccountId),
+  #[error("The group chat name is already exists: {0:?}, {1:?}")]
+  AlreadyExistsNameError(GroupChatId, GroupChatName),
 }

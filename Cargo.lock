@@ -994,7 +994,6 @@ dependencies = [
 name = "command-domain"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "chrono",
  "downcast-rs",
@@ -1020,11 +1019,13 @@ dependencies = [
  "command-domain",
  "downcast-rs",
  "env_logger",
+ "event-store-adapter-rs",
  "hyper",
  "mime",
  "serde",
  "serde_json",
  "testcontainers",
+ "thiserror",
  "tokio",
  "tower",
 ]
@@ -1058,6 +1059,7 @@ dependencies = [
  "serial_test",
  "sqlx",
  "testcontainers",
+ "thiserror",
  "tokio",
  "tower",
 ]
@@ -2076,6 +2078,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "downcast-rs",
+ "thiserror",
 ]
 
 [[package]]
@@ -2981,6 +2984,7 @@ dependencies = [
  "serial_test",
  "sqlx",
  "testcontainers",
+ "thiserror",
  "tokio",
  "tower",
  "tower-http",
@@ -3081,6 +3085,7 @@ dependencies = [
  "serde_json",
  "simple_logger",
  "sqlx",
+ "thiserror",
  "tokio",
  "tracing",
  "tracing-subscriber",

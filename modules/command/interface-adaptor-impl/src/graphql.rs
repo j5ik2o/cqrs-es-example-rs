@@ -1,7 +1,6 @@
-use std::str::FromStr;
 use std::sync::Arc;
 
-use async_graphql::{EmptySubscription, ErrorExtensions, Object, Schema, SchemaBuilder};
+use async_graphql::{EmptySubscription, Object, Schema, SchemaBuilder};
 use event_store_adapter_rs::EventStoreForDynamoDB;
 use tokio::sync::Mutex;
 

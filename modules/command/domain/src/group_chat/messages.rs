@@ -1,7 +1,7 @@
 use crate::group_chat::message::Message;
 use crate::group_chat::message_id::MessageId;
+use crate::group_chat_error::GroupChatError;
 use crate::group_chat_error::GroupChatError::{NotFoundMessageError, NotSenderError};
-use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 
 /// [GroupChat]内でやりとりする[Message]の集合。
@@ -75,7 +75,7 @@ impl Messages {
   ///
   /// # 引数
   /// - `message` - 編集する[Message]
-  pub fn edit(&mut self, message: Message) -> Result<()> {
+  pub fn edit(&mut self, message: Message) -> Result<(), GroupChatError> {
     let index = self
       .0
       .iter()
@@ -83,13 +83,10 @@ impl Messages {
     match index {
       Some(i) => {
         if self.0[i].breach_encapsulation_of_sender_id() != message.breach_encapsulation_of_sender_id() {
-          return Err(
-            NotSenderError(
-              "message.sender_id".to_string(),
-              message.breach_encapsulation_of_sender_id().clone(),
-            )
-            .into(),
-          );
+          return Err(NotSenderError(
+            "message.sender_id".to_string(),
+            message.breach_encapsulation_of_sender_id().clone(),
+          ));
         }
         self.0[i] = message;
         Ok(())
@@ -106,12 +103,12 @@ impl Messages {
   /// # 戻り値
   /// - 削除に失敗した場合は`Err(anyhow!("Message not found"))`を返す。
   /// - 削除に成功した場合は`Ok(())`を返す。
-  pub fn remove(&mut self, message_id: &MessageId) -> Result<()> {
+  pub fn remove(&mut self, message_id: &MessageId) -> Result<(), GroupChatError> {
     let index = self
       .0
       .iter()
       .position(|message| *message.breach_encapsulation_of_id() == *message_id)
-      .ok_or(anyhow!("Message not found"))?;
+      .ok_or(GroupChatError::NotFoundMessageError(message_id.clone()))?;
     self.0.remove(index);
     Ok(())
   }

@@ -1,5 +1,5 @@
+use crate::group_chat::ParseError;
 use crate::id_generate;
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -30,12 +30,12 @@ impl From<ULID> for MemberId {
 }
 
 impl FromStr for MemberId {
-  type Err = anyhow::Error;
+  type Err = ParseError;
 
-  fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
     match ULID::from_str(s) {
       Ok(value) => Ok(Self(value)),
-      Err(err) => Err(anyhow!(err)),
+      Err(err) => Err(ParseError::InvalidULID(err)),
     }
   }
 }

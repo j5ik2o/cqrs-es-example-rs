@@ -3,8 +3,7 @@ pub mod events;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use anyhow::{anyhow, Result};
-
+use crate::group_chat::ParseError;
 use crate::id_generate;
 use chrono::Utc;
 use event_store_adapter_rs::types::AggregateId;
@@ -12,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use ulid_generator_rs::ULID;
 
 use crate::user_account::events::{UserAccountEvent, UserAccountEventCreatedBody, UserAccountEventDeletedBody};
+use crate::user_account_error::UserAccountError;
 
 const USER_ACCOUNT_PREFIX: &str = "UserAccount";
 
@@ -42,7 +42,7 @@ impl AggregateId for UserAccountId {
 }
 
 impl FromStr for UserAccountId {
-  type Err = anyhow::Error;
+  type Err = ParseError;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let ss = if s.starts_with(USER_ACCOUNT_PREFIX) {
@@ -52,7 +52,7 @@ impl FromStr for UserAccountId {
     };
     match ULID::from_str(ss) {
       Ok(value) => Ok(Self { value }),
-      Err(err) => Err(anyhow!(err)),
+      Err(err) => Err(ParseError::InvalidULID(err)),
     }
   }
 }
@@ -93,9 +93,9 @@ impl UserAccount {
     Self::from(id, false, user_name, password, 0, 1)
   }
 
-  pub fn delete(&mut self) -> Result<UserAccountEvent> {
+  pub fn delete(&mut self) -> Result<UserAccountEvent, UserAccountError> {
     if self.deleted {
-      return Err(anyhow!("The user account is deleted"));
+      return Err(UserAccountError::AlreadyDeletedError(self.id.clone()));
     }
     self.deleted = true;
     self.seq_nr_counter += 1;

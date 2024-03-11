@@ -1,9 +1,9 @@
-use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
 use event_store_adapter_rs::types::Aggregate;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use thiserror::Error;
+use ulid_generator_rs::ULIDError;
 
-use crate::group_chat::events::GroupChatEventMessageEditedBody;
 pub use crate::group_chat::events::{
   GroupChatEvent, GroupChatEventCreatedBody, GroupChatEventDeletedBody, GroupChatEventMemberAddedBody,
   GroupChatEventMemberRemovedBody, GroupChatEventMessageDeletedBody, GroupChatEventMessagePostedBody,
@@ -31,6 +31,14 @@ mod members;
 mod message;
 mod message_id;
 mod messages;
+
+#[derive(Debug, Clone, Error)]
+pub enum ParseError {
+  #[error("invalid ULID format: {0}")]
+  InvalidULID(#[from] ULIDError),
+  #[error("invalid Role: {0}")]
+  InvalidRole(String),
+}
 
 /// [Message]をやりとりする場であるグループチャットを表すモデル。
 ///
@@ -176,7 +184,7 @@ impl GroupChat {
           .post_message(body.message.clone(), body.executor_id.clone())
           .unwrap();
       }
-      GroupChatEvent::GroupChatMessagePosted(body) => {
+      GroupChatEvent::GroupChatMessagePosted(_body) => {
         todo!()
       }
       GroupChatEvent::GroupChatMessageDeleted(body) => {
@@ -233,15 +241,15 @@ impl GroupChat {
   /// - 実行者がメンバーでない場合はエラーを返す。
   /// - 新しい名前が既に設定されている場合はエラーを返す。
   /// - 成功した場合は、GroupChatRenamedイベントを返す。
-  pub fn rename(&mut self, name: GroupChatName, executor_id: UserAccountId) -> Result<GroupChatEvent> {
+  pub fn rename(&mut self, name: GroupChatName, executor_id: UserAccountId) -> Result<GroupChatEvent, GroupChatError> {
     if self.deleted {
-      return Err(anyhow!("The group chat is deleted"));
+      return Err(GroupChatError::AlreadyDeletedError(self.id.clone()));
     }
     if !self.members.is_member(&executor_id) {
-      return Err(anyhow!("executor_id is not a member of the group chat"));
+      return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id));
     }
     if self.name == name {
-      return Err(anyhow!("Name already set"));
+      return Err(GroupChatError::AlreadyExistsNameError(self.id.clone(), name));
     }
     self.name = name;
     self.seq_nr_counter += 1;
@@ -272,15 +280,21 @@ impl GroupChat {
     user_account_id: UserAccountId,
     role: MemberRole,
     executor_id: UserAccountId,
-  ) -> Result<GroupChatEvent> {
+  ) -> Result<GroupChatEvent, GroupChatError> {
     if self.deleted {
-      return Err(GroupChatError::AlreadyDeletedError.into());
+      return Err(GroupChatError::AlreadyDeletedError(self.id.clone()));
     }
     if !self.members.is_administrator(&executor_id) {
-      return Err(GroupChatError::NotAdministratorError("executor_id".to_string(), executor_id).into());
+      return Err(GroupChatError::NotAdministratorError(
+        "executor_id".to_string(),
+        executor_id,
+      ));
     }
     if self.members.is_member(&user_account_id) {
-      return Err(GroupChatError::AlreadyMemberError("user_account_id".to_string(), user_account_id).into());
+      return Err(GroupChatError::AlreadyMemberError(
+        "user_account_id".to_string(),
+        user_account_id,
+      ));
     }
     let member = Member::new(member_id, user_account_id, role);
     self.members.add_member(member.clone());
@@ -305,15 +319,21 @@ impl GroupChat {
     &mut self,
     user_account_id: UserAccountId,
     executor_id: UserAccountId,
-  ) -> Result<GroupChatEvent> {
+  ) -> Result<GroupChatEvent, GroupChatError> {
     if self.deleted {
-      return Err(GroupChatError::AlreadyDeletedError.into());
+      return Err(GroupChatError::AlreadyDeletedError(self.id.clone()));
     }
     if !self.members.is_administrator(&executor_id) {
-      return Err(GroupChatError::NotAdministratorError("executor_id".to_string(), executor_id).into());
+      return Err(GroupChatError::NotAdministratorError(
+        "executor_id".to_string(),
+        executor_id,
+      ));
     }
     if !self.members.is_member(&user_account_id) {
-      return Err(GroupChatError::AlreadyMemberError("user_account_id".to_string(), user_account_id).into());
+      return Err(GroupChatError::AlreadyMemberError(
+        "user_account_id".to_string(),
+        user_account_id,
+      ));
     }
     self.members.remove_member_by_user_account_id(&user_account_id);
     self.seq_nr_counter += 1;
@@ -334,18 +354,27 @@ impl GroupChat {
   /// - 実行者がメンバーでない場合はエラーを返す。
   /// - メッセージIDが既に存在する場合はエラーを返す。
   /// - 成功した場合は、GroupChatMessagePostedイベントを返す。
-  pub fn post_message(&mut self, message: Message, executor_id: UserAccountId) -> Result<GroupChatEvent> {
+  pub fn post_message(
+    &mut self,
+    message: Message,
+    executor_id: UserAccountId,
+  ) -> Result<GroupChatEvent, GroupChatError> {
     if self.deleted {
-      return Err(GroupChatError::AlreadyDeletedError.into());
+      return Err(GroupChatError::AlreadyDeletedError(self.id.clone()));
     }
     if executor_id != message.breach_encapsulation_of_sender_id().clone() {
-      return Err(GroupChatError::MismatchedError("executor_id".to_string(), "sender_id".to_string()).into());
+      return Err(GroupChatError::MismatchedError(
+        "executor_id".to_string(),
+        "sender_id".to_string(),
+      ));
     }
     if !self.members.is_member(&executor_id) {
-      return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id).into());
+      return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id));
     }
     if self.messages.contains(message.breach_encapsulation_of_id()) {
-      return Err(GroupChatError::AlreadyExistsMessageError(message.breach_encapsulation_of_id().clone()).into());
+      return Err(GroupChatError::AlreadyExistsMessageError(
+        message.breach_encapsulation_of_id().clone(),
+      ));
     }
     self.messages.add(message.clone());
     self.seq_nr_counter += 1;
@@ -366,7 +395,11 @@ impl GroupChat {
   /// - 実行者がメンバーでない場合はエラーを返す。
   /// - メッセージIDが既に存在する場合はエラーを返す。
   /// - 成功した場合は、GroupChatMessagePostedイベントを返す。
-  pub fn edit_message(&mut self, _message: Message, _executor_id: UserAccountId) -> Result<GroupChatEvent> {
+  pub fn edit_message(
+    &mut self,
+    _message: Message,
+    _executor_id: UserAccountId,
+  ) -> Result<GroupChatEvent, GroupChatError> {
     todo!()
   }
 
@@ -382,23 +415,27 @@ impl GroupChat {
   /// - 実行者がメンバーでない場合はエラーを返す。
   /// - メッセージIDが存在しない場合はエラーを返す。
   /// - 成功した場合は、GroupChatMessageDeletedイベントを返す。
-  pub fn delete_message(&mut self, message_id: MessageId, executor_id: UserAccountId) -> Result<GroupChatEvent> {
+  pub fn delete_message(
+    &mut self,
+    message_id: MessageId,
+    executor_id: UserAccountId,
+  ) -> Result<GroupChatEvent, GroupChatError> {
     if self.deleted {
-      return Err(GroupChatError::AlreadyDeletedError.into());
+      return Err(GroupChatError::AlreadyDeletedError(self.id.clone()));
     }
     if !self.members.is_member(&executor_id) {
-      return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id).into());
+      return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id));
     }
     let result = self.messages.find_by_id(&message_id);
     match result {
-      None => Err(GroupChatError::NotFoundMessageError(message_id).into()),
+      None => Err(GroupChatError::NotFoundMessageError(message_id)),
       Some(message) => {
         let member = self
           .members
           .find_by_user_account_id(message.breach_encapsulation_of_sender_id())
           .unwrap();
         if *member.breach_encapsulation_of_user_account_id() != executor_id {
-          return Err(GroupChatError::NotSenderError("executor_id".to_string(), executor_id).into());
+          return Err(GroupChatError::NotSenderError("executor_id".to_string(), executor_id));
         }
         self.messages.remove(&message_id).unwrap();
         self.seq_nr_counter += 1;
@@ -418,12 +455,15 @@ impl GroupChat {
   /// - グループチャットが削除されている場合はエラーを返す。
   /// - 実行者が管理者でない場合はエラーを返す。
   /// - 成功した場合は、GroupChatDeletedイベントを返す。
-  pub fn delete(&mut self, executor_id: UserAccountId) -> Result<GroupChatEvent> {
+  pub fn delete(&mut self, executor_id: UserAccountId) -> Result<GroupChatEvent, GroupChatError> {
     if self.deleted {
-      return Err(GroupChatError::AlreadyDeletedError.into());
+      return Err(GroupChatError::AlreadyDeletedError(self.id.clone()));
     }
     if !self.members.is_administrator(&executor_id) {
-      return Err(GroupChatError::NotAdministratorError("executor_id".to_string(), executor_id).into());
+      return Err(GroupChatError::NotAdministratorError(
+        "executor_id".to_string(),
+        executor_id,
+      ));
     }
     self.deleted = true;
     self.seq_nr_counter += 1;
