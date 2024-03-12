@@ -363,7 +363,7 @@ impl GroupChat {
       return Err(GroupChatError::AlreadyDeletedError(self.id.clone()));
     }
     if executor_id != message.breach_encapsulation_of_sender_id().clone() {
-      return Err(GroupChatError::MismatchedError(
+      return Err(GroupChatError::MismatchedUserAccountError(
         "executor_id".to_string(),
         "sender_id".to_string(),
       ));
