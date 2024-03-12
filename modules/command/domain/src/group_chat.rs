@@ -4,12 +4,12 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ulid_generator_rs::ULIDError;
 
+use crate::group_chat::events::GroupChatEventMessageEditedBody;
 pub use crate::group_chat::events::{
   GroupChatEvent, GroupChatEventCreatedBody, GroupChatEventDeletedBody, GroupChatEventMemberAddedBody,
   GroupChatEventMemberRemovedBody, GroupChatEventMessageDeletedBody, GroupChatEventMessagePostedBody,
   GroupChatEventRenamedBody,
 };
-use crate::group_chat::events::GroupChatEventMessageEditedBody;
 pub use crate::group_chat::group_chat_id::GroupChatId;
 pub use crate::group_chat::group_chat_name::GroupChatName;
 pub use crate::group_chat::member::Member;
