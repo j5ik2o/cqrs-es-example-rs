@@ -13,7 +13,7 @@ pub enum GroupChatError {
   #[error("The {0} is already a member of the group chat: {1:?}")]
   AlreadyMemberError(String, UserAccountId),
   #[error("Both {0} and {1} are not mismatched")]
-  MismatchedError(String, String),
+  MismatchedUserAccountError(String, String),
   #[error("The message is already exist: {0:?}")]
   AlreadyExistsMessageError(MessageId),
   #[error("The message is not found: {0:?}")]
