@@ -1,8 +1,8 @@
 use serial_test::serial;
 use testcontainers::clients;
 
-use command_domain::group_chat::{Members, MessageId};
 use command_domain::group_chat::{GroupChatName, MemberRole, Message};
+use command_domain::group_chat::{Members, MessageId};
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::*;
 use command_processor::group_chat_command_processor::GroupChatCommandProcessor;

@@ -8,8 +8,8 @@ use testcontainers::core::WaitFor;
 use testcontainers::{clients, Container, GenericImage};
 
 use crate::common::{init_logger, DOCKER};
-use command_domain::group_chat::{MemberId, MessageId};
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message};
+use command_domain::group_chat::{MemberId, MessageId};
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
 use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
