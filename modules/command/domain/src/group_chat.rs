@@ -404,7 +404,7 @@ impl GroupChat {
       return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id));
     }
     if executor_id != message.breach_encapsulation_of_sender_id().clone() {
-      return Err(GroupChatError::MismatchedError(
+      return Err(GroupChatError::MismatchedUserAccountError(
         "executor_id".to_string(),
         "sender_id".to_string(),
       ));
