@@ -8,7 +8,7 @@ use testcontainers::core::WaitFor;
 use testcontainers::{clients, Container, GenericImage};
 
 use crate::common::{init_logger, DOCKER};
-use command_domain::group_chat::MemberId;
+use command_domain::group_chat::{MemberId, MessageId};
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message};
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
@@ -255,7 +255,8 @@ async fn test_post_message() {
     .await
     .unwrap();
 
-  let message = Message::new("test".to_string(), user_account_id.clone());
+  let message_id = MessageId::new();
+  let message = Message::new(message_id, "test".to_string(), user_account_id.clone());
 
   dao.insert_message(aggregate_id, message, Utc::now()).await.unwrap();
 }
@@ -299,7 +300,8 @@ async fn test_delete_message() {
     .await
     .unwrap();
 
-  let message = Message::new("test".to_string(), user_account_id.clone());
+  let message_id = MessageId::new();
+  let message = Message::new(message_id, "test".to_string(), user_account_id.clone());
 
   dao
     .insert_message(aggregate_id.clone(), message.clone(), Utc::now())

@@ -109,7 +109,7 @@ impl MutationRoot {
 
     let group_chat_id = validate_group_chat_id(&input.group_chat_id)?;
     let executor_id = validate_user_account_id(&input.executor_id)?;
-    let message = validate_message(&input.content, executor_id.clone())?;
+    let message = validate_message(&input.content, MessageId::new(), executor_id.clone())?;
 
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
     processor
@@ -119,8 +119,20 @@ impl MutationRoot {
       .map_err(error_handling)
   }
 
-  async fn edit_message<'ctx>(&self, ctx: &Context<'ctx>, input: EditMessageInput) -> FieldResult<MessageOut> {
-    todo!()
+  async fn edit_message<'ctx>(&self, ctx: &Context<'ctx>, input: EditMessageInput) -> FieldResult<GroupChatOut> {
+    let service_ctx = ctx.data::<ServiceContext<GroupChatRepositoryImpl<ES>>>().unwrap();
+
+    let group_chat_id = validate_group_chat_id(&input.group_chat_id)?;
+    let executor_id = validate_user_account_id(&input.executor_id)?;
+    let message_id = validate_message_id(&input.message_id)?;
+    let message = validate_message(&input.content, message_id, executor_id.clone())?;
+
+    let mut processor = service_ctx.group_chat_command_processor.lock().await;
+    processor
+      .edit_message(group_chat_id, message, executor_id)
+      .await
+      .map(|group_chat_id| GroupChatOut::new(group_chat_id.to_string()))
+      .map_err(error_handling)
   }
 
   async fn delete_message<'ctx>(&self, ctx: &Context<'ctx>, input: DeleteMessageInput) -> FieldResult<GroupChatOut> {
@@ -181,8 +193,8 @@ fn validate_message_id(value: &str) -> Result<MessageId, Error> {
   MessageId::from_str(value).map_err(|error| Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
 }
 
-fn validate_message(value: &str, sender_id: UserAccountId) -> Result<Message, Error> {
-  Message::validate(&value, sender_id.clone())
+fn validate_message(value: &str, message_id: MessageId, sender_id: UserAccountId) -> Result<Message, Error> {
+  Message::validate(&value, message_id, sender_id.clone())
     .map_err(|error| Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
 }
 
