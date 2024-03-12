@@ -26,7 +26,7 @@ pub enum GroupChatEvent {
   GroupChatMemberRemoved(GroupChatEventMemberRemovedBody),
   /// グループチャットにメッセージが投稿された
   GroupChatMessagePosted(GroupChatEventMessagePostedBody),
-  /// グループチャットにメッセージが編集された
+  /// グループチャットのメッセージが編集された
   GroupChatMessageEdited(GroupChatEventMessageEditedBody),
   /// グループチャットのメッセージが削除された
   GroupChatMessageDeleted(GroupChatEventMessageDeletedBody),
