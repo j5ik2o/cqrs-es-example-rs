@@ -238,11 +238,27 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
 
   pub async fn edit_message(
     &mut self,
-    _id: GroupChatId,
-    _message: Message,
-    _executor_id: UserAccountId,
+    id: GroupChatId,
+    message: Message,
+    executor_id: UserAccountId,
   ) -> Result<GroupChatId, CommandProcessError> {
-    todo!()
+    let mut repository_mg = self.group_chat_repository.lock().await;
+
+    let mut group_chat = repository_mg
+      .find_by_id(&id)
+      .await
+      .map_err(|e| CommandProcessError::RepositoryError(e))?
+      .ok_or(CommandProcessError::NotFoundError)?;
+
+    let group_chat_event = group_chat
+      .edit_message(message.clone(), executor_id)
+      .map_err(|e| CommandProcessError::DomainLogicError(e))?;
+
+    repository_mg
+      .store(&group_chat_event, &group_chat)
+      .await
+      .map(|_| group_chat_event.aggregate_id().clone())
+      .map_err(|e| CommandProcessError::RepositoryError(e))
   }
 
   /// グループチャットのメッセージを削除する。

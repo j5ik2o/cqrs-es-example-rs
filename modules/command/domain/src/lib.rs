@@ -3,7 +3,6 @@ use std::sync::Mutex;
 use once_cell::sync::Lazy;
 use ulid_generator_rs::{ULIDGenerator, ULID};
 
-pub mod aggregate;
 pub mod group_chat;
 pub mod group_chat_error;
 pub mod user_account;

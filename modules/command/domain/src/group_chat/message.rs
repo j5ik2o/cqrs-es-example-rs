@@ -29,19 +29,18 @@ impl Message {
     &self.sender_id
   }
 
-  pub fn new(text: String, sender_id: UserAccountId) -> Self {
-    let id = MessageId::new();
+  pub fn new(id: MessageId, text: String, sender_id: UserAccountId) -> Self {
     Self { id, text, sender_id }
   }
 
-  pub fn validate(text: &str, sender_id: UserAccountId) -> Result<Self, MessageError> {
+  pub fn validate(text: &str, message_id: MessageId, sender_id: UserAccountId) -> Result<Self, MessageError> {
     if text.is_empty() {
       return Err(MessageError::Empty);
     }
     if text.len() > 1000 {
       return Err(MessageError::TooLong);
     }
-    Ok(Message::new(text.to_string(), sender_id))
+    Ok(Message::new(message_id, text.to_string(), sender_id))
   }
 }
 

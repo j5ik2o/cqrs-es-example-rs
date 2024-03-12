@@ -1,9 +1,10 @@
 use chrono::{DateTime, Utc};
 use event_store_adapter_rs::types::Aggregate;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ulid_generator_rs::ULIDError;
 
+use crate::group_chat::events::GroupChatEventMessageEditedBody;
 pub use crate::group_chat::events::{
   GroupChatEvent, GroupChatEventCreatedBody, GroupChatEventDeletedBody, GroupChatEventMemberAddedBody,
   GroupChatEventMemberRemovedBody, GroupChatEventMessageDeletedBody, GroupChatEventMessagePostedBody,
@@ -184,8 +185,10 @@ impl GroupChat {
           .post_message(body.message.clone(), body.executor_id.clone())
           .unwrap();
       }
-      GroupChatEvent::GroupChatMessagePosted(_body) => {
-        todo!()
+      GroupChatEvent::GroupChatMessageEdited(body) => {
+        self
+          .edit_message(body.message.clone(), body.executor_id.clone())
+          .unwrap();
       }
       GroupChatEvent::GroupChatMessageDeleted(body) => {
         self
@@ -362,21 +365,16 @@ impl GroupChat {
     if self.deleted {
       return Err(GroupChatError::AlreadyDeletedError(self.id.clone()));
     }
+    if !self.members.is_member(&executor_id) {
+      return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id));
+    }
     if executor_id != message.breach_encapsulation_of_sender_id().clone() {
       return Err(GroupChatError::MismatchedUserAccountError(
         "executor_id".to_string(),
         "sender_id".to_string(),
       ));
     }
-    if !self.members.is_member(&executor_id) {
-      return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id));
-    }
-    if self.messages.contains(message.breach_encapsulation_of_id()) {
-      return Err(GroupChatError::AlreadyExistsMessageError(
-        message.breach_encapsulation_of_id().clone(),
-      ));
-    }
-    self.messages.add(message.clone());
+    self.messages.add(message.clone())?;
     self.seq_nr_counter += 1;
     Ok(GroupChatEvent::GroupChatMessagePosted(
       GroupChatEventMessagePostedBody::new(self.id.clone(), self.seq_nr_counter, message, executor_id),
@@ -397,10 +395,26 @@ impl GroupChat {
   /// - 成功した場合は、GroupChatMessagePostedイベントを返す。
   pub fn edit_message(
     &mut self,
-    _message: Message,
-    _executor_id: UserAccountId,
+    message: Message,
+    executor_id: UserAccountId,
   ) -> Result<GroupChatEvent, GroupChatError> {
-    todo!()
+    if self.deleted {
+      return Err(GroupChatError::AlreadyDeletedError(self.id.clone()));
+    }
+    if !self.members.is_member(&executor_id) {
+      return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id));
+    }
+    if executor_id != message.breach_encapsulation_of_sender_id().clone() {
+      return Err(GroupChatError::MismatchedUserAccountError(
+        "executor_id".to_string(),
+        "sender_id".to_string(),
+      ));
+    }
+    self.messages.edit(message.clone())?;
+    self.seq_nr_counter += 1;
+    Ok(GroupChatEvent::GroupChatMessageEdited(
+      GroupChatEventMessageEditedBody::new(self.id.clone(), self.seq_nr_counter, message, executor_id),
+    ))
   }
 
   /// メッセージを削除する
@@ -437,7 +451,7 @@ impl GroupChat {
         if *member.breach_encapsulation_of_user_account_id() != executor_id {
           return Err(GroupChatError::NotSenderError("executor_id".to_string(), executor_id));
         }
-        self.messages.remove(&message_id).unwrap();
+        self.messages.remove(&message_id, &executor_id).unwrap();
         self.seq_nr_counter += 1;
         Ok(GroupChatEvent::GroupChatMessageDeleted(
           GroupChatEventMessageDeletedBody::new(self.id.clone(), self.seq_nr_counter, message_id, executor_id),
@@ -591,7 +605,8 @@ mod tests {
       )
       .unwrap();
 
-    let message = Message::new("test".to_string(), user_account_id.clone());
+    let message_id = MessageId::new();
+    let message = Message::new(message_id, "test".to_string(), user_account_id.clone());
     let _ = group_chat
       .post_message(message.clone(), user_account_id.clone())
       .unwrap();
@@ -599,8 +614,8 @@ mod tests {
     assert!(group_chat.messages().contains(message.breach_encapsulation_of_id()));
   }
 
-  #[ignore]
-  fn _test_edit_message() {
+  #[test]
+  fn test_edit_message() {
     let group_chat_name = GroupChatName::new("test").unwrap();
     let admin_user_account_id = UserAccountId::new();
     let members = Members::new(admin_user_account_id.clone());
@@ -618,7 +633,8 @@ mod tests {
       )
       .unwrap();
 
-    let message = Message::new("test1".to_string(), user_account_id.clone());
+    let message_id = MessageId::new();
+    let message = Message::new(message_id, "test1".to_string(), user_account_id.clone());
     let _ = group_chat
       .post_message(message.clone(), user_account_id.clone())
       .unwrap();
@@ -659,7 +675,8 @@ mod tests {
       )
       .unwrap();
 
-    let message = Message::new("test".to_string(), user_account_id.clone());
+    let message_id = MessageId::new();
+    let message = Message::new(message_id, "test".to_string(), user_account_id.clone());
     let _ = group_chat
       .post_message(message.clone(), user_account_id.clone())
       .unwrap();
@@ -681,7 +698,8 @@ mod tests {
     let (mut group_chat, _) = GroupChat::new(group_chat_name.clone(), members);
     assert_eq!(group_chat.name, group_chat_name);
 
-    let message = Message::new("test".to_string(), admin_user_account_id.clone());
+    let message_id = MessageId::new();
+    let message = Message::new(message_id, "test".to_string(), admin_user_account_id.clone());
     let _ = group_chat
       .post_message(message.clone(), admin_user_account_id.clone())
       .unwrap();

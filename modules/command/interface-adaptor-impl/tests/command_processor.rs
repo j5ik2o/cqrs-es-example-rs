@@ -1,8 +1,8 @@
 use serial_test::serial;
 use testcontainers::clients;
 
-use command_domain::group_chat::Members;
 use command_domain::group_chat::{GroupChatName, MemberRole, Message};
+use command_domain::group_chat::{Members, MessageId};
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::*;
 use command_processor::group_chat_command_processor::GroupChatCommandProcessor;
@@ -148,8 +148,9 @@ async fn test_group_chat_post_message() {
     .add_member(id.clone(), user_account_id.clone(), role, admin_id.clone())
     .await
     .unwrap();
+  let message_id = MessageId::new();
   let text = "ABC".to_string();
-  let message = Message::new(text.clone(), user_account_id.clone());
+  let message = Message::new(message_id, text.clone(), user_account_id.clone());
 
   // When
   let result = command_processor
@@ -166,7 +167,6 @@ async fn test_group_chat_post_message() {
   );
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn test_group_chat_edit_message() {
@@ -188,8 +188,9 @@ async fn test_group_chat_edit_message() {
     .add_member(id.clone(), user_account_id.clone(), role, admin_id.clone())
     .await
     .unwrap();
+  let message_id = MessageId::new();
   let text = "ABC".to_string();
-  let message = Message::new(text.clone(), user_account_id.clone());
+  let message = Message::new(message_id, text.clone(), user_account_id.clone());
 
   let _ = command_processor
     .post_message(id.clone(), message.clone(), user_account_id.clone())
@@ -232,8 +233,9 @@ async fn test_group_chat_delete_message() {
     .add_member(id.clone(), user_account_id.clone(), role, admin_id.clone())
     .await
     .unwrap();
+  let message_id = MessageId::new();
   let text = "ABC".to_string();
-  let message = Message::new(text.clone(), user_account_id.clone());
+  let message = Message::new(message_id, text.clone(), user_account_id.clone());
   command_processor
     .post_message(id.clone(), message.clone(), user_account_id.clone())
     .await

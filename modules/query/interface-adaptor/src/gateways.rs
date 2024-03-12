@@ -309,7 +309,7 @@ impl MessageDao for MessageDaoImpl {
 mod tests {
   use crate::gateways::{GroupChatDao, GroupChatDaoImpl, MemberDao, MemberDaoImpl, MessageDao, MessageDaoImpl};
   use chrono::{DateTime, Utc};
-  use command_domain::group_chat::{GroupChatId, GroupChatName, MemberId, MemberRole, Message};
+  use command_domain::group_chat::{GroupChatId, GroupChatName, MemberId, MemberRole, Message, MessageId};
   use command_domain::user_account::UserAccountId;
   use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
   use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
@@ -533,8 +533,9 @@ mod tests {
       insert_group_chat_and_member(&update_dao, group_chat_name.clone(), admin_id.clone(), created_at).await;
 
     let dao = GroupChatReadModelUpdateDaoImpl::new(pool.clone());
+    let message_id = MessageId::new();
     let message_text = "test".to_string();
-    let message = Message::new(message_text, admin_id.clone());
+    let message = Message::new(message_id, message_text, admin_id.clone());
 
     dao
       .insert_message(group_chat_id, message.clone(), created_at)
@@ -576,10 +577,12 @@ mod tests {
       insert_group_chat_and_member(&update_dao, group_chat_name.clone(), admin_id.clone(), created_at).await;
 
     let dao = GroupChatReadModelUpdateDaoImpl::new(pool.clone());
+    let message_id_1 = MessageId::new();
+    let message_id_2 = MessageId::new();
     let message_text1 = "test1".to_string();
     let message_text2 = "test2".to_string();
-    let message1 = Message::new(message_text1, admin_id.clone());
-    let message2 = Message::new(message_text2, admin_id.clone());
+    let message1 = Message::new(message_id_1, message_text1, admin_id.clone());
+    let message2 = Message::new(message_id_2, message_text2, admin_id.clone());
 
     dao
       .insert_message(group_chat_id.clone(), message1.clone(), created_at)

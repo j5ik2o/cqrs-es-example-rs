@@ -111,7 +111,14 @@ pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
             )
             .await
             .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
-          GroupChatEvent::GroupChatMessageEdited(body) => todo!(),
+          GroupChatEvent::GroupChatMessageEdited(body) => group_chat_read_model_dao
+            .update_message(
+              body.aggregate_id.clone(),
+              body.message.clone(),
+              body.occurred_at.clone(),
+            )
+            .await
+            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
           GroupChatEvent::GroupChatMessageDeleted(body) => group_chat_read_model_dao
             .delete_message(body.message_id.clone(), body.occurred_at.clone())
             .await
