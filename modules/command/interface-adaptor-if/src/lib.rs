@@ -53,6 +53,8 @@ pub enum GroupChatReadModelUpdateDaoError {
   DeleteMemberError,
   #[error("Failed to insert message")]
   InsertMessageError,
+  #[error("Failed to update message")]
+  UpdateMessageError,
   #[error("Failed to delete message")]
   DeleteMessageError,
 }
@@ -105,6 +107,14 @@ pub trait GroupChatReadModelUpdateDao {
     message: Message,
     created_at: DateTime<Utc>,
   ) -> Result<(), GroupChatReadModelUpdateDaoError>;
+
+  async fn update_message(
+    &self,
+    aggregate_id: GroupChatId,
+    message: Message,
+    updated_at: DateTime<Utc>,
+  ) -> Result<(), GroupChatReadModelUpdateDaoError>;
+
   /// メッセージリードモデルを削除します。
   async fn delete_message(
     &self,

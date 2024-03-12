@@ -186,6 +186,24 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
     }
   }
 
+  async fn update_message(&self, aggregate_id: GroupChatId, message: Message, updated_at: DateTime<Utc>) -> Result<(), GroupChatReadModelUpdateDaoError> {
+    let result = sqlx::query!(
+      "UPDATE messages SET text = ?, updated_at = ? WHERE id = ?",
+      message.breach_encapsulation_of_text(),
+      updated_at.clone(),
+      message.breach_encapsulation_of_id().to_string()
+    )
+        .execute(&self.pool)
+        .await;
+    match result {
+      Ok(_) => Ok(()),
+      Err(e) => {
+        log::error!("Failed to update message: {:?}", e);
+        Err(GroupChatReadModelUpdateDaoError::UpdateMessageError)
+      }
+    }
+  }
+
   async fn delete_message(
     &self,
     message_id: MessageId,
@@ -268,6 +286,10 @@ impl GroupChatReadModelUpdateDao for MockGroupChatReadModelUpdateDao {
     _message: Message,
     _created_at: DateTime<Utc>,
   ) -> Result<(), GroupChatReadModelUpdateDaoError> {
+    Ok(())
+  }
+
+  async fn update_message(&self, aggregate_id: GroupChatId, message: Message, updated_at: DateTime<Utc>) -> Result<(), GroupChatReadModelUpdateDaoError> {
     Ok(())
   }
 

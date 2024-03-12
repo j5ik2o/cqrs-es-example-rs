@@ -9,6 +9,7 @@ pub use crate::group_chat::events::{
   GroupChatEventMemberRemovedBody, GroupChatEventMessageDeletedBody, GroupChatEventMessagePostedBody,
   GroupChatEventRenamedBody,
 };
+use crate::group_chat::events::GroupChatEventMessageEditedBody;
 pub use crate::group_chat::group_chat_id::GroupChatId;
 pub use crate::group_chat::group_chat_name::GroupChatName;
 pub use crate::group_chat::member::Member;
@@ -411,8 +412,8 @@ impl GroupChat {
     }
     self.messages.edit(message.clone())?;
     self.seq_nr_counter += 1;
-    Ok(GroupChatEvent::GroupChatMessagePosted(
-      GroupChatEventMessagePostedBody::new(self.id.clone(), self.seq_nr_counter, message, executor_id),
+    Ok(GroupChatEvent::GroupChatMessageEdited(
+      GroupChatEventMessageEditedBody::new(self.id.clone(), self.seq_nr_counter, message, executor_id),
     ))
   }
 
