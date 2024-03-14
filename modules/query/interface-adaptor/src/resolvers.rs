@@ -7,7 +7,6 @@ use async_graphql::{
 };
 use redis::Client;
 use sqlx::MySqlPool;
-use thiserror::Error;
 
 use crate::gateways::{
   GroupChat, GroupChatDao, GroupChatDaoError, GroupChatDaoImpl, Member, MemberDao, MemberDaoError, MemberDaoImpl,
@@ -64,7 +63,7 @@ impl QueryRoot {
     ctx: &Context<'ctx>,
     group_chat_id: String,
     user_account_id: String,
-  ) -> FieldResult<Option<GroupChat>> {
+  ) -> FieldResult<GroupChat> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
     ctx
       .group_chat_dao
@@ -102,7 +101,7 @@ impl QueryRoot {
     ctx: &Context<'ctx>,
     group_chat_id: String,
     user_account_id: String,
-  ) -> FieldResult<Option<Member>> {
+  ) -> FieldResult<Member> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
     ctx
       .member_dao
@@ -146,7 +145,7 @@ impl QueryRoot {
     ctx: &Context<'ctx>,
     message_id: String,
     user_account_id: String,
-  ) -> FieldResult<Option<Message>> {
+  ) -> FieldResult<Message> {
     let ctx = ctx.data::<ServiceContext>().unwrap();
     ctx
       .message_dao
