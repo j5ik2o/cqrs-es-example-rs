@@ -195,7 +195,7 @@ async fn stream_events_driver(
           let context = Context::try_from(headers).unwrap();
           let lambda_event = LambdaEvent::new(event, context);
 
-          read_model_updater::update_read_model(&dao, lambda_event).await?;
+          rmu::update_read_model(&dao, lambda_event).await?;
         }
         processed_record_count += records.len();
         shard_iterator_opt = get_records_output.next_shard_iterator().map(|s| s.to_owned())

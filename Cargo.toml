@@ -8,6 +8,7 @@ members = [
     "modules/command/interface-adaptor-if",
     "modules/command/interface-adaptor-impl",
     "modules/query/interface-adaptor",
+    "modules/rmu",
     "applications/write-api-server",
     "applications/read-model-updater",
     "applications/read-api-server",

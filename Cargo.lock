@@ -3080,6 +3080,7 @@ dependencies = [
  "log",
  "once_cell",
  "redis",
+ "rmu",
  "serde",
  "serde_dynamo",
  "serde_json",
@@ -3245,6 +3246,40 @@ dependencies = [
  "spin 0.9.8",
  "untrusted 0.9.0",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "rmu"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "aws-config",
+ "aws-sdk-dynamodb",
+ "aws-sdk-dynamodbstreams",
+ "aws_lambda_events",
+ "backtrace",
+ "chrono",
+ "command-domain",
+ "command-interface-adaptor-if",
+ "command-interface-adaptor-impl",
+ "config",
+ "downcast-rs",
+ "env_logger",
+ "http 0.2.11",
+ "lambda_runtime",
+ "log",
+ "once_cell",
+ "serde",
+ "serde_dynamo",
+ "serde_json",
+ "simple_logger",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "ulid-generator-rs",
 ]
 
 [[package]]
