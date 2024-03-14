@@ -227,7 +227,6 @@ fi
 
 echo "Result: $GET_MESSAGES_RESULT"
 
-
 # メッセージ編集
 echo -e "\nEdit Message(${GROUP_CHAT_ID}, ${USER_ACCOUNT_ID}):"
 EDIT_MESSAGE_RESULT=$(curl -s -X POST -H "Content-Type: application/json" \
