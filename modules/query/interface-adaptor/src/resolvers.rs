@@ -253,11 +253,7 @@ mod tests {
 
   #[async_trait]
   impl GroupChatDao for MockGroupChatDaoImpl {
-    async fn get_group_chat(
-      &self,
-      group_chat_id: String,
-      _account_id: String,
-    ) -> Result<Option<GroupChat>, GroupChatDaoError> {
+    async fn get_group_chat(&self, group_chat_id: String, _account_id: String) -> Result<GroupChat, GroupChatDaoError> {
       let t1 = GroupChat::new(
         group_chat_id,
         "mock group chat".to_string(),
@@ -265,7 +261,7 @@ mod tests {
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
-      Ok(Some(t1))
+      Ok(t1)
     }
 
     async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>, GroupChatDaoError> {
@@ -284,11 +280,7 @@ mod tests {
 
   #[async_trait]
   impl MemberDao for MockMemberDaoImpl {
-    async fn get_member(
-      &self,
-      group_chat_id: String,
-      user_account_id: String,
-    ) -> Result<Option<Member>, MemberDaoError> {
+    async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member, MemberDaoError> {
       let m1 = Member::new(
         "1".to_string(),
         group_chat_id,
@@ -297,7 +289,7 @@ mod tests {
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
-      Ok(Some(m1))
+      Ok(m1)
     }
 
     async fn get_members(
@@ -321,11 +313,7 @@ mod tests {
 
   #[async_trait]
   impl MessageDao for MockMessageDaoImpl {
-    async fn get_message(
-      &self,
-      message_id: String,
-      user_account_id: String,
-    ) -> Result<Option<Message>, MessageDaoError> {
+    async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message, MessageDaoError> {
       let m1 = Message::new(
         message_id,
         "mock group chat".to_string(),
@@ -334,7 +322,7 @@ mod tests {
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
       );
-      Ok(Some(m1))
+      Ok(m1)
     }
 
     async fn get_messages(

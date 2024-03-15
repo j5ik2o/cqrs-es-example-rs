@@ -456,7 +456,6 @@ mod tests {
     let group_chat_read_model = dao
       .get_group_chat(group_chat_id.to_string(), admin_id.to_string())
       .await
-      .unwrap()
       .unwrap();
     assert_eq!(group_chat_read_model.id, group_chat_id.to_string());
     assert_eq!(group_chat_read_model.name, group_chat_name.to_string());
@@ -572,7 +571,6 @@ mod tests {
         admin_id.clone().to_string(),
       )
       .await
-      .unwrap()
       .unwrap();
 
     assert_eq!(message.text, "test");
