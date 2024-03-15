@@ -50,7 +50,7 @@ This OSS repository mainly utilizes the following technology stack.
 ### Local Environment
 
 - [Debugging on Local Machine](docs/DEBUG_ON_LOCAL_MACHINE.md)
-- [Debugging with Docker Compose](docs/DEBUG_ON_DOCKER_COMPOSE.md)
+- [Debugging on Docker Compose](docs/DEBUG_ON_DOCKER_COMPOSE.md)
 - [Deploying to Local Kubernetes](docs/DEPLOY_TO_LOCAL_K8S.md)
 - [Deploying to Minikube](docs/DEPLOY_TO_MINIKUBE.md)
 
