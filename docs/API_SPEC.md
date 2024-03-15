@@ -1,19 +1,19 @@
-# API仕様の確認方法
+# How to check API specifications
 
-## Write API Server: GraphQLのSDLを確認する方法
+## Write API Server: How to check GraphQL SDL
 
 ```shell
-# CLIで確認する場合
+# To check with the CLI
 $ makers view-command-sdl
-# ファイルに出力する場合
-$ makers export-command-sdl ./schema.sdl
+# To output to a file
+$ makers export-command-sdl . /schema.sdl
 ```
 
-## Read API Server: GraphQLのSDLを確認する方法
+## Read API Server: How to check GraphQL SDL
 
 ```shell
-# CLIで確認する場合
+# To check with the CLI
 $ makers view-query-sdl
-# ファイルに出力する場合
+# To output to a file
 $ makers export-query-sdl ./schema.sdl
 ```

@@ -1,23 +1,24 @@
-## `common.env.default`を`common.env`としてコピーし編集する
+## Copy and edit `common.env.default` as `common.env
 
 ```shell
 $ cp common.env.default common.env
 ```
 
-環境変数のPREFIX(すべて英数字。英字は小文字のみ)、APPLICATION_NAMEを適宜変更する。
-PREFIXは`pwgen -A`で生成することを推奨する。
+PREFIX of environment variables (All alphanumeric characters. Change PREFIX (all alphanumeric characters, lower case
+only) and APPLICATION_NAME as appropriate.
+It is recommended to generate the PREFIX with `pwgen -A`.
 
 ```shell
 $ pwgen -A
 ```
 
-`pwgen`がない場合は`brew install pwgen`でインストールしてください。
+If you do not have `pwgen`, install it with `brew install pwgen`.
 
 ## ビルド方法
 
-ビルドを行う前に、Dockerを必ず起動してください。
+Be sure to start Docker before performing the build.
 
-ビルドを行う前に以下のコマンドでDBだけを起動します。(sqlxがDBに接続できるようにするため)
+Start DB only with the following command before performing the build. (to allow sqlx to connect to the DB)
 
 ```shell
 $ makers docker-compose-up-db
@@ -27,17 +28,21 @@ $ makers docker-compose-up-db
 $ makers build
 ```
 
-注意: sqlxにて発行するSQLを追加、修正した際は、各プロジェクト直下で`cargo sqlx prepare`を実行する必要があります(`.sqlx/`にJSONファイルが生成されます)が、`makers build`時に自動的に`cargo sqlx prepare`が実行されるように設定しています。
-なので、SQLを追加、修正した際は必ず`makers build`を実行してください。生成された`.sqlx/*.json`ファイルはgitの管理下に含めてください。このときに、DBサーバに接続する必要があるので、`makers docker-compose-up-db`を実行しておく必要があります。
+Note: If you add or modify SQL to be issued by sqlx, you will need to run `cargo sqlx prepare` directly under each
+project (a JSON file will be generated in `.sqlx/`), but you can set up `cargo sqlx prepare` is set to run.
+So, please be sure to run `makers build` when you add or modify SQL. Please include the generated `.sqlx/*.json` file
+under git's control. At this time, you need to connect to the DB server, so you need to
+run `makers docker-compose-up-db`.
 
 ## テスト方法
 
-テストを実行する前に、Dockerを必ず起動してください。
+Be sure to start Docker before running the test.
 
 ```shell
 $ makers test
 ```
 
-注意: `cargo test`でもテスト可能なのですが、今回はtestcontainerを使っている関係で同時に実行するテスト数を環境変数(`RUST_TEST_THREADS=1`)で制限しています。
-つまり、`RUST_TEST_THREADS=1 cargo test`でないとテストが正常に実行できないのでご注意ください。
-`makers test`ではデフォルトで`RUST_TEST_THREADS=1`となっているので、そのまま実行しても問題ありません。
+Note: You can also test with `cargo test`, but this time the number of tests to run simultaneously is limited by an
+environment variable (`RUST_TEST_THREADS=1`) due to the use of testcontainers.
+In other words, please note that tests cannot be run properly unless `RUST_TEST_THREADS=1 cargo test` is used.
+With `makers test`, the default is `RUST_TEST_THREADS=1`, so you can run the test as it is.

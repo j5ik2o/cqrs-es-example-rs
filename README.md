@@ -22,13 +22,14 @@ Please refer to [here](https://github.com/j5ik2o/cqrs-es-example) for implementa
 
 - Write API Server
     - API is implemented by GraphQL (Mutation)
-    - Event Sourced Aggregate is implemented by [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs)
+    - Event Sourced Aggregate is implemented
+      by [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs)
 - Read Model Updater
     - Lambda to build read models based on journals
     - Locally, run code that emulates Lambda behavior (local-rmu)
 - Read API Server
     - API is implemented by GraphQL (Query)
- 
+
 ## Stack
 
 This OSS repository mainly utilizes the following technology stack.
@@ -51,12 +52,10 @@ This OSS repository mainly utilizes the following technology stack.
 
 - [Debugging on Local Machine](docs/DEBUG_ON_LOCAL_MACHINE.md)
 - [Debugging on Docker Compose](docs/DEBUG_ON_DOCKER_COMPOSE.md)
-- [Deploying to Local Kubernetes](docs/DEPLOY_TO_LOCAL_K8S.md)
-- [Deploying to Minikube](docs/DEPLOY_TO_MINIKUBE.md)
 
 ### AWS Environment
 
-- [AWS Setup](docs/AWS_SETUP.md)
+- [AWS Setup](docs/TOOLS_INSTALLATION_AWS.md)
 - [Deploying to EKS](docs/DEPLOY_TO_EKS.md)
 
 ## Links
