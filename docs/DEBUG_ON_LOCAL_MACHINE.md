@@ -1,25 +1,27 @@
-# ローカルマシンでデバッグ
+# Debug on local machine.
 
-## docker-composeにてデータベースだけを実行する。
+## Run only database in docker-compose.
 
 ```shell
 $ makers docker-compose-up-db
 ```
 
-## IntelliJ IDEAを使ってデバッグする。
+## Debug using IntelliJ IDEA.
 
-アプリケーションは動作していないので必要に応じて起動してデバッグしてください。
+The application is not running, so start it and debug it if necessary.
 
 - write-api-server
     - `src/main.rs`
 - read-model-updater
-    - `src/main.rs`はAWS Lambda用なので、ローカルでは`bin/local.rs`を使います。
+    - Since `src/main.rs` is for AWS Lambda, use `bin/local.rs` locally.
 - read-api-server
-    - `src/main.rs`
+    - `src/main.rs`.
 
-環境変数を指定せずに起動した場合は、config/以下の設定ファイルの値で起動します。HTTPのポートはdocker-compose時と同じ番号が指定されていますので、以下の動作確認コマンドがそのまま使えます。
+If you start without specifying environment variables, it will start with the value of the configuration file under
+config/. The HTTP port number is the same as that of docker-compose, so you can use the following commands to check the
+operation.
 
-## 動作確認
+## check
 
 ```shell
 $ makers verify-group-chat

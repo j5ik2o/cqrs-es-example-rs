@@ -1,23 +1,23 @@
-# FAQ
+## FAQ
 
-## API仕様を確認したい
+## I want to check the API specification.
 
-[API_SPEC.md](API_SPEC.md)を参照してください。
+Please refer to [API_SPEC.md](API_SPEC.md).
 
-## 動作確認したい
+## I want to check the operation
 
-動作確認方法は2種類あります。
+There are two ways to check the operation.
 
-- [docker-composeから起動](./DEBUG_ON_DOCKER_COMPOSE.md)
-- [IntelliJから起動](./DEBUG_ON_LOCAL_MACHINE.md)
+- [Start from docker-compose](. /DEBUG_ON_DOCKER_COMPOSE.md)
+- [Start from IntelliJ](. /DEBUG_ON_LOCAL_MACHINE.md)
 
-## データベースの中身を確認したい
+## I want to check the contents of the database
 
-1. `makers docker-compose-up` や `makers docker-compose-up-db` でデータベースを起動する
-1. DynamoDBの場合は http://localhost:8003/ を開く
-1. Auroraの場合は http://localhost:4040/ を開く
+1. start the database with `makers docker-compose-up` or `makers docker-compose-up-db`.
+1. open http://localhost:8003/ for DynamoDB
+1. open http://localhost:4040/ for Aurora
 
-## cargo-make(makers)のタスク一覧を知りたい
+## I want to know the list of tasks for cargo-make(makers)
 
 ```shell
 $ makers --list-all-steps

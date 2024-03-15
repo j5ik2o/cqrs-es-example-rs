@@ -1,5 +1,3 @@
-# NOTE: AWS環境にデプロイする際に必要になるツールのインストール手順。今回は対象外。
-
 ## awscli
 
 ```shell
@@ -34,7 +32,7 @@ on darwin_arm64
 
 ### kubectl
 
-トラブルを避けるため、サーバ側と同じバージョンのkubectlをインストールしてください。
+To avoid trouble, install the same version of kubectl as the server side.
 
 ```shell
 $ KUBECTL_VERSION=1.27.3

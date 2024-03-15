@@ -1,15 +1,16 @@
-# GraphQL Query
+## GraphQL Query
 
-## 確認方法
+## How to check
 
-GraphQLのクエリを試したい場合は以下の手順でGraphQL IDEを開いて実行してみてください。
+If you want to try out a GraphQL query, open and run the GraphQL IDE as follows
 
 ```shell
-# read-api-serverを起動した状態で
+# with read-api-server running
 $ makers open-query-graphql-ide
 ```
 
-上段の入力欄にクエリを貼り付け、下段の入力欄(Variables)に以下を参考に貼り付け、再生ボタンを押してください。
+Paste the query in the upper input field, and paste the following in the lower input field (Variables) with reference to
+the following, then press the play button.
 
 ```json
 {
@@ -20,54 +21,53 @@ $ makers open-query-graphql-ide
 
 ## GetGroupChatSummaries
 
-参加しているグループチャットのサマリ一覧を取得する
+Get a summary list of the group chats you have joined
 
-- account_id: 閲覧アカウントID
+- account_id: browsing account ID
 
 ```graphql
 query GetGroupChatSummaries($accountId: String!) {
-  groupChats: getGroupChats(accountId: $accountId) {
-    id
-    name
-  }
-}
+    groupChats: getGroupChats(accountId: $accountId) {
+        groupChats: getGroupChats(accountId: $accountId) { id
+            groupChats: getGroupChatSummaries($accountId: String!
+        }
+    }
 ```
 
 ## GetGroupChatNameWithMessages
 
-参加しているグループチャットの名前とメッセージ一覧を取得する
+Get the name of the group chat you are a member of and a list of messages.
 
-- group_chat_id: 対象グループチャットID
-- account_id: 閲覧アカウントID
+- group_chat_id: Target group chat ID
+- account_id: account ID of the browsing account
 
 ```graphql
 query GetGroupChatNameWithMessages($groupChatId: String!, $accountId: String!) {
-  groupChat: getGroupChat(groupChatId: $groupChatId, accountId: $accountId) {
-    name
-  }
-  messages: getMessages(groupChatId: $groupChatId, accountId: $accountId) {
-    id
-    text
-    createdAt
-  }
+    groupChat: getGroupChat(groupChatId: $groupChatId, accountId: $accountId) {
+        name
+    }
+    messages: getMessages(groupChatId: $groupChatId, accountId: $accountId) {
+        id
+        text
+        createdAt
+    }
 }
 ```
 
 ## GetMembers
 
-参加しているグループチャットに所属しているメンバーを一覧で取得できる
+Get a list of members belonging to a group chat in which you are a member.
 
-- group_chat_id: 対象グループチャットID
-- account_id: 閲覧アカウントID
+- group_chat_id: ID of the target group chat
+- account_id: account ID of the browsing account
 
 ```graphql
 query GetMembers($groupChatId: String!, $accountId: String!) {
-  members: getMembers(groupChatId: $groupChatId, accountId: $accountId) {
-    id
-    accountId
-    role
-    createdAt
-  }
+    members: getMembers(groupChatId: $groupChatId, accountId: $accountId) {
+        id
+        accountId
+        role
+        createdAt
+    }
 }
 ```
-
