@@ -1,7 +1,7 @@
 python 3.12.2
 terraform 1.7.5
 helm 3.14.3
-kubectl 1.29.2
+kubectl 1.29.3
 stern 1.25.0
 helmfile 0.162.0
 minikube 1.30.1
