@@ -1,13 +1,15 @@
 extern crate log;
 
 use anyhow::Result;
+use config::{ConfigError, Environment};
 use std::time::Duration;
 
 use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
 use lambda_runtime::{service_fn, Error};
+use read_model_updater::load_app_config;
 use sqlx::mysql::{MySqlConnectOptions, MySqlPoolOptions, MySqlSslMode};
 
-use read_model_updater::{load_app_config, update_read_model};
+use rmu::update_read_model;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

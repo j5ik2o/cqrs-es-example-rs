@@ -241,26 +241,22 @@ pub struct MockGroupChatReadModelUpdateDao;
 impl GroupChatReadModelUpdateDao for MockGroupChatReadModelUpdateDao {
   async fn insert_group_chat(
     &self,
-    _aggregate_id: GroupChatId,
-    _name: GroupChatName,
-    _administrator_id: UserAccountId,
-    _created_at: DateTime<Utc>,
-  ) -> Result<(), GroupChatReadModelUpdateDaoError> {
-    Ok(())
-  }
-
-  async fn delete_group_chat(
-    &self,
-    _aggregate_id: GroupChatId,
+    _: GroupChatId,
+    _: GroupChatName,
+    _: UserAccountId,
     _: DateTime<Utc>,
   ) -> Result<(), GroupChatReadModelUpdateDaoError> {
     Ok(())
   }
 
+  async fn delete_group_chat(&self, _: GroupChatId, _: DateTime<Utc>) -> Result<(), GroupChatReadModelUpdateDaoError> {
+    Ok(())
+  }
+
   async fn rename_group_chat(
     &self,
-    _aggregate_id: GroupChatId,
-    _name: GroupChatName,
+    _: GroupChatId,
+    _: GroupChatName,
     _: DateTime<Utc>,
   ) -> Result<(), GroupChatReadModelUpdateDaoError> {
     Ok(())
@@ -268,46 +264,38 @@ impl GroupChatReadModelUpdateDao for MockGroupChatReadModelUpdateDao {
 
   async fn insert_member(
     &self,
-    _aggregate_id: GroupChatId,
-    _member_id: MemberId,
-    _account_id: UserAccountId,
-    _role: MemberRole,
-    _created_at: DateTime<Utc>,
+    _: GroupChatId,
+    _: MemberId,
+    _: UserAccountId,
+    _: MemberRole,
+    _: DateTime<Utc>,
   ) -> Result<(), GroupChatReadModelUpdateDaoError> {
     Ok(())
   }
 
-  async fn delete_member(
-    &self,
-    _aggregate_id: GroupChatId,
-    _account_id: UserAccountId,
-  ) -> Result<(), GroupChatReadModelUpdateDaoError> {
+  async fn delete_member(&self, _: GroupChatId, _: UserAccountId) -> Result<(), GroupChatReadModelUpdateDaoError> {
     Ok(())
   }
 
   async fn insert_message(
     &self,
-    _aggregate_id: GroupChatId,
-    _message: Message,
-    _created_at: DateTime<Utc>,
+    _: GroupChatId,
+    _: Message,
+    _created_a: DateTime<Utc>,
   ) -> Result<(), GroupChatReadModelUpdateDaoError> {
     Ok(())
   }
 
   async fn update_message(
     &self,
-    aggregate_id: GroupChatId,
-    message: Message,
-    updated_at: DateTime<Utc>,
+    _: GroupChatId,
+    _: Message,
+    _: DateTime<Utc>,
   ) -> Result<(), GroupChatReadModelUpdateDaoError> {
     Ok(())
   }
 
-  async fn delete_message(
-    &self,
-    _message_id: MessageId,
-    _: DateTime<Utc>,
-  ) -> Result<(), GroupChatReadModelUpdateDaoError> {
+  async fn delete_message(&self, _: MessageId, _: DateTime<Utc>) -> Result<(), GroupChatReadModelUpdateDaoError> {
     Ok(())
   }
 }

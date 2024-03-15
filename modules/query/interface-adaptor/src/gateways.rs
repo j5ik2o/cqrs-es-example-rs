@@ -68,7 +68,7 @@ pub trait GroupChatDao: Send + Sync {
     &self,
     group_chat_id: String,
     user_account_id: String,
-  ) -> Result<Option<GroupChat>, GroupChatDaoError>;
+  ) -> Result<GroupChat, GroupChatDaoError>;
   async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>, GroupChatDaoError>;
 }
 
@@ -89,7 +89,7 @@ impl GroupChatDao for GroupChatDaoImpl {
     &self,
     group_chat_id: String,
     user_account_id: String,
-  ) -> Result<Option<GroupChat>, GroupChatDaoError> {
+  ) -> Result<GroupChat, GroupChatDaoError> {
     sqlx::query_as!(
       GroupChat,
       r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at
@@ -100,7 +100,15 @@ impl GroupChatDao for GroupChatDaoImpl {
     )
     .fetch_optional(&self.my_sql_pool)
     .await
-    .map_err(|e| GroupChatDaoError::OtherError(e))
+    .map_err(GroupChatDaoError::OtherError)
+    .and_then(|opt| {
+      opt.ok_or_else(|| {
+        GroupChatDaoError::NotFoundError(format!(
+          "group_chat_id: {}, user_account_id: {}",
+          group_chat_id, user_account_id
+        ))
+      })
+    })
   }
 
   async fn get_group_chats(&self, user_account_id: String) -> Result<Vec<GroupChat>, GroupChatDaoError> {
@@ -113,7 +121,7 @@ impl GroupChatDao for GroupChatDaoImpl {
     )
     .fetch_all(&self.my_sql_pool)
     .await
-    .map_err(|e| GroupChatDaoError::OtherError(e))
+    .map_err(GroupChatDaoError::OtherError)
   }
 }
 
@@ -161,7 +169,7 @@ impl Member {
 /// メンバーを取得するためのインターフェース
 #[async_trait]
 pub trait MemberDao: Send + Sync {
-  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Option<Member>, MemberDaoError>;
+  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member, MemberDaoError>;
   async fn get_members(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Member>, MemberDaoError>;
 }
 
@@ -178,7 +186,7 @@ impl MemberDaoImpl {
 
 #[async_trait]
 impl MemberDao for MemberDaoImpl {
-  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Option<Member>, MemberDaoError> {
+  async fn get_member(&self, group_chat_id: String, user_account_id: String) -> Result<Member, MemberDaoError> {
     sqlx::query_as!(
       Member,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at
@@ -189,7 +197,15 @@ impl MemberDao for MemberDaoImpl {
     )
     .fetch_optional(&self.my_sql_pool)
     .await
-    .map_err(|e| MemberDaoError::OtherError(e))
+    .map_err(MemberDaoError::OtherError)
+    .and_then(|opt| {
+      opt.ok_or_else(|| {
+        MemberDaoError::NotFoundError(format!(
+          "group_chat_id: {}, user_account_id: {}",
+          group_chat_id, user_account_id
+        ))
+      })
+    })
   }
 
   async fn get_members(&self, group_chat_id: String, user_account_id: String) -> Result<Vec<Member>, MemberDaoError> {
@@ -204,7 +220,7 @@ impl MemberDao for MemberDaoImpl {
     )
     .fetch_all(&self.my_sql_pool)
     .await
-    .map_err(|e| MemberDaoError::OtherError(e))
+    .map_err(MemberDaoError::OtherError)
   }
 }
 
@@ -252,7 +268,7 @@ impl Message {
 /// メッセージを取得するためのインターフェース
 #[async_trait]
 pub trait MessageDao: Send + Sync {
-  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Option<Message>, MessageDaoError>;
+  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message, MessageDaoError>;
   async fn get_messages(&self, group_chat_id: String, user_account_id: String)
     -> Result<Vec<Message>, MessageDaoError>;
 }
@@ -270,7 +286,7 @@ impl MessageDaoImpl {
 
 #[async_trait]
 impl MessageDao for MessageDaoImpl {
-  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Option<Message>, MessageDaoError> {
+  async fn get_message(&self, message_id: String, user_account_id: String) -> Result<Message, MessageDaoError> {
     sqlx::query_as!(
       Message,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at, m.updated_at
@@ -280,9 +296,16 @@ impl MessageDao for MessageDaoImpl {
       message_id.clone(),
       user_account_id.clone()
     )
-        .fetch_optional(&self.my_sql_pool)
-        .await
-        .map_err(|e| MessageDaoError::OtherError(e))
+    .fetch_optional(&self.my_sql_pool)
+    .await
+    .map_err(MessageDaoError::OtherError)
+    .and_then(|opt|
+        opt.ok_or_else(|| {
+          MessageDaoError::NotFoundError(
+            format!("message_id: {}, user_account_id: {}", message_id, user_account_id)
+          )
+        })
+    )
   }
 
   async fn get_messages(
@@ -299,9 +322,9 @@ impl MessageDao for MessageDaoImpl {
       group_chat_id.clone(),
       user_account_id.clone()
     )
-        .fetch_all(&self.my_sql_pool)
-        .await
-        .map_err(|e| MessageDaoError::OtherError(e))
+    .fetch_all(&self.my_sql_pool)
+    .await
+    .map_err(MessageDaoError::OtherError)
   }
 }
 
@@ -433,7 +456,6 @@ mod tests {
     let group_chat_read_model = dao
       .get_group_chat(group_chat_id.to_string(), admin_id.to_string())
       .await
-      .unwrap()
       .unwrap();
     assert_eq!(group_chat_read_model.id, group_chat_id.to_string());
     assert_eq!(group_chat_read_model.name, group_chat_name.to_string());
@@ -549,7 +571,6 @@ mod tests {
         admin_id.clone().to_string(),
       )
       .await
-      .unwrap()
       .unwrap();
 
     assert_eq!(message.text, "test");
