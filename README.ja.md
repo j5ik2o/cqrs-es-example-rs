@@ -31,6 +31,7 @@ Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5i
 ## 開発環境
 
 - [ツールのセットアップ](docs/TOOLS_INSTALLATION.ja.md)
+- [ビルドとテスト](docs/BUILD_AND_TEST.ja.md)
 
 ### ローカル環境
 
