@@ -30,20 +30,17 @@ Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5i
 
 ## 開発環境
 
-- [ツールのセットアップ](docs/TOOLS_INSTALLATION.md)
+- [ツールのセットアップ](docs/TOOLS_INSTALLATION.ja.md)
 
 ### ローカル環境
 
-- [ローカルマシンでのデバッグ](docs/DEBUG_ON_LOCAL_MACHINE.md)
-- [Docker Composeでのデバッグ](docs/DEBUG_ON_DOCKER_COMPOSE.md)
-- [ローカルKubernetesでのデプロイ](docs/DEPLOY_TO_LOCAL_K8S.md)
-- [Minikubeへのデプロイ](docs/DEPLOY_TO_MINIKUBE.md)
+- [ローカルマシンでのデバッグ](docs/DEBUG_ON_LOCAL_MACHINE.ja.md)
+- [Docker Composeでのデバッグ](docs/DEBUG_ON_DOCKER_COMPOSE.ja.md)
 
 ### AWS環境
 
-- [AWSのセットアップ](docs/AWS_SETUP.md)
-- [EKSへのデプロイ](docs/DEPLOY_TO_EKS.md)
-
+- [AWSのセットアップ](docs/TOOLS_INSTALLATION_AWS.ja.md)
+- [EKSへのデプロイ](docs/DEPLOY_TO_EKS.ja.md)
 
 ## リンク
 
