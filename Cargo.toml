@@ -19,7 +19,7 @@ anyhow = "1.0.81"
 thiserror = "1.0.58"
 async-graphql = "6.0.11"
 async-graphql-axum = "6.0.11"
-async-trait = "0.1.78"
+async-trait = "0.1.79"
 aws-config = "1.1.8"
 aws_lambda_events = { vesrion = "0.10.0", default-features = false }
 aws-sdk-dynamodb = "1.19.0"
