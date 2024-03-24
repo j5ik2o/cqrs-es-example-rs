@@ -120,19 +120,7 @@ impl MutationRoot {
   }
 
   async fn edit_message<'ctx>(&self, ctx: &Context<'ctx>, input: EditMessageInput) -> FieldResult<GroupChatOut> {
-    let service_ctx = ctx.data::<ServiceContext<GroupChatRepositoryImpl<ES>>>().unwrap();
-
-    let group_chat_id = validate_group_chat_id(&input.group_chat_id)?;
-    let executor_id = validate_user_account_id(&input.executor_id)?;
-    let message_id = validate_message_id(&input.message_id)?;
-    let message = validate_message(&input.content, message_id, executor_id.clone())?;
-
-    let mut processor = service_ctx.group_chat_command_processor.lock().await;
-    processor
-      .edit_message(group_chat_id, message, executor_id)
-      .await
-      .map(|group_chat_id| GroupChatOut::new(group_chat_id.to_string()))
-      .map_err(error_handling)
+    todo!()
   }
 
   async fn delete_message<'ctx>(&self, ctx: &Context<'ctx>, input: DeleteMessageInput) -> FieldResult<GroupChatOut> {
