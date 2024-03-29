@@ -251,6 +251,12 @@ impl GroupChat {
     if !self.members.is_member(&executor_id) {
       return Err(GroupChatError::NotMemberError("executor_id".to_string(), executor_id));
     }
+    if !self.members.is_administrator(&executor_id) {
+      return Err(GroupChatError::NotAdministratorError(
+        "executor_id".to_string(),
+        executor_id,
+      ));
+    }
     if self.name == name {
       return Err(GroupChatError::AlreadyExistsNameError(self.id.clone(), name));
     }
