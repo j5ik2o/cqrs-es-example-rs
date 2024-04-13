@@ -34,7 +34,7 @@ env_logger = "0.11.3"
 itertools = "0.12.1"
 lambda_runtime = "0.8.3"
 log = "0.4.21"
-num = "0.4.1"
+num = "0.4.2"
 once_cell = "1.19.0"
 openssl = { version = "0.10.64", features = ["vendored"] }
 redis = "0.25.3"
