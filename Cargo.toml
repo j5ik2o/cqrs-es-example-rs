@@ -55,7 +55,7 @@ tracing = "0.1.40"
 tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3.18", default-features = false }
 ulid-generator-rs = "0.0.105"
-event-store-adapter-rs = "1.1.27"
+event-store-adapter-rs = "1.1.28"
 
 mime = "0.3.17"
 refinery = { version = "0.8", features = ["mysql"] }
