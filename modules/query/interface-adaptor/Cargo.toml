@@ -23,7 +23,7 @@ tower-http = { workspace = true, features = ["fs"] }
 env_logger = "0.11.3"
 refinery = { version = "0.8", features = ["mysql"] }
 refinery-core = "0.8"
-testcontainers = "0.16.4"
+testcontainers = "0.16.5"
 hyper = { workspace = true }
 tower = { workspace = true }
 command-domain = { path = "../../command/domain" }
