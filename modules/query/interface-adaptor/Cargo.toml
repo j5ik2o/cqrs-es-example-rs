@@ -22,7 +22,7 @@ tower-http = { workspace = true, features = ["fs"] }
 [dev-dependencies]
 env_logger = "0.11.3"
 refinery = { version = "0.8.14", features = ["mysql"] }
-refinery-core = "0.8"
+refinery-core = "0.8.14"
 testcontainers = "0.16.6"
 hyper = { workspace = true }
 tower = { workspace = true }

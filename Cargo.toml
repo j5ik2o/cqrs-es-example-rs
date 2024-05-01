@@ -59,7 +59,7 @@ event-store-adapter-rs = "1.1.33"
 
 mime = "0.3.17"
 refinery = { version = "0.8.14", features = ["mysql"] }
-refinery-core = "0.8"
+refinery-core = "0.8.14"
 testcontainers = "0.16.6"
 serial_test = "3.1.1"
 
