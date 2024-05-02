@@ -20,10 +20,10 @@ thiserror = "1.0.59"
 async-graphql = "6.0.11"
 async-graphql-axum = "6.0.11"
 async-trait = "0.1.80"
-aws-config = "1.2.1"
+aws-config = "1.3.0"
 aws_lambda_events = { vesrion = "0.10.0", default-features = false }
-aws-sdk-dynamodb = "1.23.0"
-aws-sdk-dynamodbstreams = "1.21.0"
+aws-sdk-dynamodb = "1.24.0"
+aws-sdk-dynamodbstreams = "1.22.0"
 
 backtrace = "0.3.70"
 chrono = "0.4.38"
