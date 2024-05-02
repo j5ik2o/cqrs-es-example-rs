@@ -22,7 +22,7 @@ async-graphql-axum = "6.0.11"
 async-trait = "0.1.80"
 aws-config = "1.3.0"
 aws_lambda_events = { vesrion = "0.10.0", default-features = false }
-aws-sdk-dynamodb = "1.24.0"
+aws-sdk-dynamodb = "1.25.0"
 aws-sdk-dynamodbstreams = "1.22.0"
 
 backtrace = "0.3.70"
