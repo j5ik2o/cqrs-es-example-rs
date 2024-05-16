@@ -3,11 +3,11 @@ use std::{env, thread};
 use chrono::Utc;
 use serial_test::serial;
 use sqlx::MySqlPool;
-use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
-use testcontainers::{clients, Container, GenericImage};
+use testcontainers::runners::AsyncRunner;
+use testcontainers::GenericImage;
 
-use crate::common::{init_logger, DOCKER};
+use crate::common::init_logger;
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message};
 use command_domain::group_chat::{MemberId, MessageId};
 use command_domain::user_account::UserAccountId;
@@ -64,10 +64,9 @@ fn init() {
 #[serial]
 async fn test_insert_group_chat() {
   init();
-  let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-  let mysql_port = mysql_node.get_host_port_ipv4(3306);
+  let mysql_node = mysql_image().start().await;
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
   refinery_migrate(mysql_port);
 
@@ -89,10 +88,9 @@ async fn test_insert_group_chat() {
 #[serial]
 async fn test_delete_group_chat() {
   init_logger();
-  let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-  let mysql_port = mysql_node.get_host_port_ipv4(3306);
+  let mysql_node = mysql_image().start().await;
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
   refinery_migrate(mysql_port);
 
@@ -115,10 +113,9 @@ async fn test_delete_group_chat() {
 #[serial]
 async fn test_rename_group_chat() {
   init_logger();
-  let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-  let mysql_port = mysql_node.get_host_port_ipv4(3306);
+  let mysql_node = mysql_image().start().await;
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
   refinery_migrate(mysql_port);
 
@@ -143,10 +140,9 @@ async fn test_rename_group_chat() {
 #[serial]
 async fn test_insert_member() {
   init_logger();
-  let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-  let mysql_port = mysql_node.get_host_port_ipv4(3306);
+  let mysql_node = mysql_image().start().await;
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
   refinery_migrate(mysql_port);
 
@@ -177,10 +173,9 @@ async fn test_insert_member() {
 #[serial]
 async fn test_delete_member() {
   init_logger();
-  let docker = DOCKER.get_or_init(Cli::default);
 
-  let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-  let mysql_port = mysql_node.get_host_port_ipv4(3306);
+  let mysql_node = mysql_image().start().await;
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
   refinery_migrate(mysql_port);
 
@@ -220,9 +215,9 @@ async fn test_delete_member() {
 #[serial]
 async fn test_post_message() {
   init_logger();
-  let docker = DOCKER.get_or_init(Cli::default);
-  let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-  let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+  let mysql_node = mysql_image().start().await;
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
   refinery_migrate(mysql_port);
 
@@ -265,9 +260,9 @@ async fn test_post_message() {
 #[serial]
 async fn test_delete_message() {
   init_logger();
-  let docker = DOCKER.get_or_init(Cli::default);
-  let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-  let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+  let mysql_node = mysql_image().start().await;
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
   refinery_migrate(mysql_port);
 

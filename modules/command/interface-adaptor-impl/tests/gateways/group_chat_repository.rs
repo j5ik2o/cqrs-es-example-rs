@@ -1,19 +1,16 @@
-use crate::common::{get_repository, init_logger, DOCKER};
+use crate::common::{get_repository, init_logger};
 use command_domain::group_chat::{GroupChat, GroupChatName, MemberRole};
 use command_domain::group_chat::{MemberId, Members};
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatRepository;
 use event_store_adapter_rs::types::Aggregate;
 use serial_test::serial;
-use testcontainers::clients;
-use testcontainers::clients::Cli;
 
 #[tokio::test]
 #[serial]
 async fn test_group_chat_create() {
   init_logger();
-  let docker = DOCKER.get_or_init(Cli::default);
-  let (mut repository, container, client) = get_repository(docker).await;
+  let (mut repository, container, client) = get_repository().await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -30,7 +27,7 @@ async fn test_group_chat_create() {
   assert!(actual.members().is_member(&admin_id));
 
   drop(client);
-  container.stop();
+  container.stop().await;
   drop(container);
 }
 
@@ -38,8 +35,7 @@ async fn test_group_chat_create() {
 #[serial]
 async fn test_group_chat_add_member() {
   init_logger();
-  let docker = DOCKER.get_or_init(clients::Cli::default);
-  let (mut repository, container, client) = get_repository(docker).await;
+  let (mut repository, container, client) = get_repository().await;
   let name = GroupChatName::new("ABC").unwrap();
   let admin_user_account_id = UserAccountId::new();
   let user_account_id = UserAccountId::new();
@@ -82,6 +78,6 @@ async fn test_group_chat_add_member() {
   assert!(actual.members().is_member(&user_account_id));
 
   drop(client);
-  container.stop();
+  container.stop().await;
   drop(container);
 }

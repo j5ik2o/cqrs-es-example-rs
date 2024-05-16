@@ -13,13 +13,11 @@ use aws_sdk_dynamodb::types::{
 use aws_sdk_dynamodb::Client;
 use command_domain::group_chat::{GroupChat, GroupChatEvent, GroupChatId};
 use event_store_adapter_rs::EventStoreForDynamoDB;
-use testcontainers::clients::Cli;
 use testcontainers::core::WaitFor;
-use testcontainers::{clients, Container, GenericImage};
+use testcontainers::runners::AsyncRunner;
+use testcontainers::{ContainerAsync, GenericImage};
 
 use command_interface_adaptor_impl::gateways::group_chat_repository::GroupChatRepositoryImpl;
-
-pub static DOCKER: OnceLock<clients::Cli> = OnceLock::new();
 
 pub fn init_logger() {
   env::set_var("RUST_LOG", "debug");
@@ -193,11 +191,9 @@ async fn wait_table(client: &Client, target_table_name: &str) -> bool {
   }
 }
 
-pub async fn get_repository<'a>(
-  docker: &'a Cli,
-) -> (
+pub async fn get_repository<'a>() -> (
   GroupChatRepositoryImpl<EventStoreForDynamoDB<GroupChatId, GroupChat, GroupChatEvent>>,
-  Container<'a, GenericImage>,
+  ContainerAsync<GenericImage>,
   Client,
 ) {
   init_logger();
@@ -209,8 +205,8 @@ pub async fn get_repository<'a>(
     .with_env_var("DYNAMODB_SHARED_DB", "1")
     .with_env_var("DYNAMODB_IN_MEMORY", "1")
     .with_wait_for(wait_for);
-  let dynamodb_node: Container<GenericImage> = docker.run::<GenericImage>(image);
-  let port = dynamodb_node.get_host_port_ipv4(4566);
+  let dynamodb_node = image.start().await;
+  let port = dynamodb_node.get_host_port_ipv4(4566).await;
   log::debug!("DynamoDB port: {}", port);
 
   let test_time_factor = env::var("TEST_TIME_FACTOR")
