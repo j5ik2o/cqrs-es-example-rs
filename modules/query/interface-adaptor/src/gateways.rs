@@ -339,9 +339,9 @@ mod tests {
   use serial_test::serial;
   use sqlx::MySqlPool;
   use std::sync::OnceLock;
-  use testcontainers::clients::Cli;
   use testcontainers::core::WaitFor;
-  use testcontainers::{clients, Container, GenericImage};
+  use testcontainers::runners::AsyncRunner;
+  use testcontainers::GenericImage;
 
   fn mysql_image() -> GenericImage {
     GenericImage::new("mysql", "8.0")
@@ -429,15 +429,12 @@ mod tests {
       .unwrap();
   }
 
-  pub static DOCKER: OnceLock<clients::Cli> = OnceLock::new();
-
   #[tokio::test]
   #[serial]
   async fn test_get_group_chat() {
     init_logger();
-    let docker = DOCKER.get_or_init(Cli::default);
-    let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-    let mysql_port = mysql_node.get_host_port_ipv4(3306);
+    let mysql_node = mysql_image().start().await;
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
     refinery_migrate(mysql_port);
 
@@ -466,9 +463,8 @@ mod tests {
   #[serial]
   async fn test_get_group_chats() {
     init_logger();
-    let docker = DOCKER.get_or_init(Cli::default);
-    let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-    let mysql_port = mysql_node.get_host_port_ipv4(3306);
+    let mysql_node = mysql_image().start().await;
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
     refinery_migrate(mysql_port);
 
@@ -504,9 +500,8 @@ mod tests {
   #[serial]
   async fn test_get_members() {
     init_logger();
-    let docker = DOCKER.get_or_init(Cli::default);
-    let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-    let mysql_port = mysql_node.get_host_port_ipv4(3306);
+    let mysql_node = mysql_image().start().await;
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
     refinery_migrate(mysql_port);
 
@@ -537,9 +532,9 @@ mod tests {
   #[tokio::test]
   async fn test_get_message() {
     init_logger();
-    let docker = DOCKER.get_or_init(Cli::default);
-    let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-    let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+    let mysql_node = mysql_image().start().await;
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
     refinery_migrate(mysql_port);
 
@@ -580,9 +575,9 @@ mod tests {
   #[tokio::test]
   async fn test_get_messages() {
     init_logger();
-    let docker = DOCKER.get_or_init(Cli::default);
-    let mysql_node: Container<GenericImage> = docker.run(mysql_image());
-    let mysql_port = mysql_node.get_host_port_ipv4(3306);
+
+    let mysql_node = mysql_image().start().await;
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
 
     refinery_migrate(mysql_port);
 

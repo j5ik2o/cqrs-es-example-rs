@@ -1,5 +1,4 @@
 use serial_test::serial;
-use testcontainers::clients;
 
 use command_domain::group_chat::{GroupChatName, MemberRole, Message};
 use command_domain::group_chat::{Members, MessageId};
@@ -13,9 +12,7 @@ mod common;
 #[tokio::test]
 #[serial]
 async fn test_group_chat_create() {
-  let docker = DOCKER.get_or_init(clients::Cli::default);
-
-  let (mut repository, container, client) = get_repository(&docker).await;
+  let (repository, container, client) = get_repository().await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -31,9 +28,7 @@ async fn test_group_chat_create() {
 #[tokio::test]
 #[serial]
 async fn test_group_chat_rename() {
-  let docker = DOCKER.get_or_init(clients::Cli::default);
-
-  let (repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository().await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -60,9 +55,7 @@ async fn test_group_chat_rename() {
 #[tokio::test]
 #[serial]
 async fn test_group_chat_add_member() {
-  let docker = DOCKER.get_or_init(clients::Cli::default);
-
-  let (repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository().await;
   // with_repository(|mut repository| async move {
   // Given
   let name = GroupChatName::new("ABC").unwrap();
@@ -91,9 +84,7 @@ async fn test_group_chat_add_member() {
 #[tokio::test]
 #[serial]
 async fn test_group_chat_remove_member() {
-  let docker = DOCKER.get_or_init(clients::Cli::default);
-
-  let (repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository().await;
   let user_account_id = UserAccountId::new();
   let admin_id = UserAccountId::new();
 
@@ -130,9 +121,7 @@ async fn test_group_chat_remove_member() {
 #[tokio::test]
 #[serial]
 async fn test_group_chat_post_message() {
-  let docker = DOCKER.get_or_init(clients::Cli::default);
-
-  let (repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository().await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -170,9 +159,7 @@ async fn test_group_chat_post_message() {
 #[tokio::test]
 #[serial]
 async fn test_group_chat_edit_message() {
-  let docker = DOCKER.get_or_init(clients::Cli::default);
-
-  let (repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository().await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -215,9 +202,7 @@ async fn test_group_chat_edit_message() {
 #[tokio::test]
 #[serial]
 async fn test_group_chat_delete_message() {
-  let docker = DOCKER.get_or_init(clients::Cli::default);
-
-  let (repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository().await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();
@@ -260,9 +245,8 @@ async fn test_group_chat_delete_message() {
 #[serial]
 async fn test_group_chat_destroy() {
   init_logger();
-  let docker = DOCKER.get_or_init(clients::Cli::default);
 
-  let (repository, container, client) = get_repository(docker).await;
+  let (repository, container, client) = get_repository().await;
   // Given
   let name = GroupChatName::new("ABC").unwrap();
   let admin_id = UserAccountId::new();

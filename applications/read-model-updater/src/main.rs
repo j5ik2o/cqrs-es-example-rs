@@ -1,7 +1,6 @@
 extern crate log;
 
 use anyhow::Result;
-use config::{ConfigError, Environment};
 use std::time::Duration;
 
 use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;

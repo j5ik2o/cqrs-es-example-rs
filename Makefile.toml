@@ -4,19 +4,19 @@ env_files = [
 ]
 
 env_scripts = [
-'''
-#!/usr/bin/env bash
-if [ -n "$K8S_CONTEXT" ]; then
-    echo "K8S_CONTEXT = $K8S_CONTEXT"
-    kubectl config use-context $K8S_CONTEXT
-fi
-echo "--- Using Environments -----------------"
-echo "AWS_PROFILE      = $AWS_PROFILE"
-echo "AWS_REGION       = $AWS_REGION"
-echo "PREFIX           = $PREFIX"
-echo "APPLICATION_NAME = $APPLICATION_NAME"
-echo "----------------------------------------"
-'''
+    '''
+    #!/usr/bin/env bash
+    if [ -n "$K8S_CONTEXT" ]; then
+        echo "K8S_CONTEXT = $K8S_CONTEXT"
+        kubectl config use-context $K8S_CONTEXT
+    fi
+    echo "--- Using Environments -----------------"
+    echo "AWS_PROFILE      = $AWS_PROFILE"
+    echo "AWS_REGION       = $AWS_REGION"
+    echo "PREFIX           = $PREFIX"
+    echo "APPLICATION_NAME = $APPLICATION_NAME"
+    echo "----------------------------------------"
+    '''
 ]
 
 [env]
@@ -488,7 +488,7 @@ dependencies = ["docker-build-write-api-server", "aws-ecr-login", "docker-ecr-pu
 [tasks.docker-build-ecr-push-read-api-server]
 description = "Read API ServerのDockerイメージをECRにpushします"
 workspace = false
-dependencies = ["docker-build-read-api-server", "aws-ecr-login" , "docker-ecr-push-read-api-server"]
+dependencies = ["docker-build-read-api-server", "aws-ecr-login", "docker-ecr-push-read-api-server"]
 
 [tasks.docker-ecr-build-push-all]
 description = "Write/Read API ServerのDockerイメージをECRにpushします"
