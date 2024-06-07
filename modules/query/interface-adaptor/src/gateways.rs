@@ -433,8 +433,8 @@ mod tests {
   #[serial]
   async fn test_get_group_chat() {
     init_logger();
-    let mysql_node = mysql_image().start().await;
-    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+    let mysql_node = mysql_image().start().await.unwrap();
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
     refinery_migrate(mysql_port);
 
@@ -463,8 +463,8 @@ mod tests {
   #[serial]
   async fn test_get_group_chats() {
     init_logger();
-    let mysql_node = mysql_image().start().await;
-    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+    let mysql_node = mysql_image().start().await.unwrap();
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
     refinery_migrate(mysql_port);
 
@@ -500,8 +500,8 @@ mod tests {
   #[serial]
   async fn test_get_members() {
     init_logger();
-    let mysql_node = mysql_image().start().await;
-    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+    let mysql_node = mysql_image().start().await.unwrap();
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
     refinery_migrate(mysql_port);
 
@@ -533,8 +533,8 @@ mod tests {
   async fn test_get_message() {
     init_logger();
 
-    let mysql_node = mysql_image().start().await;
-    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+    let mysql_node = mysql_image().start().await.unwrap();
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
     refinery_migrate(mysql_port);
 
@@ -576,8 +576,8 @@ mod tests {
   async fn test_get_messages() {
     init_logger();
 
-    let mysql_node = mysql_image().start().await;
-    let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+    let mysql_node = mysql_image().start().await.unwrap();
+    let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
     refinery_migrate(mysql_port);
 

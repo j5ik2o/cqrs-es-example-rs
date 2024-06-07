@@ -65,8 +65,8 @@ fn init() {
 async fn test_insert_group_chat() {
   init();
 
-  let mysql_node = mysql_image().start().await;
-  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+  let mysql_node = mysql_image().start().await.unwrap();
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
   refinery_migrate(mysql_port);
 
@@ -89,8 +89,8 @@ async fn test_insert_group_chat() {
 async fn test_delete_group_chat() {
   init_logger();
 
-  let mysql_node = mysql_image().start().await;
-  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+  let mysql_node = mysql_image().start().await.unwrap();
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
   refinery_migrate(mysql_port);
 
@@ -114,8 +114,8 @@ async fn test_delete_group_chat() {
 async fn test_rename_group_chat() {
   init_logger();
 
-  let mysql_node = mysql_image().start().await;
-  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+  let mysql_node = mysql_image().start().await.unwrap();
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
   refinery_migrate(mysql_port);
 
@@ -141,8 +141,8 @@ async fn test_rename_group_chat() {
 async fn test_insert_member() {
   init_logger();
 
-  let mysql_node = mysql_image().start().await;
-  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+  let mysql_node = mysql_image().start().await.unwrap();
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
   refinery_migrate(mysql_port);
 
@@ -174,8 +174,8 @@ async fn test_insert_member() {
 async fn test_delete_member() {
   init_logger();
 
-  let mysql_node = mysql_image().start().await;
-  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+  let mysql_node = mysql_image().start().await.unwrap();
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
   refinery_migrate(mysql_port);
 
@@ -216,8 +216,8 @@ async fn test_delete_member() {
 async fn test_post_message() {
   init_logger();
 
-  let mysql_node = mysql_image().start().await;
-  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+  let mysql_node = mysql_image().start().await.unwrap();
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
   refinery_migrate(mysql_port);
 
@@ -261,8 +261,8 @@ async fn test_post_message() {
 async fn test_delete_message() {
   init_logger();
 
-  let mysql_node = mysql_image().start().await;
-  let mysql_port = mysql_node.get_host_port_ipv4(3306).await;
+  let mysql_node = mysql_image().start().await.unwrap();
+  let mysql_port = mysql_node.get_host_port_ipv4(3306).await.unwrap();
 
   refinery_migrate(mysql_port);
 

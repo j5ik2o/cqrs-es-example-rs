@@ -1,5 +1,4 @@
 use std::env;
-use std::sync::OnceLock;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -205,8 +204,8 @@ pub async fn get_repository<'a>() -> (
     .with_env_var("DYNAMODB_SHARED_DB", "1")
     .with_env_var("DYNAMODB_IN_MEMORY", "1")
     .with_wait_for(wait_for);
-  let dynamodb_node = image.start().await;
-  let port = dynamodb_node.get_host_port_ipv4(4566).await;
+  let dynamodb_node = image.start().await.unwrap();
+  let port = dynamodb_node.get_host_port_ipv4(4566).await.unwrap();
   log::debug!("DynamoDB port: {}", port);
 
   let test_time_factor = env::var("TEST_TIME_FACTOR")
