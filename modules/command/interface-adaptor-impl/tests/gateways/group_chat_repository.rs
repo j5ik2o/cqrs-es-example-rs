@@ -78,6 +78,6 @@ async fn test_group_chat_add_member() {
   assert!(actual.members().is_member(&user_account_id));
 
   drop(client);
-  container.stop().await;
+  let _ = container.stop().await.unwrap();
   drop(container);
 }

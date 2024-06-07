@@ -3,9 +3,10 @@ use std::sync::Arc;
 use async_graphql::futures_util::Stream;
 use async_graphql::futures_util::StreamExt;
 use async_graphql::{
-  Context, EmptyMutation, Error, ErrorExtensions, FieldResult, Object, Schema, SchemaBuilder, Subscription,
+  Context, EmptyMutation, EmptySubscription, Error, ErrorExtensions, FieldResult, Object, Schema, SchemaBuilder,
+  Subscription,
 };
-use redis::Client;
+use redis::{Client, PubSub};
 use sqlx::MySqlPool;
 
 use crate::gateways::{
@@ -198,34 +199,10 @@ fn message_dao_error_handling(error: MessageDaoError) -> Error {
   }
 }
 
-/// 以下のサブスクリプションは未実装です。
-pub struct SubscriptionRoot;
+pub type ApiSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
 
-/// https://github.com/async-graphql/examples/blob/c8219078a4b7aa6d84d22e9b79f033088897be4b/poem/subscription-redis/src/main.rs
-#[Subscription]
-impl SubscriptionRoot {
-  async fn group_chats<'ctx>(
-    &self,
-    ctx: &Context<'ctx>,
-    group_chat_id: String,
-  ) -> anyhow::Result<impl Stream<Item = String>> {
-    let client = ctx.data_unchecked::<Client>();
-    let mut conn = client.get_async_connection().await?.into_pubsub();
-    conn.subscribe(format!("group_chat_id={}", group_chat_id)).await?;
-    Ok(
-      conn
-        .into_on_message()
-        .filter_map(|msg| async move { msg.get_payload().ok() }),
-    )
-  }
-}
-
-/// ----
-
-pub type ApiSchema = Schema<QueryRoot, EmptyMutation, SubscriptionRoot>;
-
-pub fn create_schema_builder() -> SchemaBuilder<QueryRoot, EmptyMutation, SubscriptionRoot> {
-  Schema::build(QueryRoot, EmptyMutation, SubscriptionRoot)
+pub fn create_schema_builder() -> SchemaBuilder<QueryRoot, EmptyMutation, EmptySubscription> {
+  Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
 }
 
 pub fn create_schema(pool: MySqlPool) -> ApiSchema {
