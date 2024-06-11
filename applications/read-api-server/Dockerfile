@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.8
 ARG TAG_PREFIX
 FROM --platform=$BUILDPLATFORM messense/rust-musl-cross:${TAG_PREFIX}-musl as builder
 
