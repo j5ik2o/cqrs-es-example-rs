@@ -3,9 +3,9 @@ use std::{env, thread};
 use chrono::Utc;
 use serial_test::serial;
 use sqlx::MySqlPool;
-use testcontainers::core::WaitFor;
+use testcontainers::core::{ContainerPort, WaitFor};
 use testcontainers::runners::AsyncRunner;
-use testcontainers::GenericImage;
+use testcontainers::{ContainerRequest, GenericImage, ImageExt};
 
 use crate::common::init_logger;
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message};
@@ -14,10 +14,11 @@ use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
 use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
 
-fn mysql_image() -> GenericImage {
+fn mysql_image() -> ContainerRequest<GenericImage> {
+  let port = ContainerPort::from(3306);
   GenericImage::new("mysql", "8.0")
-    .with_exposed_port(3306)
     .with_wait_for(WaitFor::message_on_stdout("Ready for start up"))
+    .with_exposed_port(port)
     .with_env_var("MYSQL_ROOT_PASSWORD", "password")
     .with_env_var("MYSQL_DATABASE", "ceer")
     .with_env_var("MYSQL_USER", "ceer")

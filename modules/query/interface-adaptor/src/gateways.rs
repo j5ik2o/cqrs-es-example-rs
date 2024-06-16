@@ -339,13 +339,14 @@ mod tests {
   use serial_test::serial;
   use sqlx::MySqlPool;
   use std::sync::OnceLock;
-  use testcontainers::core::WaitFor;
+  use testcontainers::core::{ContainerPort, WaitFor};
   use testcontainers::runners::AsyncRunner;
-  use testcontainers::GenericImage;
+  use testcontainers::{ContainerRequest, GenericImage, ImageExt};
 
-  fn mysql_image() -> GenericImage {
+  fn mysql_image() -> ContainerRequest<GenericImage> {
+    let port = ContainerPort::from(3306);
     GenericImage::new("mysql", "8.0")
-      .with_exposed_port(3306)
+      .with_exposed_port(port)
       .with_wait_for(WaitFor::message_on_stdout("Ready for start up"))
       .with_env_var("MYSQL_ROOT_PASSWORD", "password")
       .with_env_var("MYSQL_DATABASE", "ceer")
