@@ -14,7 +14,7 @@ use command_domain::group_chat::{GroupChat, GroupChatEvent, GroupChatId};
 use event_store_adapter_rs::EventStoreForDynamoDB;
 use testcontainers::core::WaitFor;
 use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, GenericImage};
+use testcontainers::{ContainerAsync, GenericImage, ImageExt};
 
 use command_interface_adaptor_impl::gateways::group_chat_repository::GroupChatRepositoryImpl;
 
@@ -198,12 +198,12 @@ pub async fn get_repository<'a>() -> (
   init_logger();
   let wait_for = WaitFor::message_on_stdout("Ready.");
   let image = GenericImage::new("localstack/localstack", "2.1.0")
+    .with_wait_for(wait_for)
     .with_env_var("SERVICES", "dynamodb")
     .with_env_var("DEFAULT_REGION", "us-west-1")
     .with_env_var("EAGER_SERVICE_LOADING", "1")
     .with_env_var("DYNAMODB_SHARED_DB", "1")
-    .with_env_var("DYNAMODB_IN_MEMORY", "1")
-    .with_wait_for(wait_for);
+    .with_env_var("DYNAMODB_IN_MEMORY", "1");
   let dynamodb_node = image.start().await.unwrap();
   let port = dynamodb_node.get_host_port_ipv4(4566).await.unwrap();
   log::debug!("DynamoDB port: {}", port);

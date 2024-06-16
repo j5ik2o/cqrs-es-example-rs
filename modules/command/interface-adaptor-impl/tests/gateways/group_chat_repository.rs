@@ -27,7 +27,7 @@ async fn test_group_chat_create() {
   assert!(actual.members().is_member(&admin_id));
 
   drop(client);
-  container.stop().await;
+  let _ = container.stop().await;
   drop(container);
 }
 
