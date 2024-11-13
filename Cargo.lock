@@ -1523,9 +1523,9 @@ dependencies = [
 
 [[package]]
 name = "event-store-adapter-rs"
-version = "1.1.37"
+version = "1.1.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af1abd0af7321660bea43177394c0c86dbf92a4ccfd4e1939e908e493ef6755a"
+checksum = "b8cc13a92432a595891af964d64894e6ead584b316a9de81679be138be984589"
 dependencies = [
  "async-trait",
  "aws-config",
@@ -2393,7 +2393,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2a198fb6b0eada2a8df47933734e6d35d350665a33a3593d7164fa52c75c19"
 dependencies = [
  "cfg-if",
- "windows-targets 0.52.5",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
