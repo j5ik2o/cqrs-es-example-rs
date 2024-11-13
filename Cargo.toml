@@ -54,7 +54,7 @@ tower-http = "0.4"
 tracing = "0.1.40"
 tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3.18", default-features = false }
-ulid-generator-rs = "0.0.110"
+ulid-generator-rs = "0.0.112"
 event-store-adapter-rs = "1.1.34"
 
 mime = "0.3.17"
