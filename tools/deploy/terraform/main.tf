@@ -10,7 +10,7 @@ terraform {
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 2.10.1"
+      version = "~> 2.16.0"
     }
   }
   backend "s3" {
