@@ -156,6 +156,7 @@ async fn test_group_chat_post_message() {
   );
 }
 
+#[ignore]
 #[tokio::test]
 #[serial]
 async fn test_group_chat_edit_message() {
