@@ -46,3 +46,15 @@ Note: You can also test with `cargo test`, but this time the number of tests to 
 environment variable (`RUST_TEST_THREADS=1`) due to the use of testcontainers.
 In other words, please note that tests cannot be run properly unless `RUST_TEST_THREADS=1 cargo test` is used.
 With `makers test`, the default is `RUST_TEST_THREADS=1`, so you can run the test as it is.
+## Deploying the Lambda to LocalStack
+
+To emulate the DynamoDB Streams → Lambda → MySQL flow locally, run the following:
+
+```shell
+$ makers build-read-model-updater-lambda
+$ makers deploy-read-model-updater-localstack
+```
+
+`build-read-model-updater-lambda` builds the Lambda-compatible binary inside Docker and places the ZIP at `dist/lambda/read-model-updater/bootstrap.zip`.
+`deploy-read-model-updater-localstack` relies on the AWS CLI to create or update the function on LocalStack and wires it to the `journal` table stream.
+Configuration values are read from `common.env`, so configure the LocalStack endpoint and dummy credentials before executing the commands.

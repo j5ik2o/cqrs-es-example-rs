@@ -33,3 +33,4 @@ env.sh
 common.env
 
 _build/
+dist/
