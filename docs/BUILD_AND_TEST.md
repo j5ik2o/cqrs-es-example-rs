@@ -1,24 +1,22 @@
-## Copy and edit `common.env.default` as `common.env
+## `common.env.default` を `common.env` にコピーして編集する
 
 ```shell
 $ cp common.env.default common.env
 ```
 
-PREFIX of environment variables (All alphanumeric characters. Change PREFIX (all alphanumeric characters, lower case
-only) and APPLICATION_NAME as appropriate.
-It is recommended to generate the PREFIX with `pwgen -A`.
+環境変数の PREFIX（英数字のみ。英字は小文字）と APPLICATION_NAME を適宜変更してください。PREFIX は `pwgen -A` などで生成すると便利です。
 
 ```shell
 $ pwgen -A
 ```
 
-If you do not have `pwgen`, install it with `brew install pwgen`.
+`pwgen` が未インストールの場合は `brew install pwgen` で導入できます。
 
 ## ビルド方法
 
-Be sure to start Docker before performing the build.
+ビルドを実行する前に Docker を必ず起動しておきます。
 
-Start DB only with the following command before performing the build. (to allow sqlx to connect to the DB)
+sqlx が DB に接続できるよう、先に DB だけ起動します。
 
 ```shell
 $ makers docker-compose-up-db
@@ -28,33 +26,25 @@ $ makers docker-compose-up-db
 $ makers build
 ```
 
-Note: If you add or modify SQL to be issued by sqlx, you will need to run `cargo sqlx prepare` directly under each
-project (a JSON file will be generated in `.sqlx/`), but you can set up `cargo sqlx prepare` is set to run.
-So, please be sure to run `makers build` when you add or modify SQL. Please include the generated `.sqlx/*.json` file
-under git's control. At this time, you need to connect to the DB server, so you need to
-run `makers docker-compose-up-db`.
+補足: sqlx で実行する SQL を追加・変更した場合は、各プロジェクト直下で `cargo sqlx prepare` を実行する必要があります（`.sqlx/` に JSON が生成されます）。このリポジトリでは `makers build` 中に自動で `cargo sqlx prepare` が走るようにしているため、SQL 変更時は必ず `makers build` を実行し、生成された `.sqlx/*.json` を Git 管理下に含めてください。なお DB 接続が必要なので、あらかじめ `makers docker-compose-up-db` を実行しておいてください。
 
-## テスト方法
+## LocalStack 上での Lambda デプロイ
 
-Be sure to start Docker before running the test.
-
-```shell
-$ makers test
-```
-
-Note: You can also test with `cargo test`, but this time the number of tests to run simultaneously is limited by an
-environment variable (`RUST_TEST_THREADS=1`) due to the use of testcontainers.
-In other words, please note that tests cannot be run properly unless `RUST_TEST_THREADS=1 cargo test` is used.
-With `makers test`, the default is `RUST_TEST_THREADS=1`, so you can run the test as it is.
-## Deploying the Lambda to LocalStack
-
-To emulate the DynamoDB Streams → Lambda → MySQL flow locally, run the following:
+`makers docker-compose-up` を実行すると、コンテナ起動後に LocalStack へ Lambda が自動デプロイされます。手動で再デプロイしたい場合は次のコマンドを利用します。
 
 ```shell
 $ makers build-read-model-updater-lambda
 $ makers deploy-read-model-updater-localstack
 ```
 
-`build-read-model-updater-lambda` builds the Lambda-compatible binary inside Docker and places the ZIP at `dist/lambda/read-model-updater/bootstrap.zip`.
-`deploy-read-model-updater-localstack` relies on the AWS CLI to create or update the function on LocalStack and wires it to the `journal` table stream.
-Configuration values are read from `common.env`, so configure the LocalStack endpoint and dummy credentials before executing the commands.
+`build-read-model-updater-lambda` は Docker 上で Lambda 互換バイナリをビルドし、`dist/lambda/read-model-updater/bootstrap.zip` を生成します。`deploy-read-model-updater-localstack` は AWS CLI を用いて LocalStack に関数を作成（または更新）し、`journal` テーブルのストリームとイベントソースマッピングを設定します。設定値は `common.env` から読み込まれるため、LocalStack のエンドポイントやダミー資格情報を事前に記入してください。
+
+## テスト方法
+
+テストを実行する前に Docker を必ず起動してください。
+
+```shell
+$ makers test
+```
+
+補足: `cargo test` でもテスト可能ですが、testcontainers を利用している関係で同時実行数を環境変数（`RUST_TEST_THREADS=1`）で制限しています。`RUST_TEST_THREADS=1 cargo test` 以外では正しく動作しないため注意してください。`makers test` ではデフォルトで `RUST_TEST_THREADS=1` が設定されているので、そのまま実行すれば問題ありません。
