@@ -605,6 +605,25 @@ description = "Write/Read API Serverの外部DNSを更新します"
 workspace = false
 run_task = { name = ["update-dns-write-api-server", "update-dns-read-api-server"] }
 
+# --- Lambda / LocalStack
+
+[tasks.build-read-model-updater-lambda]
+description = "read-model-updater のLambda用バイナリとZIPを生成します"
+workspace = false
+script = '''
+#!/usr/bin/env bash
+./tools/scripts/build-read-model-updater-lambda.sh
+'''
+
+[tasks.deploy-read-model-updater-localstack]
+description = "LocalStackにread-model-updater LambdaをデプロイしDynamoDB Streamと接続します"
+workspace = false
+dependencies = ["build-read-model-updater-lambda"]
+script = '''
+#!/usr/bin/env bash
+./tools/scripts/deploy-read-model-updater-localstack.sh
+'''
+
 # --- Testing
 
 [tasks.curl-get-root-write-api-server]

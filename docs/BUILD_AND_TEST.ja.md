@@ -46,3 +46,16 @@ $ makers test
 で制限しています。
 つまり、`RUST_TEST_THREADS=1 cargo test`でないとテストが正常に実行できないのでご注意ください。
 `makers test`ではデフォルトで`RUST_TEST_THREADS=1`となっているので、そのまま実行しても問題ありません。
+
+## LocalStack上でのLambdaデプロイ
+
+ローカルで DynamoDB Streams → Lambda → MySQL の経路を再現する場合は次の手順を踏んでください。
+
+```shell
+$ makers build-read-model-updater-lambda
+$ makers deploy-read-model-updater-localstack
+```
+
+`build-read-model-updater-lambda` は Docker 上で Lambda 互換バイナリをビルドして `dist/lambda/read-model-updater/bootstrap.zip` を生成します。
+`deploy-read-model-updater-localstack` は AWS CLI を利用し、LocalStack に Lambda 関数を作成した後で `journal` テーブルのストリームとイベントソースマッピングを貼ります。
+環境変数は `common.env` から読み込まれるため、LocalStack のエンドポイントやダミー認証情報を適宜設定してください。
