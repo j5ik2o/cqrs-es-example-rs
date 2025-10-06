@@ -5,7 +5,7 @@ set -eu
 # shellcheck disable=SC2046
 cd $(dirname "$0") || exit
 
-ROOT_DIR=$(git rev-parse --show-toplevel 2>/dev/null || cd .. && pwd)
+ROOT_DIR=$(git rev-parse --show-toplevel 2>/dev/null || (cd .. && pwd))
 
 # Ensure env file exists for makers/scripts that rely on it
 if [ ! -f "$ROOT_DIR/common.env" ]; then
