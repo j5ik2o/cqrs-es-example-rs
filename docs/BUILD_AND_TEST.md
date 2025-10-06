@@ -30,7 +30,7 @@ $ makers build
 
 ## LocalStack 上での Lambda デプロイ
 
-DynamoDB Streams → Lambda → MySQL のフローをローカルで再現するには、次のコマンドを順に実行します。
+`makers docker-compose-up` を実行すると、コンテナ起動後に LocalStack へ Lambda が自動デプロイされます。手動で再デプロイしたい場合は次のコマンドを利用します。
 
 ```shell
 $ makers build-read-model-updater-lambda
