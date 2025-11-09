@@ -228,23 +228,23 @@ fi
 echo "Result: $GET_MESSAGES_RESULT"
 
 # メッセージ編集
-echo -e "\nEdit Message(${GROUP_CHAT_ID}, ${USER_ACCOUNT_ID}):"
-EDIT_MESSAGE_RESULT=$(curl -s -X POST -H "Content-Type: application/json" \
-	${WRITE_API_SERVER_BASE_URL}/query \
-	-d @- <<EOS
-{
-  "query": "mutation EditMessage(\$input: EditMessageInput!) { editMessage(input: \$input) { groupChatId } }",
-  "variables": {
-    "input": {
-      "groupChatId": "${GROUP_CHAT_ID}",
-      "messageId": "${MESSAGE_ID}",
-      "content": "Text2",
-      "executorId": "${USER_ACCOUNT_ID}"
-    }
-  }
-}
-EOS
-)
+#echo -e "\nEdit Message(${GROUP_CHAT_ID}, ${USER_ACCOUNT_ID}):"
+#EDIT_MESSAGE_RESULT=$(curl -s -X POST -H "Content-Type: application/json" \
+#	${WRITE_API_SERVER_BASE_URL}/query \
+#	-d @- <<EOS
+#{
+#  "query": "mutation EditMessage(\$input: EditMessageInput!) { editMessage(input: \$input) { groupChatId } }",
+#  "variables": {
+#    "input": {
+#      "groupChatId": "${GROUP_CHAT_ID}",
+#      "messageId": "${MESSAGE_ID}",
+#      "content": "Text2",
+#      "executorId": "${USER_ACCOUNT_ID}"
+#    }
+#  }
+#}
+#EOS
+#)
 
 if echo $EDIT_MESSAGE_RESULT | jq -e .errors > /dev/null; then
   echo "Error: $EDIT_MESSAGE_RESULT"
