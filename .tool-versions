@@ -4,4 +4,4 @@ helm 3.15.3
 kubectl 1.37.2
 stern 1.25.0
 helmfile 0.171.0
-minikube 1.33.1
+minikube 1.39.0
