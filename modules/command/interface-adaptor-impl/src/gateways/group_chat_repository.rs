@@ -121,7 +121,17 @@ impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> Group
       Ok(Some(snapshot_read)) => {
         let (snapshot_envelope_opt, _head_seq_nr) = snapshot_read.into_parts();
         match snapshot_envelope_opt {
-          None => Ok(None),
+          None => {
+            // スナップショットがなくてもヘッドがあれば、作成イベントから復元する。
+            let events = self.event_store.get_events_by_id_since_seq_nr(id, 1).await;
+            match events {
+              Ok(events) => {
+                let events = events.into_iter().map(|event| event.into_payload()).collect();
+                Ok(GroupChat::replay_from_events(events))
+              }
+              Err(error) => Err(GroupChatRepositoryError::FindByIdError(id.clone(), error)),
+            }
+          }
           Some(snapshot_envelope) => {
             // get_events_by_id_since_seq_nr は下限を含む。スナップショット自身のイベントを
             // 再適用しないよう、次の seq_nr から読む。上限を超える seq_nr は渡せない。

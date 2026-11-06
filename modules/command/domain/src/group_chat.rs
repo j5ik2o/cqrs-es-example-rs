@@ -218,6 +218,36 @@ impl GroupChat {
     })
   }
 
+  /// スナップショットがない場合に、作成イベントから集約を復元して後続イベントを再生する。
+  ///
+  /// # 引数
+  /// - `events`: 作成イベントを先頭にした、`seq_nr` の昇順のイベントの集合
+  ///
+  /// # 戻り値
+  /// 先頭が作成イベントなら復元した集約、そうでなければ `None`
+  pub fn replay_from_events(events: Vec<GroupChatEvent>) -> Option<Self> {
+    let mut events = events.into_iter();
+    let created = match events.next() {
+      Some(GroupChatEvent::GroupChatCreated(created)) => created,
+      _ => return None,
+    };
+    let mut result = Self {
+      id: created.aggregate_id.clone(),
+      deleted: false,
+      name: created.name.clone(),
+      members: created.members.clone(),
+      messages: Messages::new([]),
+      seq_nr_counter: created.seq_nr,
+      version: created.seq_nr,
+      last_updated_at: created.occurred_at,
+    };
+    for event in events {
+      log::debug!("Replaying event: {:?}", event);
+      result.apply_event(&event);
+    }
+    Some(result)
+  }
+
   /// [GroupChatName]の参照を返す。
   pub fn name(&self) -> &GroupChatName {
     &self.name

@@ -187,8 +187,18 @@ async fn wait_table(client: &Client, target_table_name: &str) -> bool {
   }
 }
 
-pub async fn get_repository<'a>() -> (
+pub async fn get_repository() -> (
   GroupChatRepositoryImpl<EventStoreForDynamoDB<GroupChatId, GroupChat, GroupChatEvent>>,
+  ContainerAsync<GenericImage>,
+  Client,
+) {
+  let (repository, _event_store, container, client) = get_repository_and_store().await;
+  (repository, container, client)
+}
+
+pub async fn get_repository_and_store() -> (
+  GroupChatRepositoryImpl<EventStoreForDynamoDB<GroupChatId, GroupChat, GroupChatEvent>>,
+  EventStoreForDynamoDB<GroupChatId, GroupChat, GroupChatEvent>,
   ContainerAsync<GenericImage>,
   Client,
 ) {
@@ -241,6 +251,6 @@ pub async fn get_repository<'a>() -> (
   )
   .await
   .unwrap();
-  let repository = GroupChatRepositoryImpl::new(epg, 10);
-  (repository, dynamodb_node, client)
+  let repository = GroupChatRepositoryImpl::new(epg.clone(), 10);
+  (repository, epg, dynamodb_node, client)
 }
