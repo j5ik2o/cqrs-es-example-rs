@@ -1,5 +1,4 @@
 use chrono::{DateTime, Utc};
-use event_store_adapter_rs::types::Aggregate;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ulid_generator_rs::ULIDError;
@@ -67,31 +66,32 @@ impl PartialEq for GroupChat {
   }
 }
 
-impl Aggregate for GroupChat {
-  type ID = GroupChatId;
-
-  fn id(&self) -> &Self::ID {
+impl GroupChat {
+  /// グループチャットIDを返す。
+  pub fn id(&self) -> &GroupChatId {
     &self.id
   }
 
-  fn seq_nr(&self) -> usize {
+  /// 最後に反映したイベントの `seq_nr` を返す。
+  pub fn seq_nr(&self) -> usize {
     self.seq_nr_counter
   }
 
-  fn version(&self) -> usize {
+  /// スナップショットのバージョンを返す。
+  pub fn version(&self) -> usize {
     self.version
   }
 
-  fn set_version(&mut self, version: usize) {
+  /// スナップショットのバージョンを設定する。
+  pub fn set_version(&mut self, version: usize) {
     self.version = version;
   }
 
-  fn last_updated_at(&self) -> &DateTime<Utc> {
+  /// 最後に更新された時刻を返す。
+  pub fn last_updated_at(&self) -> &DateTime<Utc> {
     &self.last_updated_at
   }
-}
 
-impl GroupChat {
   // pub fn breach_encapsulation_of_seq_nr_counter(&self) -> usize {
   //  self.seq_nr_counter
   //}
@@ -216,6 +216,36 @@ impl GroupChat {
       result.apply_event(event);
       result
     })
+  }
+
+  /// スナップショットがない場合に、作成イベントから集約を復元して後続イベントを再生する。
+  ///
+  /// # 引数
+  /// - `events`: 作成イベントを先頭にした、`seq_nr` の昇順のイベントの集合
+  ///
+  /// # 戻り値
+  /// 先頭が作成イベントなら復元した集約、そうでなければ `None`
+  pub fn replay_from_events(events: Vec<GroupChatEvent>) -> Option<Self> {
+    let mut events = events.into_iter();
+    let created = match events.next() {
+      Some(GroupChatEvent::GroupChatCreated(created)) => created,
+      _ => return None,
+    };
+    let mut result = Self {
+      id: created.aggregate_id.clone(),
+      deleted: false,
+      name: created.name.clone(),
+      members: created.members.clone(),
+      messages: Messages::new([]),
+      seq_nr_counter: created.seq_nr,
+      version: created.seq_nr,
+      last_updated_at: created.occurred_at,
+    };
+    for event in events {
+      log::debug!("Replaying event: {:?}", event);
+      result.apply_event(&event);
+    }
+    Some(result)
   }
 
   /// [GroupChatName]の参照を返す。

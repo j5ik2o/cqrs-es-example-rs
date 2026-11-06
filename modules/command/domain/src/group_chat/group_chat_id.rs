@@ -1,6 +1,6 @@
 use crate::group_chat::ParseError;
 use crate::id_generate;
-use event_store_adapter_rs::types::AggregateId;
+use event_store_adapter_rs::AggregateId;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
