@@ -1,5 +1,5 @@
 use async_graphql::{Context, Error, ErrorExtensions, FieldResult, Object};
-use event_store_adapter_rs::types::EventStoreWriteError;
+use event_store_adapter_rs::EventStoreError;
 use std::str::FromStr;
 
 use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message, MessageId};
@@ -153,11 +153,9 @@ impl MutationRoot {
 
 fn error_handling_repository_error(error: &CommandProcessError, cause: &GroupChatRepositoryError) -> Error {
   match cause {
-    GroupChatRepositoryError::StoreError(_, EventStoreWriteError::OptimisticLockError(_)) => {
-      Error::new(error.to_string())
-        .extend_with(|_, e| e.set("code", "409"))
-        .extend_with(|_, e| e.set("cause", cause.to_string()))
-    }
+    GroupChatRepositoryError::StoreError(_, EventStoreError::OptimisticLock { .. }) => Error::new(error.to_string())
+      .extend_with(|_, e| e.set("code", "409"))
+      .extend_with(|_, e| e.set("cause", cause.to_string())),
     GroupChatRepositoryError::StoreError(_, _) => Error::new(error.to_string())
       .extend_with(|_, e| e.set("code", "500"))
       .extend_with(|_, e| e.set("cause", cause.to_string())),

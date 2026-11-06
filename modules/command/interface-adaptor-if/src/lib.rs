@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use chrono::{DateTime, Utc};
-use event_store_adapter_rs::types::{EventStoreReadError, EventStoreWriteError};
+use event_store_adapter_rs::EventStoreError;
 use thiserror::Error;
 
 use command_domain::group_chat::*;
@@ -10,9 +10,9 @@ use command_domain::user_account::UserAccountId;
 #[derive(Debug, Error)]
 pub enum GroupChatRepositoryError {
   #[error("Failed to store the group chat: {0:?}")]
-  StoreError(GroupChat, EventStoreWriteError),
+  StoreError(GroupChat, EventStoreError),
   #[error("Failed to find the group chat by id: {0:?}")]
-  FindByIdError(GroupChatId, EventStoreReadError),
+  FindByIdError(GroupChatId, EventStoreError),
 }
 
 /// グループチャットのリポジトリ。

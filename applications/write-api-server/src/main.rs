@@ -8,7 +8,7 @@ use aws_sdk_dynamodb::client::Client;
 use aws_sdk_dynamodb::config::{Credentials, Region};
 use axum::http::HeaderValue;
 use config::{Config, Environment};
-use event_store_adapter_rs::EventStoreForDynamoDB;
+use event_store_adapter_rs::{DynamoDbOptions, DynamoDbTables, EventStoreForDynamoDB};
 use hyper::header::CONTENT_TYPE;
 use serde::Deserialize;
 use tower_http::cors::{AllowMethods, CorsLayer};
@@ -33,10 +33,9 @@ struct ApiSettings {
 #[derive(Deserialize, Debug)]
 struct PersistenceSettings {
   journal_table_name: String,
-  journal_aid_index_name: String,
   snapshot_table_name: String,
-  snapshot_aid_index_name: String,
-  shard_count: u64,
+  head_table_name: String,
+  snapshot_history_index_name: String,
   snapshot_interval: usize,
 }
 
@@ -59,14 +58,13 @@ async fn main() -> Result<()> {
 
   let app_settings = load_app_config().unwrap();
   let aws_client = create_aws_client(&app_settings.aws).await;
-  let egg = EventStoreForDynamoDB::new(
-    aws_client,
-    app_settings.persistence.journal_table_name.clone(),
-    app_settings.persistence.journal_aid_index_name.clone(),
-    app_settings.persistence.snapshot_table_name.clone(),
-    app_settings.persistence.snapshot_aid_index_name.clone(),
-    app_settings.persistence.shard_count,
-  );
+  let tables = DynamoDbTables {
+    journal_table_name: app_settings.persistence.journal_table_name.clone(),
+    snapshot_table_name: app_settings.persistence.snapshot_table_name.clone(),
+    head_table_name: app_settings.persistence.head_table_name.clone(),
+    snapshot_history_index_name: app_settings.persistence.snapshot_history_index_name.clone(),
+  };
+  let egg = EventStoreForDynamoDB::open(aws_client, tables, DynamoDbOptions::default()).await?;
   let repository = GroupChatRepositoryImpl::new(egg, app_settings.persistence.snapshot_interval);
 
   let route = create_router(repository).layer(create_cors_layer(&app_settings));

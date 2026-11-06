@@ -8,10 +8,9 @@ allow_origins = [
 
 [persistence]
 journal_table_name = "journal"
-journal_aid_index_name = "journal-aid-index"
 snapshot_table_name = "snapshot"
-snapshot_aid_index_name = "snapshot-aid-index"
-shard_count = 64
+head_table_name = "head"
+snapshot_history_index_name = "snapshot-active-history-index"
 snapshot_interval = 10
 
 [aws]
