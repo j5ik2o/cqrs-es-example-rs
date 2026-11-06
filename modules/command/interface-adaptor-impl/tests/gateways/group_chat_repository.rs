@@ -3,7 +3,6 @@ use command_domain::group_chat::{GroupChat, GroupChatName, MemberRole};
 use command_domain::group_chat::{MemberId, Members};
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatRepository;
-use event_store_adapter_rs::types::Aggregate;
 use serial_test::serial;
 
 #[tokio::test]

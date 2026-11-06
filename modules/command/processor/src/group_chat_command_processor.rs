@@ -1,4 +1,3 @@
-use event_store_adapter_rs::types::Event;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex;

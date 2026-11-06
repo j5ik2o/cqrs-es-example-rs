@@ -7,11 +7,11 @@ use aws_sdk_dynamodb::config::{Credentials, Region};
 use aws_sdk_dynamodb::operation::create_table::CreateTableOutput;
 use aws_sdk_dynamodb::types::{
   AttributeDefinition, GlobalSecondaryIndex, KeySchemaElement, KeyType, Projection, ProjectionType,
-  ProvisionedThroughput, ScalarAttributeType,
+  ProvisionedThroughput, ScalarAttributeType, StreamSpecification, StreamViewType,
 };
 use aws_sdk_dynamodb::Client;
 use command_domain::group_chat::{GroupChat, GroupChatEvent, GroupChatId};
-use event_store_adapter_rs::EventStoreForDynamoDB;
+use event_store_adapter_rs::{DynamoDbOptions, DynamoDbTables, EventStoreForDynamoDB};
 use testcontainers::core::WaitFor;
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, GenericImage, ImageExt};
@@ -23,27 +23,7 @@ pub fn init_logger() {
   let _ = env_logger::builder().is_test(true).try_init();
 }
 
-pub async fn create_journal_table(client: &Client, table_name: &str, gsi_name: &str) -> Result<CreateTableOutput> {
-  let pkey_attribute_definition = AttributeDefinition::builder()
-    .attribute_name("pkey")
-    .attribute_type(ScalarAttributeType::S)
-    .build()?;
-
-  let skey_attribute_definition = AttributeDefinition::builder()
-    .attribute_name("skey")
-    .attribute_type(ScalarAttributeType::S)
-    .build()?;
-
-  let pkey_schema = KeySchemaElement::builder()
-    .attribute_name("pkey")
-    .key_type(KeyType::Hash)
-    .build()?;
-
-  let skey_schema = KeySchemaElement::builder()
-    .attribute_name("skey")
-    .key_type(KeyType::Range)
-    .build()?;
-
+pub async fn create_journal_table(client: &Client, table_name: &str) -> Result<CreateTableOutput> {
   let aid_attribute_definition = AttributeDefinition::builder()
     .attribute_name("aid")
     .attribute_type(ScalarAttributeType::S)
@@ -54,39 +34,28 @@ pub async fn create_journal_table(client: &Client, table_name: &str, gsi_name: &
     .attribute_type(ScalarAttributeType::N)
     .build()?;
 
+  let aid_schema = KeySchemaElement::builder()
+    .attribute_name("aid")
+    .key_type(KeyType::Hash)
+    .build()?;
+
+  let seq_nr_schema = KeySchemaElement::builder()
+    .attribute_name("seq_nr")
+    .key_type(KeyType::Range)
+    .build()?;
+
   let provisioned_throughput = ProvisionedThroughput::builder()
     .read_capacity_units(10)
     .write_capacity_units(5)
     .build()?;
 
-  let gsi = GlobalSecondaryIndex::builder()
-    .index_name(gsi_name)
-    .key_schema(
-      KeySchemaElement::builder()
-        .attribute_name("aid")
-        .key_type(KeyType::Hash)
-        .build()?,
-    )
-    .key_schema(
-      KeySchemaElement::builder()
-        .attribute_name("seq_nr")
-        .key_type(KeyType::Range)
-        .build()?,
-    )
-    .projection(Projection::builder().projection_type(ProjectionType::All).build())
-    .provisioned_throughput(provisioned_throughput.clone())
-    .build()?;
-
   let result = client
     .create_table()
     .table_name(table_name)
-    .attribute_definitions(pkey_attribute_definition)
-    .attribute_definitions(skey_attribute_definition)
     .attribute_definitions(aid_attribute_definition)
     .attribute_definitions(seq_nr_attribute_definition)
-    .key_schema(pkey_schema)
-    .key_schema(skey_schema)
-    .global_secondary_indexes(gsi)
+    .key_schema(aid_schema)
+    .key_schema(seq_nr_schema)
     .provisioned_throughput(provisioned_throughput)
     .send()
     .await?;
@@ -95,34 +64,29 @@ pub async fn create_journal_table(client: &Client, table_name: &str, gsi_name: &
 }
 
 pub async fn create_snapshot_table(client: &Client, table_name: &str, gsi_name: &str) -> Result<CreateTableOutput> {
-  let pkey_attribute_definition = AttributeDefinition::builder()
-    .attribute_name("pkey")
-    .attribute_type(ScalarAttributeType::S)
-    .build()?;
-
-  let pkey_schema = KeySchemaElement::builder()
-    .attribute_name("pkey")
-    .key_type(KeyType::Hash)
-    .build()?;
-
-  let skey_attribute_definition = AttributeDefinition::builder()
-    .attribute_name("skey")
-    .attribute_type(ScalarAttributeType::S)
-    .build()?;
-
-  let skey_schema = KeySchemaElement::builder()
-    .attribute_name("skey")
-    .key_type(KeyType::Range)
-    .build()?;
-
   let aid_attribute_definition = AttributeDefinition::builder()
     .attribute_name("aid")
     .attribute_type(ScalarAttributeType::S)
     .build()?;
 
-  let seq_nr_attribute_definition = AttributeDefinition::builder()
-    .attribute_name("seq_nr")
+  let skey_attribute_definition = AttributeDefinition::builder()
+    .attribute_name("skey")
     .attribute_type(ScalarAttributeType::N)
+    .build()?;
+
+  let active_history_seq_nr_attribute_definition = AttributeDefinition::builder()
+    .attribute_name("active_history_seq_nr")
+    .attribute_type(ScalarAttributeType::N)
+    .build()?;
+
+  let aid_schema = KeySchemaElement::builder()
+    .attribute_name("aid")
+    .key_type(KeyType::Hash)
+    .build()?;
+
+  let skey_schema = KeySchemaElement::builder()
+    .attribute_name("skey")
+    .key_type(KeyType::Range)
     .build()?;
 
   let provisioned_throughput = ProvisionedThroughput::builder()
@@ -140,22 +104,21 @@ pub async fn create_snapshot_table(client: &Client, table_name: &str, gsi_name: 
     )
     .key_schema(
       KeySchemaElement::builder()
-        .attribute_name("seq_nr")
+        .attribute_name("active_history_seq_nr")
         .key_type(KeyType::Range)
         .build()?,
     )
-    .projection(Projection::builder().projection_type(ProjectionType::All).build())
+    .projection(Projection::builder().projection_type(ProjectionType::KeysOnly).build())
     .provisioned_throughput(provisioned_throughput.clone())
     .build()?;
 
   let result = client
     .create_table()
     .table_name(table_name)
-    .attribute_definitions(pkey_attribute_definition)
-    .attribute_definitions(skey_attribute_definition)
     .attribute_definitions(aid_attribute_definition)
-    .attribute_definitions(seq_nr_attribute_definition)
-    .key_schema(pkey_schema)
+    .attribute_definitions(skey_attribute_definition)
+    .attribute_definitions(active_history_seq_nr_attribute_definition)
+    .key_schema(aid_schema)
     .key_schema(skey_schema)
     .global_secondary_indexes(gsi)
     .provisioned_throughput(provisioned_throughput)
@@ -164,16 +127,50 @@ pub async fn create_snapshot_table(client: &Client, table_name: &str, gsi_name: 
 
   Ok(result)
 }
-pub fn create_client(dynamodb_port: u16) -> Client {
-  let region = Region::new("us-west-1");
-  let config = aws_sdk_dynamodb::Config::builder()
-    .region(Some(region))
+
+pub async fn create_head_table(client: &Client, table_name: &str) -> Result<CreateTableOutput> {
+  let aid_attribute_definition = AttributeDefinition::builder()
+    .attribute_name("aid")
+    .attribute_type(ScalarAttributeType::S)
+    .build()?;
+
+  let aid_schema = KeySchemaElement::builder()
+    .attribute_name("aid")
+    .key_type(KeyType::Hash)
+    .build()?;
+
+  let provisioned_throughput = ProvisionedThroughput::builder()
+    .read_capacity_units(10)
+    .write_capacity_units(5)
+    .build()?;
+
+  let stream_specification = StreamSpecification::builder()
+    .stream_enabled(true)
+    .stream_view_type(StreamViewType::NewImage)
+    .build()?;
+
+  let result = client
+    .create_table()
+    .table_name(table_name)
+    .attribute_definitions(aid_attribute_definition)
+    .key_schema(aid_schema)
+    .provisioned_throughput(provisioned_throughput)
+    .stream_specification(stream_specification)
+    .send()
+    .await?;
+
+  Ok(result)
+}
+
+pub async fn create_client(dynamodb_port: u16) -> Client {
+  let config = aws_config::defaults(aws_config::BehaviorVersion::latest())
+    .region(Region::new("us-west-1"))
     .endpoint_url(format!("http://localhost:{}", dynamodb_port))
     .credentials_provider(Credentials::new("x", "x", None, None, "default"))
-    .behavior_version_latest()
-    .build();
+    .load()
+    .await;
 
-  Client::from_conf(config)
+  Client::new(&config)
 }
 
 async fn wait_table(client: &Client, target_table_name: &str) -> bool {
@@ -215,34 +212,35 @@ pub async fn get_repository<'a>() -> (
 
   sleep(Duration::from_millis(1000 * test_time_factor));
 
-  let client = create_client(port);
+  let client = create_client(port).await;
 
   let journal_table_name = "journal";
-  let journal_aid_index_name = "journal-aid-index";
-  let _journal_table_output = create_journal_table(&client, journal_table_name, journal_aid_index_name).await;
-
   let snapshot_table_name = "snapshot";
-  let snapshot_aid_index_name = "snapshot-aid-index";
-  let _snapshot_table_output = create_snapshot_table(&client, snapshot_table_name, snapshot_aid_index_name).await;
+  let head_table_name = "head";
+  let snapshot_history_index_name = "snapshot-active-history-index";
+  let _journal_table_output = create_journal_table(&client, journal_table_name).await;
+  let _snapshot_table_output = create_snapshot_table(&client, snapshot_table_name, snapshot_history_index_name).await;
+  let _head_table_output = create_head_table(&client, head_table_name).await;
 
-  while !(wait_table(&client, journal_table_name).await) {
-    log::info!("Waiting for journal table to be created");
-    sleep(Duration::from_millis(1000 * test_time_factor));
+  for table_name in [journal_table_name, snapshot_table_name, head_table_name] {
+    while !(wait_table(&client, table_name).await) {
+      log::info!("Waiting for {} table to be created", table_name);
+      sleep(Duration::from_millis(1000 * test_time_factor));
+    }
   }
 
-  while !(wait_table(&client, snapshot_table_name).await) {
-    log::info!("Waiting for snapshot table to be created");
-    sleep(Duration::from_millis(1000 * test_time_factor));
-  }
-
-  let epg = EventStoreForDynamoDB::new(
+  let epg = EventStoreForDynamoDB::open(
     client.clone(),
-    journal_table_name.to_string(),
-    journal_aid_index_name.to_string(),
-    snapshot_table_name.to_string(),
-    snapshot_aid_index_name.to_string(),
-    64,
-  );
+    DynamoDbTables {
+      journal_table_name: journal_table_name.to_string(),
+      snapshot_table_name: snapshot_table_name.to_string(),
+      head_table_name: head_table_name.to_string(),
+      snapshot_history_index_name: snapshot_history_index_name.to_string(),
+    },
+    DynamoDbOptions::default(),
+  )
+  .await
+  .unwrap();
   let repository = GroupChatRepositoryImpl::new(epg, 10);
   (repository, dynamodb_node, client)
 }

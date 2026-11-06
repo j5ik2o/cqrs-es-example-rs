@@ -1,4 +1,4 @@
-use event_store_adapter_rs::types::{Aggregate, Event, EventStore};
+use event_store_adapter_rs::{EventEnvelope, EventStore, SeqNr, SnapshotEnvelope};
 use std::collections::{HashMap, VecDeque};
 
 use command_domain::group_chat::GroupChatEvent;
@@ -48,22 +48,16 @@ impl GroupChatRepository for MockGroupChatRepository {
 }
 
 #[derive(Debug, Clone)]
-pub struct GroupChatRepositoryImpl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> {
+pub struct GroupChatRepositoryImpl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> {
   event_store: ES,
   snapshot_interval: usize,
 }
 
-unsafe impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> Sync
-  for GroupChatRepositoryImpl<ES>
-{
-}
+unsafe impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> Sync for GroupChatRepositoryImpl<ES> {}
 
-unsafe impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> Send
-  for GroupChatRepositoryImpl<ES>
-{
-}
+unsafe impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> Send for GroupChatRepositoryImpl<ES> {}
 
-impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> GroupChatRepositoryImpl<ES> {
+impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> GroupChatRepositoryImpl<ES> {
   /// コンストラクタ。
   ///
   /// # 引数
@@ -94,13 +88,25 @@ impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> Gro
 }
 
 #[async_trait::async_trait]
-impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> GroupChatRepository
+impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> GroupChatRepository
   for GroupChatRepositoryImpl<ES>
 {
   async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<(), GroupChatRepositoryError> {
+    let event_envelope = EventEnvelope::new(
+      event.aggregate_id().clone(),
+      event.seq_nr() as SeqNr,
+      event.occurred_at().clone(),
+      event.clone(),
+    );
     let result = match Self::resolve_snapshot(self.snapshot_interval, event.is_created(), snapshot) {
-      Some(snapshot) => self.event_store.persist_event_and_snapshot(event, snapshot).await,
-      None => self.event_store.persist_event(event, snapshot.version()).await,
+      Some(snapshot) => {
+        let snapshot_envelope = SnapshotEnvelope::new(snapshot.clone(), snapshot.seq_nr() as SeqNr);
+        self
+          .event_store
+          .persist_event_and_snapshot(event_envelope, snapshot_envelope)
+          .await
+      }
+      None => self.event_store.persist_event(event_envelope).await,
     };
     match result {
       Ok(_) => Ok(()),
@@ -112,17 +118,24 @@ impl<ES: EventStore<AID = GroupChatId, AG = GroupChat, EV = GroupChatEvent>> Gro
     let snapshot_opt = self.event_store.get_latest_snapshot_by_id(id).await;
     match snapshot_opt {
       Ok(None) => Ok(None),
-      Ok(Some(snapshot)) => {
-        let events = self
-          .event_store
-          .get_events_by_id_since_seq_nr(id, snapshot.seq_nr())
-          .await;
-        match events {
-          Ok(events) => {
-            let result = GroupChat::replay(events, snapshot.clone());
-            Ok(Some(result))
+      Ok(Some(snapshot_read)) => {
+        let (snapshot_envelope_opt, _head_seq_nr) = snapshot_read.into_parts();
+        match snapshot_envelope_opt {
+          None => Ok(None),
+          Some(snapshot_envelope) => {
+            let events = self
+              .event_store
+              .get_events_by_id_since_seq_nr(id, snapshot_envelope.seq_nr())
+              .await;
+            match events {
+              Ok(events) => {
+                let events = events.into_iter().map(|event| event.into_payload()).collect();
+                let result = GroupChat::replay(events, snapshot_envelope.into_aggregate());
+                Ok(Some(result))
+              }
+              Err(error) => Err(GroupChatRepositoryError::FindByIdError(id.clone(), error)),
+            }
           }
-          Err(error) => Err(GroupChatRepositoryError::FindByIdError(id.clone(), error)),
         }
       }
       Err(error) => Err(GroupChatRepositoryError::FindByIdError(id.clone(), error)),

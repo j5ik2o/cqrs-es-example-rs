@@ -6,7 +6,7 @@ use std::str::FromStr;
 use crate::group_chat::ParseError;
 use crate::id_generate;
 use chrono::Utc;
-use event_store_adapter_rs::types::AggregateId;
+use event_store_adapter_rs::AggregateId;
 use serde::{Deserialize, Serialize};
 use ulid_generator_rs::ULID;
 

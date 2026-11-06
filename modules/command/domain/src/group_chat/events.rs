@@ -1,5 +1,4 @@
 use chrono::{DateTime, Utc};
-use event_store_adapter_rs::types::Event;
 use serde::{Deserialize, Serialize};
 use ulid_generator_rs::{ULIDGenerator, ULID};
 
@@ -32,11 +31,9 @@ pub enum GroupChatEvent {
   GroupChatMessageDeleted(GroupChatEventMessageDeletedBody),
 }
 
-impl Event for GroupChatEvent {
-  type AggregateID = GroupChatId;
-  type ID = GroupChatEventId;
-
-  fn id(&self) -> &GroupChatEventId {
+impl GroupChatEvent {
+  /// イベントIDを返す。
+  pub fn id(&self) -> &GroupChatEventId {
     match self {
       GroupChatEvent::GroupChatCreated(event) => &event.id,
       GroupChatEvent::GroupChatDeleted(event) => &event.id,
@@ -49,7 +46,8 @@ impl Event for GroupChatEvent {
     }
   }
 
-  fn seq_nr(&self) -> usize {
+  /// イベントの `seq_nr` を返す。
+  pub fn seq_nr(&self) -> usize {
     match self {
       GroupChatEvent::GroupChatCreated(event) => event.seq_nr,
       GroupChatEvent::GroupChatDeleted(event) => event.seq_nr,
@@ -62,7 +60,8 @@ impl Event for GroupChatEvent {
     }
   }
 
-  fn aggregate_id(&self) -> &GroupChatId {
+  /// 集約IDを返す。
+  pub fn aggregate_id(&self) -> &GroupChatId {
     match self {
       GroupChatEvent::GroupChatCreated(event) => &event.aggregate_id,
       GroupChatEvent::GroupChatDeleted(event) => &event.aggregate_id,
@@ -75,7 +74,8 @@ impl Event for GroupChatEvent {
     }
   }
 
-  fn occurred_at(&self) -> &DateTime<Utc> {
+  /// 発生時刻を返す。
+  pub fn occurred_at(&self) -> &DateTime<Utc> {
     match self {
       GroupChatEvent::GroupChatCreated(event) => &event.occurred_at,
       GroupChatEvent::GroupChatDeleted(event) => &event.occurred_at,
@@ -88,7 +88,8 @@ impl Event for GroupChatEvent {
     }
   }
 
-  fn is_created(&self) -> bool {
+  /// 集約の作成イベントかどうかを返す。
+  pub fn is_created(&self) -> bool {
     match self {
       GroupChatEvent::GroupChatCreated(_) => true,
       _ => false,
@@ -305,7 +306,6 @@ mod tests {
   use crate::group_chat::events::{GroupChatEvent, GroupChatEventCreatedBody};
   use crate::group_chat::{GroupChatId, GroupChatName, Members};
   use crate::user_account::UserAccountId;
-  use event_store_adapter_rs::types::Event;
 
   #[test]
   fn test_to_json() {
