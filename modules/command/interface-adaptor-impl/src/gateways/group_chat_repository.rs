@@ -1,4 +1,4 @@
-use event_store_adapter_rs::{EventEnvelope, EventStore, SeqNr, SnapshotEnvelope};
+use event_store_adapter_rs::{EventEnvelope, EventStore, SeqNr, SnapshotEnvelope, SEQ_NR_MAX};
 use std::collections::{HashMap, VecDeque};
 
 use command_domain::group_chat::GroupChatEvent;
@@ -123,10 +123,12 @@ impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> Group
         match snapshot_envelope_opt {
           None => Ok(None),
           Some(snapshot_envelope) => {
-            let events = self
-              .event_store
-              .get_events_by_id_since_seq_nr(id, snapshot_envelope.seq_nr())
-              .await;
+            // get_events_by_id_since_seq_nr は下限を含む。スナップショット自身のイベントを
+            // 再適用しないよう、次の seq_nr から読む。上限を超える seq_nr は渡せない。
+            let events = match snapshot_envelope.seq_nr().checked_add(1) {
+              Some(start) if start <= SEQ_NR_MAX => self.event_store.get_events_by_id_since_seq_nr(id, start).await,
+              _ => Ok(Vec::new()),
+            };
             match events {
               Ok(events) => {
                 let events = events.into_iter().map(|event| event.into_payload()).collect();
