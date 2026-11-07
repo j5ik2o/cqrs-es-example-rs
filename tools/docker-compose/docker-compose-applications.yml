@@ -22,9 +22,12 @@ services:
       APP__AWS__ACCESS_KEY_ID: x
       APP__AWS__SECRET_ACCESS_KEY: x
     depends_on:
-      - localstack
-      - dynamodb-admin
-      - dynamodb-setup
+      localstack:
+        condition: service_started
+      dynamodb-admin:
+        condition: service_started
+      dynamodb-setup:
+        condition: service_completed_successfully
   read-model-updater-1:
     image: read-model-updater-local:latest-${ARCH}
     container_name: read-model-updater-rs-1
@@ -54,7 +57,7 @@ services:
       dynamodb-admin:
         condition: service_started
       dynamodb-setup:
-        condition: service_started
+        condition: service_completed_successfully
   read-api-server-1:
     image: read-api-server:latest-${ARCH}
     container_name: read-api-server-rs-1
