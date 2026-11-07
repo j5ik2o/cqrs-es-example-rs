@@ -15,42 +15,42 @@ the following, then press the play button.
 ```json
 {
   "groupChatId": "01H7CD0JFZHGYH09AVCP6AD1ZC",
-  "accountId": "01H7C6DWMK1BKS1JYH1XZE529M"
+  "userAccountId": "01H7C6DWMK1BKS1JYH1XZE529M"
 }
 ```
 
-## GetGroupChatSummaries
+## GetGroupChats
 
-Get a summary list of the group chats you have joined
+Get a summary list of the group chats you have joined.
 
-- account_id: browsing account ID
+- userAccountId: browsing account ID
 
 ```graphql
-query GetGroupChatSummaries($accountId: String!) {
-    groupChats: getGroupChats(accountId: $accountId) {
-        groupChats: getGroupChats(accountId: $accountId) { id
-            groupChats: getGroupChatSummaries($accountId: String!
-        }
-    }
+query GetGroupChats($userAccountId: String!) {
+  groupChats: getGroupChats(userAccountId: $userAccountId) {
+    id
+    name
+  }
+}
 ```
 
 ## GetGroupChatNameWithMessages
 
 Get the name of the group chat you are a member of and a list of messages.
 
-- group_chat_id: Target group chat ID
-- account_id: account ID of the browsing account
+- groupChatId: Target group chat ID
+- userAccountId: account ID of the browsing account
 
 ```graphql
-query GetGroupChatNameWithMessages($groupChatId: String!, $accountId: String!) {
-    groupChat: getGroupChat(groupChatId: $groupChatId, accountId: $accountId) {
-        name
-    }
-    messages: getMessages(groupChatId: $groupChatId, accountId: $accountId) {
-        id
-        text
-        createdAt
-    }
+query GetGroupChatNameWithMessages($groupChatId: String!, $userAccountId: String!) {
+  groupChat: getGroupChat(groupChatId: $groupChatId, userAccountId: $userAccountId) {
+    name
+  }
+  messages: getMessages(groupChatId: $groupChatId, userAccountId: $userAccountId) {
+    id
+    text
+    createdAt
+  }
 }
 ```
 
@@ -58,16 +58,16 @@ query GetGroupChatNameWithMessages($groupChatId: String!, $accountId: String!) {
 
 Get a list of members belonging to a group chat in which you are a member.
 
-- group_chat_id: ID of the target group chat
-- account_id: account ID of the browsing account
+- groupChatId: ID of the target group chat
+- userAccountId: account ID of the browsing account
 
 ```graphql
-query GetMembers($groupChatId: String!, $accountId: String!) {
-    members: getMembers(groupChatId: $groupChatId, accountId: $accountId) {
-        id
-        accountId
-        role
-        createdAt
-    }
+query GetMembers($groupChatId: String!, $userAccountId: String!) {
+  members: getMembers(groupChatId: $groupChatId, userAccountId: $userAccountId) {
+    id
+    userAccountId
+    role
+    createdAt
+  }
 }
 ```

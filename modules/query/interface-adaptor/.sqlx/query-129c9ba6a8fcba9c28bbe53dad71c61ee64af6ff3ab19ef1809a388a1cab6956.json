@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at, m.updated_at\n\t\t FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id\n         WHERE gc.disabled = 'false' AND m.disabled = 'false' AND m.id = ?\n           AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)",
+  "query": "SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at\n         FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n         WHERE gc.disabled = 0 AND m.group_chat_id = ?\n\t\t\tAND EXISTS (SELECT 1 FROM members AS requester WHERE requester.group_chat_id = m.group_chat_id AND requester.user_account_id = ?)\n         ORDER BY m.created_at, m.id",
   "describe": {
     "columns": [
       {
@@ -9,7 +9,6 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
-          "char_set": 224,
           "max_size": 256
         }
       },
@@ -19,7 +18,6 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
-          "char_set": 224,
           "max_size": 256
         }
       },
@@ -29,18 +27,16 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
-          "char_set": 224,
           "max_size": 256
         }
       },
       {
         "ordinal": 3,
-        "name": "text",
+        "name": "role",
         "type_info": {
-          "type": "Blob",
-          "flags": "NOT_NULL | BLOB | NO_DEFAULT_VALUE",
-          "char_set": 224,
-          "max_size": 262140
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 256
         }
       },
       {
@@ -49,7 +45,6 @@
         "type_info": {
           "type": "Datetime",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 63,
           "max_size": 19
         }
       },
@@ -59,7 +54,6 @@
         "type_info": {
           "type": "Datetime",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 63,
           "max_size": 19
         }
       }
@@ -76,5 +70,5 @@
       false
     ]
   },
-  "hash": "bb97d66f4c7dca240e9a0f51ff675cc3b3f6cd5f20cd8ada93e6b6354895a4d7"
+  "hash": "129c9ba6a8fcba9c28bbe53dad71c61ee64af6ff3ab19ef1809a388a1cab6956"
 }

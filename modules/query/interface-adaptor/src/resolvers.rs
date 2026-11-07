@@ -1,12 +1,8 @@
 use std::sync::Arc;
 
-use async_graphql::futures_util::Stream;
-use async_graphql::futures_util::StreamExt;
 use async_graphql::{
   Context, EmptyMutation, EmptySubscription, Error, ErrorExtensions, FieldResult, Object, Schema, SchemaBuilder,
-  Subscription,
 };
-use redis::{Client, PubSub};
 use sqlx::MySqlPool;
 
 use crate::gateways::{
@@ -218,8 +214,9 @@ mod tests {
   use std::sync::Arc;
 
   use async_graphql::async_trait::async_trait;
+  use async_graphql::Value;
 
-  use chrono::NaiveDateTime;
+  use chrono::{DateTime, Utc};
 
   use crate::gateways::GroupChatDao;
   use crate::resolvers::{create_schema_builder, ServiceContext};
@@ -235,8 +232,8 @@ mod tests {
         group_chat_id,
         "mock group chat".to_string(),
         "mock owner".to_string(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
       );
       Ok(t1)
     }
@@ -246,8 +243,8 @@ mod tests {
         "1".to_string(),
         "mock group chat".to_string(),
         user_account_id,
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
       );
       Ok(vec![t1])
     }
@@ -263,8 +260,8 @@ mod tests {
         group_chat_id,
         user_account_id,
         "mock member".to_string(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
       );
       Ok(m1)
     }
@@ -279,8 +276,8 @@ mod tests {
         group_chat_id,
         "mock member".to_string(),
         "mock member".to_string(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
       );
       Ok(vec![m1])
     }
@@ -296,8 +293,8 @@ mod tests {
         "mock group chat".to_string(),
         user_account_id,
         "mock message".to_string(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
       );
       Ok(m1)
     }
@@ -312,27 +309,61 @@ mod tests {
         group_chat_id,
         user_account_id,
         "mock message".to_string(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-        NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
+        DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
       );
       Ok(vec![m1])
     }
   }
 
   fn create_schema_on_test() -> ApiSchema {
-    let ctx = ServiceContext::new(
+    create_schema_with_daos(
       Arc::new(MockGroupChatDaoImpl),
       Arc::new(MockMemberDaoImpl),
       Arc::new(MockMessageDaoImpl),
-    );
+    )
+  }
 
+  fn create_schema_with_daos(
+    group_chat_dao: Arc<dyn GroupChatDao>,
+    member_dao: Arc<dyn MemberDao>,
+    message_dao: Arc<dyn MessageDao>,
+  ) -> ApiSchema {
+    let ctx = ServiceContext::new(group_chat_dao, member_dao, message_dao);
     create_schema_builder().data(ctx).finish()
+  }
+
+  fn first_error_code(response: &async_graphql::Response) -> Option<String> {
+    response
+      .errors
+      .first()
+      .and_then(|error| error.extensions.as_ref())
+      .and_then(|extensions| extensions.get("code"))
+      .and_then(|code| match code {
+        Value::String(code) => Some(code.clone()),
+        _ => None,
+      })
+  }
+
+  struct ErrorGroupChatDaoImpl;
+
+  #[async_trait]
+  impl GroupChatDao for ErrorGroupChatDaoImpl {
+    async fn get_group_chat(&self, _: String, _: String) -> Result<GroupChat, GroupChatDaoError> {
+      Err(GroupChatDaoError::NotFoundError("missing group chat".to_string()))
+    }
+
+    async fn get_group_chats(&self, _: String) -> Result<Vec<GroupChat>, GroupChatDaoError> {
+      Err(GroupChatDaoError::OtherError(sqlx::Error::RowNotFound))
+    }
   }
 
   #[tokio::test]
   async fn test_get_group_chat() {
     let result = create_schema_on_test()
-      .execute(r#"{ getGroupChat(groupChatId: "group_chat_id", userAccountId: "user_account_id") { id name } }"#)
+      .execute(
+        r#"{ getGroupChat(groupChatId: "group_chat_id", userAccountId: "user_account_id") { id name createdAt updatedAt } }"#,
+      )
       .await
       .into_result()
       .unwrap()
@@ -342,10 +373,38 @@ mod tests {
       async_graphql::value!({
           "getGroupChat": {
               "id": "group_chat_id",
-              "name": "mock group chat"
+              "name": "mock group chat",
+              "createdAt": "1970-01-01T00:00:00",
+              "updatedAt": "1970-01-01T00:00:00"
           }
       })
     );
+  }
+
+  #[tokio::test]
+  async fn test_get_group_chat_maps_not_found_to_404() {
+    let response = create_schema_with_daos(
+      Arc::new(ErrorGroupChatDaoImpl),
+      Arc::new(MockMemberDaoImpl),
+      Arc::new(MockMessageDaoImpl),
+    )
+    .execute(r#"{ getGroupChat(groupChatId: "group_chat_id", userAccountId: "user_account_id") { id } }"#)
+    .await;
+
+    assert_eq!(first_error_code(&response).as_deref(), Some("404"));
+  }
+
+  #[tokio::test]
+  async fn test_get_group_chats_maps_other_error_to_500() {
+    let response = create_schema_with_daos(
+      Arc::new(ErrorGroupChatDaoImpl),
+      Arc::new(MockMemberDaoImpl),
+      Arc::new(MockMessageDaoImpl),
+    )
+    .execute(r#"{ getGroupChats(userAccountId: "user_account_id") { id } }"#)
+    .await;
+
+    assert_eq!(first_error_code(&response).as_deref(), Some("500"));
   }
 
   #[tokio::test]
