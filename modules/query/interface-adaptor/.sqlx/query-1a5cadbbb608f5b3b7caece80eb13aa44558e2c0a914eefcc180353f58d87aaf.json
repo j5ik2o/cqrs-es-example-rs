@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at\n         FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n         WHERE gc.disabled = 'false' AND m.group_chat_id = ?\n\t\t\tAND EXISTS (SELECT 1 FROM members AS m2 WHERE m2.group_chat_id = m.group_chat_id AND m2.user_account_id = ?)",
+  "query": "SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at\n\t\t FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id\n\t\t WHERE gc.disabled = 0 AND m.group_chat_id = ? AND m.user_account_id = ?",
   "describe": {
     "columns": [
       {
@@ -9,57 +9,42 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
-          "char_set": 224,
           "max_size": 256
         }
       },
       {
         "ordinal": 1,
-        "name": "group_chat_id",
+        "name": "name",
         "type_info": {
           "type": "VarString",
-          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
           "max_size": 256
         }
       },
       {
         "ordinal": 2,
-        "name": "user_account_id",
+        "name": "owner_id",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
-          "char_set": 224,
           "max_size": 256
         }
       },
       {
         "ordinal": 3,
-        "name": "role",
-        "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
-          "char_set": 224,
-          "max_size": 256
-        }
-      },
-      {
-        "ordinal": 4,
         "name": "created_at",
         "type_info": {
           "type": "Datetime",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 63,
           "max_size": 19
         }
       },
       {
-        "ordinal": 5,
+        "ordinal": 4,
         "name": "updated_at",
         "type_info": {
           "type": "Datetime",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 63,
           "max_size": 19
         }
       }
@@ -72,9 +57,8 @@
       false,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "0a2dd717f11121fbf262b46ae53258c6803fe967506ef2d09aebed57c00e1719"
+  "hash": "1a5cadbbb608f5b3b7caece80eb13aa44558e2c0a914eefcc180353f58d87aaf"
 }

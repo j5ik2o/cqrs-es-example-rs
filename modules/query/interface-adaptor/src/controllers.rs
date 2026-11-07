@@ -64,14 +64,13 @@ pub fn create_router(pool: MySqlPool) -> Router {
   let schema = create_schema(pool);
   let serve_dir = ServeDir::new(&EndpointPaths::Assets.as_str()[1..]);
   let service = get_service(serve_dir);
-  let r = Router::new()
+  Router::new()
     .route(EndpointPaths::Root.as_str(), get(hello_read_api))
     .route(EndpointPaths::HealthAlive.as_str(), get(alive))
     .route(EndpointPaths::HealthReady.as_str(), get(ready))
     .route(EndpointPaths::GraphQL.as_str(), get(graphql).post(graphql_handler))
     .nest_service(EndpointPaths::Assets.as_str(), service)
-    .layer(Extension(schema));
-  r
+    .layer(Extension(schema))
 }
 
 #[cfg(test)]
