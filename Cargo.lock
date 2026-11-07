@@ -1235,7 +1235,7 @@ dependencies = [
  "once_cell",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tracing",
  "ulid-generator-rs",
 ]
@@ -1258,7 +1258,7 @@ dependencies = [
  "serde",
  "serde_json",
  "testcontainers",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tower 0.4.13",
 ]
@@ -1292,7 +1292,7 @@ dependencies = [
  "serial_test",
  "sqlx",
  "testcontainers",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tower 0.4.13",
 ]
@@ -1309,7 +1309,7 @@ dependencies = [
  "downcast-rs",
  "event-store-adapter-rs",
  "log",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
 ]
 
@@ -2684,7 +2684,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "downcast-rs",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -3712,7 +3712,7 @@ dependencies = [
  "serial_test",
  "sqlx",
  "testcontainers",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tower 0.4.13",
  "tower-http",
@@ -3837,7 +3837,7 @@ dependencies = [
  "serde_json",
  "simple_logger",
  "sqlx",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -4006,7 +4006,7 @@ dependencies = [
  "serde_json",
  "simple_logger",
  "sqlx",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tracing",
  "tracing-subscriber",
