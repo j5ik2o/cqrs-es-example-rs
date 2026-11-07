@@ -1176,7 +1176,7 @@ dependencies = [
  "mime",
  "once_cell",
  "refinery",
- "refinery-core 0.8.14",
+ "refinery-core",
  "serde",
  "serde_json",
  "serial_test",
@@ -3458,7 +3458,7 @@ dependencies = [
  "once_cell",
  "redis",
  "refinery",
- "refinery-core 0.8.14",
+ "refinery-core",
  "serde",
  "serial_test",
  "sqlx",
@@ -3627,25 +3627,8 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e48a123dfddb4e33b888a233e3dd8f428d0dadbe8a2302177fcad504b9fb0e3"
 dependencies = [
- "refinery-core 0.10.1",
+ "refinery-core",
  "refinery-macros",
-]
-
-[[package]]
-name = "refinery-core"
-version = "0.8.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9bf253999e1899ae476c910b994959e341d84c4389ba9533d3dacbe06df04825"
-dependencies = [
- "async-trait",
- "cfg-if",
- "log",
- "regex",
- "siphasher",
- "thiserror 1.0.69",
- "time",
- "url",
- "walkdir",
 ]
 
 [[package]]
@@ -3675,7 +3658,7 @@ checksum = "623c53cdc704ababffe5361be8cb726f874fcd4e97b945741aa69b15d0406f36"
 dependencies = [
  "proc-macro2",
  "quote",
- "refinery-core 0.10.1",
+ "refinery-core",
  "regex",
  "syn 2.0.119",
 ]
