@@ -41,10 +41,15 @@ pub struct StreamSettings {
   /// 欠番を補うために読む journal テーブル名
   pub journal_table_name: String,
   /// Streams から読み込む最大件数
+  #[serde(default = "default_max_item_count")]
   pub max_item_count: i32,
   /// 新しいレコードを待つ間隔(ミリ秒)
   #[serde(default = "default_poll_interval_millis")]
   pub poll_interval_millis: u64,
+}
+
+fn default_max_item_count() -> i32 {
+  100
 }
 
 fn default_poll_interval_millis() -> u64 {
@@ -82,4 +87,26 @@ pub async fn create_aws_config(aws_settings: &AwsSettings) -> SdkConfig {
     ));
   }
   config_loader.load().await
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn should_default_max_item_count_and_poll_interval() {
+    let source = config::File::from_str(
+      "head_table_name = \"head\"\njournal_table_name = \"journal\"\n",
+      config::FileFormat::Toml,
+    );
+    let settings: StreamSettings = config::Config::builder()
+      .add_source(source)
+      .build()
+      .unwrap()
+      .try_deserialize()
+      .unwrap();
+
+    assert_eq!(100, settings.max_item_count);
+    assert_eq!(1000, settings.poll_interval_millis);
+  }
 }

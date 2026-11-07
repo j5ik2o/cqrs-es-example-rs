@@ -130,5 +130,5 @@ output "aurora_cluster_master_username" {
 
 output "mysql_url" {
   sensitive = true
-  value  = "mysql://${module.aurora.cluster_master_username}:${module.aurora.cluster_master_password}@${module.aurora.cluster_endpoint}/${module.aurora.cluster_database_name}"
+  value     = "mysql://${module.aurora.cluster_master_username}:${module.aurora.cluster_master_password}@${module.aurora.cluster_endpoint}/${module.aurora.cluster_database_name}"
 }

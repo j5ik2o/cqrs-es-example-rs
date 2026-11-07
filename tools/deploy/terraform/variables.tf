@@ -23,7 +23,7 @@ variable "vpc_cidr" {
 }
 
 variable "aws_subnet_public" {
-  type    = list(string)
+  type = list(string)
   default = [
     "10.0.1.0/24",
     "10.0.2.0/24",
@@ -32,7 +32,7 @@ variable "aws_subnet_public" {
 }
 
 variable "aws_subnet_private" {
-  type    = list(string)
+  type = list(string)
   default = [
     "10.0.4.0/24",
     "10.0.5.0/24",
@@ -41,7 +41,7 @@ variable "aws_subnet_private" {
 }
 
 variable "aws_subnet_database" {
-  type    = list(string)
+  type = list(string)
   default = [
     "10.0.20.0/24",
     "10.0.21.0/24"
@@ -113,7 +113,7 @@ variable "eks_auth_accounts" {
 
 variable "eks_auth_roles" {
   description = "Additional IAM roles to add to the aws-auth configmap."
-  type        = list(object({
+  type = list(object({
     rolearn  = string
     username = string
     groups   = list(string)
@@ -123,7 +123,7 @@ variable "eks_auth_roles" {
     {
       rolearn  = "arn:aws:iam::66666666666:role/role1"
       username = "role1"
-      groups   = [
+      groups = [
         "system:masters"
       ]
     },
@@ -132,7 +132,7 @@ variable "eks_auth_roles" {
 
 variable "eks_auth_users" {
   description = "Additional IAM users to add to the aws-auth configmap."
-  type        = list(object({
+  type = list(object({
     userarn  = string
     username = string
     groups   = list(string)
@@ -142,14 +142,14 @@ variable "eks_auth_users" {
     {
       userarn  = "arn:aws:iam::66666666666:user/user1"
       username = "user1"
-      groups   = [
+      groups = [
         "system:masters"
       ]
     },
     {
       userarn  = "arn:aws:iam::66666666666:user/user2"
       username = "user2"
-      groups   = [
+      groups = [
         "system:masters"
       ]
     },

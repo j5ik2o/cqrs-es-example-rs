@@ -2,6 +2,10 @@ output "aws_dynamodb_table_journal_table_name" {
   value = concat(aws_dynamodb_table.journal-table.*.name, [""])[0]
 }
 
+output "aws_dynamodb_table_journal_table_arn" {
+  value = concat(aws_dynamodb_table.journal-table.*.arn, [""])[0]
+}
+
 output "aws_dynamodb_table_snapshot_table_name" {
   value = concat(aws_dynamodb_table.snapshot-table.*.name, [""])[0]
 }

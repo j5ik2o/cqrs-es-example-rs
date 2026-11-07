@@ -55,6 +55,27 @@ datadog-api-key = "xxxx"
 read_model_updater_tag = "9ed584699fe19cab82121fae2d4ac7f1eee2e49089ba463cdd7378085ccc7b39-amd64"
 ```
 
+## Three-table layout and existing data
+
+ESA v5 uses three DynamoDB tables, `journal`, `snapshot`, and `head`, and every table is keyed by `aid`.
+The hash and range keys of `journal` and `snapshot` change, so applying this configuration to an
+existing environment replaces both tables. Existing events are not kept.
+
+Before you apply it to an existing environment:
+
+1. Back up the existing `journal` and `snapshot` tables. For an on-demand backup, run
+   `aws dynamodb create-backup --table-name <table> --backup-name <name>`.
+2. Decide whether the existing data must be kept. This sample does not ship a migration script and
+   assumes the tables are recreated, as they are in LocalStack.
+3. If the data must be kept, create the three new tables and rewrite the items with the new keys.
+   Do not delete the old tables until the rewrite is complete.
+4. Run `makers terraform-plan` and confirm that `journal` and `snapshot` are replacements, then run
+   `makers terraform-apply`.
+
+You may add `prevent_destroy = true` to the `journal` table to prevent accidental deletion. In that
+case `makers terraform-destroy` fails; remove the setting only when you intend to destroy the
+environment.
+
 ## terraform init
 
 ```shell

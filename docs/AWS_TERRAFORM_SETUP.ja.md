@@ -55,6 +55,26 @@ datadog-api-key = "xxxx"
 read_model_updater_tag     = "9ed584699fe19cab82121fae2d4ac7f1eee2e49089ba463cdd7378085ccc7b39-amd64"
 ```
 
+## 3 テーブル構成への変更と既存データ
+
+ESA v5 では DynamoDB のテーブルが journal / snapshot / head の 3 つになり、キーは `aid` に統一されます。
+journal と snapshot のハッシュキーとソートキーが変わるため、既存環境に適用すると Terraform は
+テーブルを作り直します。既存のイベントは残りません。
+
+既存環境に適用する前に、次の準備をしてください。
+
+1. 既存の journal と snapshot のバックアップを取る。オンデマンドバックアップを使う場合は
+   `aws dynamodb create-backup --table-name <table> --backup-name <name>` を実行する。
+2. 既存データを残す必要があるかを決める。このサンプルは移行スクリプトを提供せず、
+   LocalStack と同じくテーブルを作り直す前提にしている。
+3. データを残す場合は、新しい 3 テーブルを作成し、項目を新しいキーで書き直す。
+   書き直しが終わるまで旧テーブルは削除しない。
+4. `makers terraform-plan` で journal と snapshot が置換対象になっていることを確認してから
+   `makers terraform-apply` を実行する。
+
+誤削除を防ぐため、journal テーブルに `prevent_destroy = true` を追加してもよい。ただし、
+その場合は `makers terraform-destroy` が失敗するので、削除するときだけ外す。
+
 ## terraform init
 
 ```shell
