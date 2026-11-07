@@ -11,13 +11,20 @@ if [ ! -f "$ROOT_DIR/common.env" ]; then
   cp "$ROOT_DIR/common.env.default" "$ROOT_DIR/common.env"
 fi
 
+export AWS_REGION=${AWS_REGION:-ap-northeast-1}
+export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-$AWS_REGION}
+
 LAMBDA_BOOTSTRAP_PATH="$ROOT_DIR/dist/lambda/read-model-updater/bootstrap"
+
+# The local read model updater runs in docker-compose. The Lambda updater is
+# optional, so it is deployed only when explicitly requested.
+DEPLOY_LAMBDA=${DOCKER_COMPOSE_UP_DEPLOY_LAMBDA:-0}
 
 build_lambda() {
   "$ROOT_DIR/tools/scripts/build-read-model-updater-lambda.sh"
 }
 
-if [ "${DOCKER_COMPOSE_UP_BUILD_LAMBDA:-1}" = "1" ]; then
+if [ "${DEPLOY_LAMBDA}" = "1" ] && [ "${DOCKER_COMPOSE_UP_BUILD_LAMBDA:-1}" = "1" ]; then
   REBUILD=0
   if [ ! -f "$LAMBDA_BOOTSTRAP_PATH" ]; then
     REBUILD=1
@@ -60,7 +67,7 @@ shift $(($OPTIND - 1))
 docker compose -p cqrs-es-example-rs -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} down -v --remove-orphans
 docker compose -p cqrs-es-example-rs  -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} up --remove-orphans --force-recreate --renew-anon-volumes -d "$@"
 
-if [ "${DOCKER_COMPOSE_UP_DEPLOY_LAMBDA:-1}" = "1" ]; then
+if [ "${DEPLOY_LAMBDA}" = "1" ]; then
 
   export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
   export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}

@@ -723,6 +723,6 @@ make build
 '''
 
 [tasks.docker-compose-e2e-test]
-description = "Docker Composeを起動します"
+description = "Docker Composeでe2eを実行します"
 workspace = false
 command = "./tools/scripts/docker-compose-e2e-test.sh"
