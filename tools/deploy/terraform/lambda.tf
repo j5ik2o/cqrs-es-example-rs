@@ -24,12 +24,14 @@ module "lambda_function" {
     "RUST_LOG"              = "debug"
     "RUST_BACKTRACE"        = "full"
     "APP__DATABASE__URL"    = "mysql://${module.aurora.cluster_master_username}:${module.aurora.cluster_master_password}@${module.aurora.cluster_endpoint}/${module.aurora.cluster_database_name}"
-    "APP__AWS__REGION_NAME" = "ap-northeast-1"
+    "APP__AWS__REGION_NAME"                = "ap-northeast-1"
+    "APP__STREAM__HEAD_TABLE_NAME"         = module.event_sourcing.aws_dynamodb_table_head_table_name
+    "APP__STREAM__JOURNAL_TABLE_NAME"      = module.event_sourcing.aws_dynamodb_table_journal_table_name
   }
 
   event_source_mapping = {
     dynamodb = {
-      event_source_arn  = module.event_sourcing.aws_dynamodb_table_journal_stream_arn
+      event_source_arn  = module.event_sourcing.aws_dynamodb_table_head_stream_arn
       starting_position = "LATEST"
     }
   }
@@ -37,7 +39,7 @@ module "lambda_function" {
   allowed_triggers = {
     dynamodb = {
       principal  = "dynamodb.amazonaws.com"
-      source_arn = module.event_sourcing.aws_dynamodb_table_journal_stream_arn
+      source_arn = module.event_sourcing.aws_dynamodb_table_head_stream_arn
     }
   }
   create_current_version_allowed_triggers = false

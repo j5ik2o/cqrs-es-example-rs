@@ -1,178 +1,263 @@
+use std::collections::HashMap;
+use std::str::FromStr;
+
 use aws_lambda_events::dynamodb;
-use command_interface_adaptor_if::{GroupChatReadModelUpdateDao, GroupChatReadModelUpdateDaoError};
+use chrono::{DateTime, Utc};
 use lambda_runtime::LambdaEvent;
 use serde_dynamo::AttributeValue;
-use serde_json::Value;
-use std::string::FromUtf8Error;
 use thiserror::Error;
 
-use command_domain::group_chat::GroupChatEvent;
-use command_domain::group_chat::MemberRole;
+use command_domain::group_chat::{GroupChatEvent, GroupChatId};
+use command_interface_adaptor_if::{GroupChatReadModelUpdateDao, GroupChatReadModelUpdateDaoError, ReadModelEvent};
+
+pub mod journal;
+
+pub use journal::{DynamoDbJournalReader, JournalReadError, JournalReader};
+
+/// 設定項目を保持する予約済みの集約 ID。ヘッドの Streams に一度だけ流れる。
+const CONFIG_AGGREGATE_ID: &str = "__config__";
+
+/// 購読対象の集約型名。
+const GROUP_CHAT_TYPE_NAME: &str = "GroupChat";
 
 #[derive(Debug, Error)]
 pub enum UpdateReadModelError {
-  #[error("Payload not found.")]
-  PayloadNotFound,
-  #[error("Payload parse error: {0:?}")]
-  PayloadParseError(FromUtf8Error),
-  #[error("Unexpected type: {0:?}")]
-  UnexpectedType(Option<AttributeValue>),
-  #[error("GroupChatReadModelUpdateError: {0:?}")]
-  GroupChatReadModelUpdateError(GroupChatReadModelUpdateDaoError),
+  #[error("Unexpected stream event name: {0}")]
+  UnexpectedEventName(String),
+  #[error("The stream record has no new image")]
+  MissingNewImage,
+  #[error("The head item is missing the {0} attribute")]
+  MissingAttribute(&'static str),
+  #[error("The head attribute {0} has an unexpected type")]
+  UnexpectedAttributeType(&'static str),
+  #[error("The head attribute {name} is not a valid number: {value}")]
+  InvalidNumber { name: &'static str, value: String },
+  #[error("The head attribute occurred_at is out of range: {0}")]
+  InvalidOccurredAt(String),
+  #[error("The aggregate id is invalid: {aggregate_id}: {reason}")]
+  InvalidAggregateId { aggregate_id: String, reason: String },
+  #[error("Failed to deserialize the event payload: {0}")]
+  Payload(String),
+  #[error("Journal read failed: {0}")]
+  JournalRead(#[from] JournalReadError),
+  #[error("The journal is missing the contiguous seq_nr range {from_seq_nr}..={to_seq_nr} for {aggregate_id}")]
+  JournalGap {
+    aggregate_id: String,
+    from_seq_nr: u64,
+    to_seq_nr: u64,
+  },
+  #[error("Read model update failed: {0}")]
+  ReadModelUpdate(#[from] GroupChatReadModelUpdateDaoError),
 }
 
-// NOTE: イベントのシーケンス番号とリードモデルのシーケンス番号がズレないことを前提にしているため
-// DynamoDBを初期化した際は、必ずAurora側のデータベースも初期化すること
-pub async fn update_read_model<D: GroupChatReadModelUpdateDao>(
+/// ヘッドの Streams のイベントをリードモデルへ反映する。
+///
+/// INSERT と MODIFY の両方で `NewImage` を読み、`__config__` と他の型の集約は読み飛ばす。
+/// 重複と古い `seq_nr` は捨て、欠番は journal から補う。
+pub async fn update_read_model<D, J>(
   group_chat_read_model_dao: &D,
+  journal_reader: &J,
   event: LambdaEvent<dynamodb::Event>,
-) -> Result<(), UpdateReadModelError> {
+) -> Result<(), UpdateReadModelError>
+where
+  D: GroupChatReadModelUpdateDao,
+  J: JournalReader, {
   tracing::info!("Rust function invoked: event = {:?}", event);
-  for record in event.payload.records {
-    let attribute_values = record.change.new_image.clone().into_inner();
-    tracing::info!("attribute_values = {:?}", attribute_values);
-    let payload_str = match attribute_values.get("payload") {
-      None => return Err(UpdateReadModelError::PayloadNotFound),
-      Some(AttributeValue::S(v)) => v.clone(),
-      Some(AttributeValue::B(v)) => match String::from_utf8(v.clone()) {
-        Ok(s) => s,
-        Err(error) => {
-          return Err(UpdateReadModelError::PayloadParseError(error));
-        }
-      },
-      unexpected_type => return Err(UpdateReadModelError::UnexpectedType(unexpected_type.cloned())),
-    };
-    tracing::info!("payload_str = {}", payload_str);
-    let type_value_str = get_type_string(&payload_str);
-    tracing::info!("type_value_str = {}", type_value_str);
-    match type_value_str {
-      s if s.starts_with("GroupChat") => {
-        let ev = serde_json::from_str::<GroupChatEvent>(&payload_str).unwrap();
-        tracing::info!("ev = {:?}", ev);
-        match &ev {
-          GroupChatEvent::GroupChatCreated(body) => {
-            group_chat_read_model_dao
-              .insert_group_chat(
-                body.aggregate_id.clone(),
-                body.name.clone(),
-                body
-                  .members
-                  .administrator_id()
-                  .breach_encapsulation_of_user_account_id()
-                  .clone(),
-                body.occurred_at,
-              )
-              .await
-              .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?;
-            group_chat_read_model_dao
-              .insert_member(
-                body.aggregate_id.clone(),
-                body.members.administrator_id().breach_encapsulation_of_id().clone(),
-                body
-                  .members
-                  .administrator_id()
-                  .breach_encapsulation_of_user_account_id()
-                  .clone(),
-                MemberRole::Admin,
-                body.occurred_at,
-              )
-              .await
-              .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?;
-          }
-          GroupChatEvent::GroupChatDeleted(body) => group_chat_read_model_dao
-            .delete_group_chat(body.aggregate_id.clone(), body.occurred_at.clone())
-            .await
-            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
-          GroupChatEvent::GroupChatRenamed(body) => group_chat_read_model_dao
-            .rename_group_chat(body.aggregate_id.clone(), body.name.clone(), body.occurred_at.clone())
-            .await
-            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
-          GroupChatEvent::GroupChatMemberAdded(body) => group_chat_read_model_dao
-            .insert_member(
-              body.aggregate_id.clone(),
-              body.member.breach_encapsulation_of_id().clone(),
-              body.member.breach_encapsulation_of_user_account_id().clone(),
-              body.member.breach_encapsulation_of_role().clone(),
-              body.occurred_at,
-            )
-            .await
-            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
-          GroupChatEvent::GroupChatMemberRemoved(body) => group_chat_read_model_dao
-            .delete_member(body.aggregate_id.clone(), body.user_account_id.clone())
-            .await
-            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
-          GroupChatEvent::GroupChatMessagePosted(body) => group_chat_read_model_dao
-            .insert_message(
-              body.aggregate_id.clone(),
-              body.message.clone(),
-              body.occurred_at.clone(),
-            )
-            .await
-            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
-          GroupChatEvent::GroupChatMessageEdited(body) => group_chat_read_model_dao
-            .update_message(
-              body.aggregate_id.clone(),
-              body.message.clone(),
-              body.occurred_at.clone(),
-            )
-            .await
-            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
-          GroupChatEvent::GroupChatMessageDeleted(body) => group_chat_read_model_dao
-            .delete_message(body.message_id.clone(), body.occurred_at.clone())
-            .await
-            .map_err(UpdateReadModelError::GroupChatReadModelUpdateError)?,
-        }
-      }
-      _ => {}
-    }
-  }
+  process_records(group_chat_read_model_dao, journal_reader, event.payload.records).await?;
   tracing::info!("Rust function responds to event");
   Ok(())
 }
 
-/// DynamoDBのストリームから取得したイベントのペイロードからイベントタイプを取得する
-fn get_type_string(payload_str: &String) -> String {
-  let parsed: Value = serde_json::from_str(payload_str).unwrap();
-  let type_value = &parsed["type"];
-  let type_value_str = type_value.as_str().unwrap();
-  type_value_str.to_string()
+/// Streams のレコード列をリードモデルへ反映する。
+pub async fn process_records<D, J>(
+  group_chat_read_model_dao: &D,
+  journal_reader: &J,
+  records: Vec<dynamodb::EventRecord>,
+) -> Result<(), UpdateReadModelError>
+where
+  D: GroupChatReadModelUpdateDao,
+  J: JournalReader, {
+  for record in records {
+    let Some((aggregate_id, events)) = parse_head_record(&record)? else {
+      continue;
+    };
+    for event in events {
+      apply_head_event(group_chat_read_model_dao, journal_reader, &aggregate_id, event).await?;
+    }
+  }
+  Ok(())
 }
 
-// ---
+/// ヘッド遷移 1 件を適用する。現在の位置より後ろのイベントだけを、journal で欠番を
+/// 埋めたうえで、1 つのトランザクションで適用する。
+async fn apply_head_event<D, J>(
+  group_chat_read_model_dao: &D,
+  journal_reader: &J,
+  aggregate_id: &GroupChatId,
+  event: ReadModelEvent,
+) -> Result<(), UpdateReadModelError>
+where
+  D: GroupChatReadModelUpdateDao,
+  J: JournalReader, {
+  let position = group_chat_read_model_dao.get_position(aggregate_id).await?;
+  if event.seq_nr() <= position {
+    tracing::debug!(
+      "skip duplicate or stale head event: aggregate_id = {}, seq_nr = {}, position = {}",
+      aggregate_id,
+      event.seq_nr(),
+      position
+    );
+    return Ok(());
+  }
+  let mut pending = Vec::new();
+  if event.seq_nr() > position + 1 {
+    let from_seq_nr = position + 1;
+    let to_seq_nr = event.seq_nr() - 1;
+    let journal_events = journal_reader.read_events(aggregate_id, from_seq_nr, to_seq_nr).await?;
+    require_contiguous(aggregate_id, from_seq_nr, to_seq_nr, &journal_events)?;
+    pending.extend(journal_events);
+  }
+  pending.push(event);
+  group_chat_read_model_dao.apply_events(aggregate_id, &pending).await?;
+  Ok(())
+}
 
-#[cfg(test)]
-mod tests {
-  use aws_lambda_events::dynamodb::Event;
-  use chrono::Utc;
-  use command_domain::id_generate;
-  use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::MockGroupChatReadModelUpdateDao;
-  use http::{HeaderMap, HeaderValue};
-  use lambda_runtime::Context;
-  use once_cell::sync::Lazy;
+fn require_contiguous(
+  aggregate_id: &GroupChatId,
+  from_seq_nr: u64,
+  to_seq_nr: u64,
+  events: &[ReadModelEvent],
+) -> Result<(), UpdateReadModelError> {
+  let mut expected = from_seq_nr;
+  for event in events {
+    if event.seq_nr() != expected {
+      return Err(UpdateReadModelError::JournalGap {
+        aggregate_id: aggregate_id.to_string(),
+        from_seq_nr,
+        to_seq_nr,
+      });
+    }
+    expected += 1;
+  }
+  if expected != to_seq_nr + 1 {
+    return Err(UpdateReadModelError::JournalGap {
+      aggregate_id: aggregate_id.to_string(),
+      from_seq_nr,
+      to_seq_nr,
+    });
+  }
+  Ok(())
+}
 
-  use super::*;
+/// ヘッドの Streams レコードから集約 ID とイベントを組み立てる。
+///
+/// 設定項目、他の型の集約、REMOVE は `None` を返す。
+fn parse_head_record(
+  record: &dynamodb::EventRecord,
+) -> Result<Option<(GroupChatId, Vec<ReadModelEvent>)>, UpdateReadModelError> {
+  match record.event_name.as_str() {
+    "INSERT" | "MODIFY" => {}
+    "REMOVE" => return Ok(None),
+    other => return Err(UpdateReadModelError::UnexpectedEventName(other.to_string())),
+  }
+  let image = &record.change.new_image;
+  let aid = match image.get("aid") {
+    Some(AttributeValue::S(value)) => value.clone(),
+    Some(_) => return Err(UpdateReadModelError::UnexpectedAttributeType("aid")),
+    None => return Err(UpdateReadModelError::MissingAttribute("aid")),
+  };
+  if aid == CONFIG_AGGREGATE_ID {
+    return Ok(None);
+  }
+  let type_name = match image.get("type_name") {
+    Some(AttributeValue::S(value)) => value.clone(),
+    Some(_) => return Err(UpdateReadModelError::UnexpectedAttributeType("type_name")),
+    None => aid
+      .split_once('-')
+      .map(|(name, _)| name.to_string())
+      .unwrap_or_default(),
+  };
+  if type_name != GROUP_CHAT_TYPE_NAME {
+    return Ok(None);
+  }
+  let aggregate_id = GroupChatId::from_str(&aid).map_err(|e| UpdateReadModelError::InvalidAggregateId {
+    aggregate_id: aid.clone(),
+    reason: e.to_string(),
+  })?;
+  let events = parse_head_events(image)?;
+  Ok(Some((aggregate_id, events)))
+}
 
-  static REQUEST_ID: Lazy<String> = Lazy::new(|| id_generate().to_string());
-  static DEADLINE_MS: Lazy<String> = Lazy::new(|| (Utc::now().timestamp_millis() + 3000).to_string());
+fn parse_head_events(image: &HashMap<String, AttributeValue>) -> Result<Vec<ReadModelEvent>, UpdateReadModelError> {
+  let items = match image.get("events") {
+    Some(AttributeValue::L(items)) => items,
+    Some(_) => return Err(UpdateReadModelError::UnexpectedAttributeType("events")),
+    None => return Err(UpdateReadModelError::MissingAttribute("events")),
+  };
+  let mut events = Vec::with_capacity(items.len());
+  for item in items {
+    match item {
+      AttributeValue::M(fields) => events.push(parse_head_event(fields)?),
+      _ => return Err(UpdateReadModelError::UnexpectedAttributeType("events")),
+    }
+  }
+  events.sort_by_key(ReadModelEvent::seq_nr);
+  Ok(events)
+}
 
-  /// DynamoDBのイベント(ダミー)のペイロードからイベントタイプを取得する
-  #[tokio::test]
-  async fn example_dynamodb_event() {
-    let data = include_bytes!("../fixtures/example-dynamodb-event.json");
-    let parsed: Event = serde_json::from_slice(data).unwrap();
-    let output: String = serde_json::to_string(&parsed).unwrap();
-    // println!("output: {}", output);
-    let reparsed: Event = serde_json::from_slice(output.as_bytes()).unwrap();
-    assert_eq!(parsed, reparsed);
+fn parse_head_event(fields: &HashMap<String, AttributeValue>) -> Result<ReadModelEvent, UpdateReadModelError> {
+  let seq_nr_value = number_attribute(fields, "seq_nr")?;
+  let seq_nr = u64::try_from(seq_nr_value).map_err(|_| UpdateReadModelError::InvalidNumber {
+    name: "seq_nr",
+    value: seq_nr_value.to_string(),
+  })?;
+  let occurred_at = number_attribute(fields, "occurred_at")?;
+  let _manifest = string_attribute(fields, "manifest")?;
+  let payload = bytes_attribute(fields, "payload")?;
+  let event =
+    serde_json::from_slice::<GroupChatEvent>(&payload).map_err(|e| UpdateReadModelError::Payload(e.to_string()))?;
+  Ok(ReadModelEvent::new(seq_nr, nanos_to_datetime(occurred_at)?, event))
+}
 
-    let mut headers = HeaderMap::new();
-    headers.insert("lambda-runtime-aws-request-id", HeaderValue::from_static(&REQUEST_ID));
-    headers.insert("lambda-runtime-deadline-ms", HeaderValue::from_static(&DEADLINE_MS));
-    let context = Context::try_from(headers).unwrap();
-    let le = LambdaEvent::new(parsed, context);
-
-    let dao = MockGroupChatReadModelUpdateDao;
-
-    update_read_model(&dao, le).await.unwrap();
+fn number_attribute(item: &HashMap<String, AttributeValue>, name: &'static str) -> Result<i64, UpdateReadModelError> {
+  match item.get(name) {
+    None => Err(UpdateReadModelError::MissingAttribute(name)),
+    Some(AttributeValue::N(value)) => value.parse::<i64>().map_err(|_| UpdateReadModelError::InvalidNumber {
+      name,
+      value: value.clone(),
+    }),
+    Some(_) => Err(UpdateReadModelError::UnexpectedAttributeType(name)),
   }
 }
+
+fn string_attribute(
+  item: &HashMap<String, AttributeValue>,
+  name: &'static str,
+) -> Result<String, UpdateReadModelError> {
+  match item.get(name) {
+    None => Err(UpdateReadModelError::MissingAttribute(name)),
+    Some(AttributeValue::S(value)) => Ok(value.clone()),
+    Some(_) => Err(UpdateReadModelError::UnexpectedAttributeType(name)),
+  }
+}
+
+fn bytes_attribute(
+  item: &HashMap<String, AttributeValue>,
+  name: &'static str,
+) -> Result<Vec<u8>, UpdateReadModelError> {
+  match item.get(name) {
+    None => Err(UpdateReadModelError::MissingAttribute(name)),
+    Some(AttributeValue::B(value)) => Ok(value.clone()),
+    Some(AttributeValue::S(value)) => Ok(value.as_bytes().to_vec()),
+    Some(_) => Err(UpdateReadModelError::UnexpectedAttributeType(name)),
+  }
+}
+
+fn nanos_to_datetime(nanos: i64) -> Result<DateTime<Utc>, UpdateReadModelError> {
+  let seconds = nanos.div_euclid(1_000_000_000);
+  let subsec_nanos = nanos.rem_euclid(1_000_000_000) as u32;
+  DateTime::from_timestamp(seconds, subsec_nanos).ok_or(UpdateReadModelError::InvalidOccurredAt(nanos.to_string()))
+}
+
+#[cfg(test)]
+mod tests;

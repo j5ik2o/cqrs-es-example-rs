@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT seq_nr FROM read_model_positions WHERE aggregate_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "seq_nr",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 20
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b0ecf04251db7cee9e3888f397410fb9414746c4647cb3a3e822de3820dd95fc"
+}

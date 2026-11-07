@@ -1,14 +1,15 @@
 extern crate log;
 
 use anyhow::Result;
+use aws_sdk_dynamodb::Client as DynamoDBClient;
 use std::time::Duration;
 
 use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
 use lambda_runtime::{service_fn, Error};
-use read_model_updater::load_app_config;
+use read_model_updater::{create_aws_config, load_app_config};
 use sqlx::mysql::{MySqlConnectOptions, MySqlPoolOptions, MySqlSslMode};
 
-use rmu::update_read_model;
+use rmu::{update_read_model, DynamoDbJournalReader};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -39,10 +40,16 @@ async fn main() -> Result<(), Error> {
   tracing::info!("main: connect");
   let dao = GroupChatReadModelUpdateDaoImpl::new(pool);
 
+  let stream_settings = app_settings
+    .stream
+    .ok_or_else(|| anyhow::anyhow!("stream settings are not configured"))?;
+  let aws_config = create_aws_config(&app_settings.aws).await;
+  let journal_reader = DynamoDbJournalReader::new(DynamoDBClient::new(&aws_config), stream_settings.journal_table_name);
+
   tracing::info!("main: start");
   lambda_runtime::run(service_fn(|event| async {
     tracing::info!("function: start");
-    let result = update_read_model(&dao, event).await;
+    let result = update_read_model(&dao, &journal_reader, event).await;
     tracing::info!("function: finished: {:?}", result);
     result
   }))

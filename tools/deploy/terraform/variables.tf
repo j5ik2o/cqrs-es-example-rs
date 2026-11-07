@@ -56,15 +56,15 @@ variable "event_sourcing_journal_name" {
   type = string
 }
 
-variable "event_sourcing_journal_gsi_name" {
-  type = string
-}
-
 variable "event_sourcing_snapshot_name" {
   type = string
 }
 
-variable "event_sourcing_snapshot_gsi_name" {
+variable "event_sourcing_snapshot_history_index_name" {
+  type = string
+}
+
+variable "event_sourcing_head_name" {
   type = string
 }
 

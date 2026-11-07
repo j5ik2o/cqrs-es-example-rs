@@ -1,26 +1,27 @@
 use std::collections::HashMap;
-use std::mem::size_of;
+use std::time::Duration;
 
 use anyhow::Result;
-use aws_config::meta::region::RegionProviderChain;
 use aws_lambda_events::dynamodb;
 use aws_lambda_events::dynamodb::{StreamRecord, StreamViewType};
 use aws_sdk_dynamodb::Client as DynamoDBClient;
-use aws_sdk_dynamodbstreams::config::{Credentials, Region};
 use aws_sdk_dynamodbstreams::types::ShardIteratorType;
 use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
 use chrono::Utc;
 use command_domain::id_generate;
+use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
 use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
-use http::{HeaderMap, HeaderValue};
-use lambda_runtime::{Context, LambdaEvent};
 
+use rmu::{process_records, DynamoDbJournalReader, JournalReader};
 use serde_dynamo::Item;
-use sqlx::{MySql, MySqlPool, Pool};
+use sqlx::MySqlPool;
 
-use read_model_updater::{load_app_config, AwsSettings};
+use read_model_updater::{create_aws_config, load_app_config};
 
-// ローカル版のRead Model Updater
+/// ローカル版の Read Model Updater。
+///
+/// 集約 head テーブルの DynamoDB Streams を購読する。Lambda の代わりに同じ処理関数を
+/// 呼び出し、処理位置は `read_model_positions` に記録する。
 #[tokio::main]
 async fn main() -> Result<()> {
   tracing_subscriber::fmt()
@@ -31,34 +32,41 @@ async fn main() -> Result<()> {
     .init();
 
   let app_settings = load_app_config().unwrap();
+  let stream_settings = app_settings
+    .stream
+    .as_ref()
+    .ok_or_else(|| anyhow::anyhow!("stream_settings is not found"))?
+    .clone();
 
   let pool = MySqlPool::connect(&app_settings.database.url).await?;
-  let dynamodb_client = create_aws_client(&app_settings.aws).await;
-  let dynamodb_streams_client = create_aws_dynamodb_streams_client(&app_settings.aws).await;
-  if let Some(stream_settings) = &app_settings.stream {
-    loop {
-      match stream_events_driver(
-        &dynamodb_client,
-        &dynamodb_streams_client,
-        pool.clone(),
-        &stream_settings.journal_table_name,
-        stream_settings.max_item_count,
-      )
-      .await
-      {
-        Ok(_) => {}
-        Err(err) => {
-          tracing::error!(
-            "An error has occurred, but stream processing is restarted.\
+  let aws_config = create_aws_config(&app_settings.aws).await;
+  let dynamodb_client = DynamoDBClient::new(&aws_config);
+  let dynamodb_streams_client = DynamoDBStreamsClient::new(&aws_config);
+  let dao = GroupChatReadModelUpdateDaoImpl::new(pool);
+  let journal_reader = DynamoDbJournalReader::new(dynamodb_client.clone(), stream_settings.journal_table_name.clone());
+
+  loop {
+    match stream_events_driver(
+      &dynamodb_client,
+      &dynamodb_streams_client,
+      &dao,
+      &journal_reader,
+      &stream_settings.head_table_name,
+      stream_settings.max_item_count,
+      Duration::from_millis(stream_settings.poll_interval_millis),
+    )
+    .await
+    {
+      Ok(_) => {}
+      Err(err) => {
+        tracing::error!(
+          "An error has occurred, but stream processing is restarted.\
           If this error persists, the read model condition may be incorrect.: {}",
-            err
-          );
-          continue;
-        }
+          err
+        );
+        tokio::time::sleep(Duration::from_secs(1)).await;
       }
     }
-  } else {
-    Err(anyhow::anyhow!("stream_settings is not found"))
   }
 }
 
@@ -84,198 +92,158 @@ fn convert_to(src: aws_sdk_dynamodbstreams::types::AttributeValue) -> serde_dyna
   }
 }
 
-async fn stream_events_driver(
+fn convert_item(
+  item: &HashMap<String, aws_sdk_dynamodbstreams::types::AttributeValue>,
+) -> HashMap<String, serde_dynamo::AttributeValue> {
+  item.iter().map(|(k, v)| (k.clone(), convert_to(v.clone()))).collect()
+}
+
+#[derive(Debug, Clone)]
+enum ShardState {
+  Reading(String),
+  Closed,
+}
+
+async fn stream_events_driver<D, J>(
   dynamodb_client: &DynamoDBClient,
   dynamodb_streams_client: &DynamoDBStreamsClient,
-  pool: Pool<MySql>,
-  journal_table_name: &str,
-  max_item_count: usize,
-) -> Result<()> {
-  let describe_table_out = dynamodb_client
+  dao: &D,
+  journal_reader: &J,
+  head_table_name: &str,
+  max_item_count: i32,
+  poll_interval: Duration,
+) -> Result<()>
+where
+  D: GroupChatReadModelUpdateDao,
+  J: JournalReader, {
+  let describe_table_output = dynamodb_client
     .describe_table()
-    .table_name(journal_table_name)
+    .table_name(head_table_name)
     .send()
     .await?;
-  let stream_arn = describe_table_out.table().unwrap().latest_stream_arn().unwrap();
+  let stream_arn = describe_table_output
+    .table()
+    .and_then(|table| table.latest_stream_arn())
+    .ok_or_else(|| {
+      anyhow::anyhow!(
+        "the head table {} has no DynamoDB Streams; enable Streams with NEW_IMAGE",
+        head_table_name
+      )
+    })?;
 
-  let dao = GroupChatReadModelUpdateDaoImpl::new(pool);
-  let mut last_evaluated_shard_id: Option<String> = None;
+  let mut shard_states: HashMap<String, ShardState> = HashMap::new();
   loop {
-    tracing::info!("stream_arn = {:?}", stream_arn);
-    tracing::info!("last_evaluated_shard_id = {:?}", last_evaluated_shard_id);
-    tracing::info!("max_item_count = {:?}", max_item_count);
-
-    let mut builder = dynamodb_streams_client.describe_stream().stream_arn(stream_arn);
-    if let Some(shard_id) = last_evaluated_shard_id.clone() {
-      builder = builder.exclusive_start_shard_id(shard_id);
-    }
-    let describe_stream_output = builder.send().await?;
-    let shards = describe_stream_output.stream_description().unwrap().shards().to_vec();
-
+    let describe_stream_output = dynamodb_streams_client
+      .describe_stream()
+      .stream_arn(stream_arn)
+      .send()
+      .await?;
+    let shards = describe_stream_output
+      .stream_description()
+      .map(|description| description.shards().to_vec())
+      .unwrap_or_default();
     for shard in shards {
-      tracing::info!("shard = {:?}", shard);
-      let get_shard_iterator_output = dynamodb_streams_client
-        .get_shard_iterator()
-        .stream_arn(stream_arn)
-        .shard_id(shard.shard_id().unwrap())
-        .shard_iterator_type(ShardIteratorType::Latest)
-        .send()
-        .await?;
-      let mut shard_iterator_opt = get_shard_iterator_output.shard_iterator().map(|s| s.to_owned());
-      let mut processed_record_count = 0usize;
-      while shard_iterator_opt.is_some() && processed_record_count < max_item_count {
-        tracing::info!("shard_iterator = {:?}", shard_iterator_opt.clone().unwrap());
+      let Some(shard_id) = shard.shard_id() else {
+        continue;
+      };
+      let shard_id = shard_id.to_string();
+      if matches!(shard_states.get(&shard_id), Some(ShardState::Closed)) {
+        continue;
+      }
+      if !shard_states.contains_key(&shard_id) {
+        let get_shard_iterator_output = dynamodb_streams_client
+          .get_shard_iterator()
+          .stream_arn(stream_arn)
+          .shard_id(&shard_id)
+          .shard_iterator_type(ShardIteratorType::TrimHorizon)
+          .send()
+          .await?;
+        match get_shard_iterator_output.shard_iterator() {
+          Some(iterator) => {
+            shard_states.insert(shard_id.clone(), ShardState::Reading(iterator.to_string()));
+          }
+          None => {
+            shard_states.insert(shard_id.clone(), ShardState::Closed);
+            continue;
+          }
+        }
+      }
+      loop {
+        let iterator = match shard_states.get(&shard_id) {
+          Some(ShardState::Reading(iterator)) => Some(iterator.clone()),
+          _ => None,
+        };
+        let Some(iterator) = iterator else {
+          break;
+        };
         let get_records_output = dynamodb_streams_client
           .get_records()
-          .shard_iterator(shard_iterator_opt.unwrap())
+          .shard_iterator(iterator)
+          .limit(max_item_count)
           .send()
           .await?;
         let records = get_records_output.records();
-        for record in records {
-          let stream_record = record.dynamodb.clone().unwrap();
-          tracing::info!("dynamodb stream event = {:?}", stream_record);
-
-          let new_image = stream_record
-            .new_image()
-            .unwrap()
-            .iter()
-            .map(|(k, v)| (k.clone(), convert_to(v.clone())))
-            .collect::<HashMap<String, serde_dynamo::AttributeValue>>();
-
-          let item: serde_dynamo::Item = new_image.clone().into();
-          let keys = stream_record.keys().cloned().unwrap();
-          let key_item: serde_dynamo::Item = keys
-            .iter()
-            .map(|(k, v)| (k.clone(), convert_to(v.clone())))
-            .collect::<HashMap<String, serde_dynamo::AttributeValue>>()
-            .into();
-
-          let sequence_number = id_generate();
-          let event_id = id_generate();
-
-          let event = dynamodb::Event {
-            records: vec![dynamodb::EventRecord {
-              aws_region: "ap-northeast-1".to_string(),
-              change: StreamRecord {
-                approximate_creation_date_time: Utc::now(),
-                keys: key_item,
-                new_image: item.clone(),
-                old_image: item.clone(),
-                sequence_number: Some(sequence_number.to_string()),
-                size_bytes: size_of::<Item>() as i64,
-                stream_view_type: Some(StreamViewType::NewImage),
-              },
-              event_id: event_id.to_string(),
-              event_name: "INSERT".to_string(),
-              event_source: None,
-              event_version: None,
-              event_source_arn: Some(
-                "arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000"
-                  .to_string(),
-              ),
-              user_identity: None,
-              record_format: None,
-              table_name: None,
-            }],
-          };
-
-          let request_id = id_generate().to_string();
-          let deadline_ms = (Utc::now().timestamp_millis() + 3000).to_string();
-
-          let mut headers = HeaderMap::new();
-          headers.insert(
-            "lambda-runtime-aws-request-id",
-            HeaderValue::from_str(&request_id).unwrap(),
-          );
-          headers.insert(
-            "lambda-runtime-deadline-ms",
-            HeaderValue::from_str(&deadline_ms).unwrap(),
-          );
-
-          let context = Context::try_from(headers).unwrap();
-          let lambda_event = LambdaEvent::new(event, context);
-
-          rmu::update_read_model(&dao, lambda_event).await?;
+        if !records.is_empty() {
+          let event_records = event_records_from_stream_records(records)?;
+          process_records(dao, journal_reader, event_records).await?;
         }
-        processed_record_count += records.len();
-        shard_iterator_opt = get_records_output.next_shard_iterator().map(|s| s.to_owned())
+        match get_records_output.next_shard_iterator() {
+          Some(next_iterator) => {
+            shard_states.insert(shard_id.clone(), ShardState::Reading(next_iterator.to_string()));
+          }
+          None => {
+            shard_states.insert(shard_id.clone(), ShardState::Closed);
+            break;
+          }
+        }
+        if records.is_empty() {
+          break;
+        }
       }
     }
-
-    let next_last_evaluated_shard_id = describe_stream_output
-      .stream_description()
-      .unwrap()
-      .last_evaluated_shard_id()
-      .map(|s| s.to_owned());
-
-    if next_last_evaluated_shard_id.is_none() {
-      break;
-    }
-
-    last_evaluated_shard_id = next_last_evaluated_shard_id;
+    tokio::time::sleep(poll_interval).await;
   }
-
-  Ok(())
 }
 
-async fn create_aws_client(aws_settings: &AwsSettings) -> DynamoDBClient {
-  let region_name = aws_settings.region_name.clone();
-  let region = Region::new(region_name);
-  let region_provider_chain = RegionProviderChain::default_provider().or_else(region);
-
-  let mut config_loader = aws_config::from_env().region(region_provider_chain);
-  if let Some(endpoint_url) = aws_settings.endpoint_url.clone() {
-    tracing::info!("endpoint_url = {}", endpoint_url);
-    config_loader = config_loader.endpoint_url(endpoint_url);
-  }
-
-  match (
-    aws_settings.access_key_id.clone(),
-    aws_settings.secret_access_key.clone(),
-  ) {
-    (Some(access_key_id), Some(secret_access_key)) => {
-      tracing::info!("access_key_id = {}", access_key_id);
-      tracing::info!("secret_access_key = {}", secret_access_key);
-      config_loader = config_loader.credentials_provider(Credentials::new(
-        access_key_id,
-        secret_access_key,
-        None,
-        None,
-        "default",
-      ));
-    }
-    _ => {}
-  }
-
-  let config = config_loader.load().await;
-
-  DynamoDBClient::new(&config)
-}
-
-async fn create_aws_dynamodb_streams_client(aws_settings: &AwsSettings) -> DynamoDBStreamsClient {
-  let region_name = aws_settings.region_name.clone();
-  let region = Region::new(region_name);
-  let region_provider_chain = RegionProviderChain::default_provider().or_else(region);
-  let mut config_loader = aws_config::from_env().region(region_provider_chain);
-  if let Some(endpoint_url) = aws_settings.endpoint_url.clone() {
-    config_loader = config_loader.endpoint_url(endpoint_url);
-  }
-  match (
-    aws_settings.access_key_id.clone(),
-    aws_settings.secret_access_key.clone(),
-  ) {
-    (Some(access_key_id), Some(secret_access_key)) => {
-      config_loader = config_loader.credentials_provider(Credentials::new(
-        access_key_id,
-        secret_access_key,
-        None,
-        None,
-        "default",
-      ));
-    }
-    _ => {}
-  }
-  let config = config_loader.load().await;
-
-  DynamoDBStreamsClient::new(&config)
+fn event_records_from_stream_records(
+  records: &[aws_sdk_dynamodbstreams::types::Record],
+) -> Result<Vec<dynamodb::EventRecord>> {
+  records
+    .iter()
+    .map(|record| {
+      let stream_record = record
+        .dynamodb()
+        .ok_or_else(|| anyhow::anyhow!("the stream record has no dynamodb payload"))?;
+      let new_image: Item = convert_item(stream_record.new_image().unwrap_or(&HashMap::new())).into();
+      let old_image: Item = convert_item(stream_record.old_image().unwrap_or(&HashMap::new())).into();
+      let keys: Item = convert_item(stream_record.keys().unwrap_or(&HashMap::new())).into();
+      let event_name = record
+        .event_name()
+        .map(|name| name.as_str().to_string())
+        .unwrap_or_else(|| "INSERT".to_string());
+      Ok(dynamodb::EventRecord {
+        aws_region: record.aws_region().unwrap_or("ap-northeast-1").to_string(),
+        change: StreamRecord {
+          approximate_creation_date_time: Utc::now(),
+          keys,
+          new_image,
+          old_image,
+          sequence_number: stream_record.sequence_number().map(|value| value.to_string()),
+          size_bytes: stream_record.size_bytes().unwrap_or_default(),
+          stream_view_type: Some(StreamViewType::NewImage),
+        },
+        event_id: record
+          .event_id()
+          .map(|value| value.to_string())
+          .unwrap_or_else(|| id_generate().to_string()),
+        event_name,
+        event_source: record.event_source().map(|value| value.to_string()),
+        event_version: record.event_version().map(|value| value.to_string()),
+        event_source_arn: None,
+        user_identity: None,
+        record_format: None,
+        table_name: None,
+      })
+    })
+    .collect()
 }

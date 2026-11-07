@@ -57,6 +57,54 @@ pub enum GroupChatReadModelUpdateDaoError {
   UpdateMessageError,
   #[error("Failed to delete message")]
   DeleteMessageError,
+  #[error("Failed to acquire a database connection")]
+  AcquireConnectionError,
+  #[error("Failed to begin a database transaction")]
+  BeginTransactionError,
+  #[error("Failed to commit a database transaction")]
+  CommitTransactionError,
+  #[error("Failed to read the read model position")]
+  ReadPositionError,
+  #[error("Failed to update the read model position")]
+  UpdatePositionError,
+  #[error("Expected seq_nr {expected} but received {actual}")]
+  UnexpectedSeqNr { expected: u64, actual: u64 },
+}
+
+/// リードモデルに適用するイベント。
+///
+/// `seq_nr` と `occurred_at` はヘッドまたは journal の封筒が持つ値を使う。payload に
+/// 埋め込まれた値は使わない。
+#[derive(Debug, Clone)]
+pub struct ReadModelEvent {
+  seq_nr: u64,
+  occurred_at: DateTime<Utc>,
+  event: GroupChatEvent,
+}
+
+impl ReadModelEvent {
+  pub fn new(seq_nr: u64, occurred_at: DateTime<Utc>, event: GroupChatEvent) -> Self {
+    Self {
+      seq_nr,
+      occurred_at,
+      event,
+    }
+  }
+
+  /// イベントの `seq_nr` を返す。
+  pub fn seq_nr(&self) -> u64 {
+    self.seq_nr
+  }
+
+  /// イベントの発生時刻を返す。
+  pub fn occurred_at(&self) -> &DateTime<Utc> {
+    &self.occurred_at
+  }
+
+  /// イベント本体を返す。
+  pub fn event(&self) -> &GroupChatEvent {
+    &self.event
+  }
 }
 
 /// グループチャットリードモデル更新用のデータアクセスオブジェクト。
@@ -120,5 +168,20 @@ pub trait GroupChatReadModelUpdateDao {
     &self,
     message_id: MessageId,
     updated_at: DateTime<Utc>,
+  ) -> Result<(), GroupChatReadModelUpdateDaoError>;
+
+  /// 集約の処理済み `seq_nr` を返します。まだ 1 件も適用していない場合は 0 を返します。
+  async fn get_position(&self, aggregate_id: &GroupChatId) -> Result<u64, GroupChatReadModelUpdateDaoError>;
+
+  /// イベントを適用し、処理位置を進めます。
+  ///
+  /// リードモデルの更新と `read_model_positions` の更新は 1 つのトランザクションで行います。
+  /// トランザクション内で位置を読み直すため、位置以下の `seq_nr` のイベントは重複・古い
+  /// イベントとして捨てます。`events` は `seq_nr` の昇順で、現在の位置から連続している
+  /// 必要があります。
+  async fn apply_events(
+    &self,
+    aggregate_id: &GroupChatId,
+    events: &[ReadModelEvent],
   ) -> Result<(), GroupChatReadModelUpdateDaoError>;
 }

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE read_model_positions SET seq_nr = ?, updated_at = ? WHERE aggregate_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "2b92be1148b56fce3025e0d88c2985f46d4d2fd8f75e074fee7cf59101530dad"
+}

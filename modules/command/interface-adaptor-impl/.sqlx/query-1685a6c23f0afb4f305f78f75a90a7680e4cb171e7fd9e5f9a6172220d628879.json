@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM members WHERE group_chat_id = ? AND user_account_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "1685a6c23f0afb4f305f78f75a90a7680e4cb171e7fd9e5f9a6172220d628879"
+}

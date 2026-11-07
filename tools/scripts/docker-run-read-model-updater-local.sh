@@ -13,6 +13,7 @@ docker run -v $(pwd)/../../config:/config \
   -e APP__AWS__ENDPOINT_URL=http://localstack:4566 \
   -e APP__AWS__ACCESS_KEY_ID=x \
   -e APP__AWS__SECRET_ACCESS_KEY=x \
-  -e APP__STREAM_JOURNAL_TABLE_NAME=journal \
-  -e APP__STREAM_MAX_ITEM_COUNT=100 \
+  -e APP__STREAM__HEAD_TABLE_NAME=head \
+  -e APP__STREAM__JOURNAL_TABLE_NAME=journal \
+  -e APP__STREAM__MAX_ITEM_COUNT=100 \
   -d read-model-updater-local:latest-arm64

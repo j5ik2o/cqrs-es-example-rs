@@ -25,12 +25,12 @@ dynamodbSetup:
       value: "dynamodb:8000"
     - name: "JOURNAL_TABLE_NAME"
       value: "aje8iz5k-Journal"
-    - name: "JOURNAL_GSI_NAME"
-      value: "aje8iz5k-GetJournalRowsIndex"
     - name: "SNAPSHOT_TABLE_NAME"
       value: "aje8iz5k-Snapshot"
-    - name: "SNAPSHOT_GSI_NAME"
-      value: "aje8iz5k-GetSnapshotRowsIndex"
+    - name: "SNAPSHOT_HISTORY_INDEX_NAME"
+      value: "aje8iz5k-SnapshotActiveHistoryIndex"
+    - name: "HEAD_TABLE_NAME"
+      value: "aje8iz5k-Head"
 localstack:
   enabled: true
   resources:
