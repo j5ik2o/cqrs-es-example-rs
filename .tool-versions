@@ -3,5 +3,5 @@ terraform 1.17.1
 helm 4.3.1
 kubectl 1.37.2
 stern 1.25.0
-helmfile 0.171.0
+helmfile 1.8.3
 minikube 1.39.0
