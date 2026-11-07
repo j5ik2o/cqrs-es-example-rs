@@ -39,7 +39,7 @@ impl GroupChatReadModelUpdateDaoImpl {
     .map(|_| ())
     .map_err(|e| {
       log::error!("Failed to insert group chat: {:?}", e);
-      GroupChatReadModelUpdateDaoError::InsertGroupChatError
+      map_sqlx_error(e, GroupChatReadModelUpdateDaoError::InsertGroupChatError)
     })
   }
 
@@ -59,7 +59,7 @@ impl GroupChatReadModelUpdateDaoImpl {
     .map(|_| ())
     .map_err(|e| {
       log::error!("Failed to delete group chat: {:?}", e);
-      GroupChatReadModelUpdateDaoError::DeleteGroupChatError
+      map_sqlx_error(e, GroupChatReadModelUpdateDaoError::DeleteGroupChatError)
     })
   }
 
@@ -80,7 +80,7 @@ impl GroupChatReadModelUpdateDaoImpl {
     .map(|_| ())
     .map_err(|e| {
       log::error!("Failed to rename group chat: {:?}", e);
-      GroupChatReadModelUpdateDaoError::RenameGroupChatError
+      map_sqlx_error(e, GroupChatReadModelUpdateDaoError::RenameGroupChatError)
     })
   }
 
@@ -106,7 +106,7 @@ impl GroupChatReadModelUpdateDaoImpl {
     .map(|_| ())
     .map_err(|e| {
       log::error!("Failed to insert member: {:?}", e);
-      GroupChatReadModelUpdateDaoError::InsertMemberError
+      map_sqlx_error(e, GroupChatReadModelUpdateDaoError::InsertMemberError)
     })
   }
 
@@ -125,7 +125,7 @@ impl GroupChatReadModelUpdateDaoImpl {
     .map(|_| ())
     .map_err(|e| {
       log::error!("Failed to delete member: {:?}", e);
-      GroupChatReadModelUpdateDaoError::DeleteMemberError
+      map_sqlx_error(e, GroupChatReadModelUpdateDaoError::DeleteMemberError)
     })
   }
 
@@ -150,7 +150,7 @@ impl GroupChatReadModelUpdateDaoImpl {
     .map(|_| ())
     .map_err(|e| {
       log::error!("Failed to insert message: {:?}", e);
-      GroupChatReadModelUpdateDaoError::InsertMessageError
+      map_sqlx_error(e, GroupChatReadModelUpdateDaoError::InsertMessageError)
     })
   }
 
@@ -170,7 +170,7 @@ impl GroupChatReadModelUpdateDaoImpl {
     .map(|_| ())
     .map_err(|e| {
       log::error!("Failed to update message: {:?}", e);
-      GroupChatReadModelUpdateDaoError::UpdateMessageError
+      map_sqlx_error(e, GroupChatReadModelUpdateDaoError::UpdateMessageError)
     })
   }
 
@@ -190,7 +190,7 @@ impl GroupChatReadModelUpdateDaoImpl {
     .map(|_| ())
     .map_err(|e| {
       log::error!("Failed to delete message: {:?}", e);
-      GroupChatReadModelUpdateDaoError::DeleteMessageError
+      map_sqlx_error(e, GroupChatReadModelUpdateDaoError::DeleteMessageError)
     })
   }
 
@@ -453,6 +453,40 @@ impl GroupChatReadModelUpdateDao for GroupChatReadModelUpdateDaoImpl {
       log::error!("Failed to commit a transaction: {:?}", e);
       GroupChatReadModelUpdateDaoError::CommitTransactionError
     })
+  }
+}
+
+/// Keeps the operation-specific variant for permanent data errors, and marks
+/// connection, locking, and throttling failures as retryable.
+fn map_sqlx_error(error: sqlx::Error, permanent: GroupChatReadModelUpdateDaoError) -> GroupChatReadModelUpdateDaoError {
+  if is_transient_sqlx_error(&error) {
+    GroupChatReadModelUpdateDaoError::Transient(error.to_string())
+  } else {
+    permanent
+  }
+}
+
+fn is_transient_sqlx_error(error: &sqlx::Error) -> bool {
+  match error {
+    sqlx::Error::Database(database_error) => {
+      // `code()` is the SQLSTATE (for example 23000). The MySQL error number
+      // tells a constraint violation apart from a deadlock or lock timeout.
+      match database_error
+        .as_error()
+        .downcast_ref::<sqlx::mysql::MySqlDatabaseError>()
+      {
+        Some(mysql_error) => !matches!(mysql_error.number(), 1062 | 1452 | 1406 | 1264 | 1366),
+        None => true,
+      }
+    }
+    sqlx::Error::RowNotFound
+    | sqlx::Error::ColumnNotFound(_)
+    | sqlx::Error::ColumnIndexOutOfBounds { .. }
+    | sqlx::Error::ColumnDecode { .. }
+    | sqlx::Error::TypeNotFound { .. }
+    | sqlx::Error::Encode(_)
+    | sqlx::Error::Decode(_) => false,
+    _ => true,
   }
 }
 

@@ -7,6 +7,10 @@ edition = "2021"
 name = "local"
 path = "bin/local.rs"
 
+[[bin]]
+name = "recover"
+path = "bin/recover.rs"
+
 [dependencies]
 anyhow = { workspace = true, features = ["backtrace"] }
 thiserror = {workspace = true}

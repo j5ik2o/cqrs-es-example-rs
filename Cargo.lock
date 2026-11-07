@@ -3996,11 +3996,13 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "aws-sdk-dynamodb",
+ "aws-sdk-dynamodbstreams",
  "aws_lambda_events",
  "chrono",
  "command-domain",
  "command-interface-adaptor-if",
  "lambda_runtime",
+ "rand 0.8.5",
  "serde_dynamo",
  "serde_json",
  "thiserror 2.0.21",

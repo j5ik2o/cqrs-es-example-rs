@@ -69,6 +69,14 @@ pub enum GroupChatReadModelUpdateDaoError {
   UpdatePositionError,
   #[error("Expected seq_nr {expected} but received {actual}")]
   UnexpectedSeqNr { expected: u64, actual: u64 },
+  /// The storage reported a failure that may succeed when retried, such as a
+  /// connection loss, a deadlock, or a lock wait timeout.
+  #[error("Transient read model update failure: {0}")]
+  Transient(String),
+  /// The storage reported a failure that the same event cannot fix, such as a
+  /// constraint violation or an oversized value.
+  #[error("Permanent read model update failure: {0}")]
+  Permanent(String),
 }
 
 /// リードモデルに適用するイベント。
@@ -111,7 +119,7 @@ impl ReadModelEvent {
 ///
 /// NOTE: このデータアクセスオブジェクトはあくまで書き込み用です。読み込み用のデータアクセスオブジェクトはクエリ側に別途定義します。
 #[async_trait::async_trait]
-pub trait GroupChatReadModelUpdateDao {
+pub trait GroupChatReadModelUpdateDao: Send + Sync {
   /// グループチャットリードモデルを作成します。
   async fn insert_group_chat(
     &self,
@@ -184,4 +192,42 @@ pub trait GroupChatReadModelUpdateDao {
     aggregate_id: &GroupChatId,
     events: &[ReadModelEvent],
   ) -> Result<(), GroupChatReadModelUpdateDaoError>;
+}
+
+/// A durable record of one event that the read model updater could not apply.
+///
+/// Only identifiers and the failure classification are stored. The event body
+/// is always re-read from the journal, so repairing the payload does not leave
+/// a stale copy in the task.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecoveryTask {
+  pub store_id: String,
+  pub projection_name: String,
+  pub projection_version: String,
+  pub aggregate_id: String,
+  pub seq_nr: u64,
+  pub failure_type: String,
+  pub error_message: String,
+  pub status: String,
+}
+
+#[derive(Debug, Clone, Error)]
+pub enum RecoveryTaskStoreError {
+  #[error("Recovery task store failed: {0}")]
+  Other(String),
+}
+
+/// Persists recovery tasks. Recording is idempotent for the same
+/// (store, projection, aggregate, seq_nr) key.
+#[async_trait::async_trait]
+pub trait RecoveryTaskStore: Send + Sync {
+  async fn record(&self, task: &RecoveryTask) -> Result<(), RecoveryTaskStoreError>;
+  async fn list_pending(&self) -> Result<Vec<RecoveryTask>, RecoveryTaskStoreError>;
+  async fn mark_completed(
+    &self,
+    store_id: &str,
+    projection_name: &str,
+    aggregate_id: &str,
+    seq_nr: u64,
+  ) -> Result<(), RecoveryTaskStoreError>;
 }
