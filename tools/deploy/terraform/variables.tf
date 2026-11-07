@@ -169,3 +169,8 @@ variable "read_model_updater_enabled" {
 }
 
 variable "read_model_updater_tag" {}
+variable "rmu_ops_alert_email" {
+  description = "Email address for RMU recovery alerts. An empty value disables the email subscription."
+  type        = string
+  default     = ""
+}

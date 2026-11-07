@@ -7,7 +7,7 @@ use sqlx::MySqlPool;
 use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
 use command_interface_adaptor_impl::gateways::recovery_task_store_impl::MySqlRecoveryTaskStore;
 use read_model_updater::{create_aws_config, load_app_config};
-use rmu::{Applier, DynamoDbHeadScanner, DynamoDbJournalReader, RecoveryService, Resyncer};
+use rmu::{run_recovery_pass, Applier, DynamoDbHeadScanner, DynamoDbJournalReader, RecoveryService, Resyncer};
 
 /// Replays the pending recovery tasks recorded by the read model updater.
 ///
@@ -55,42 +55,36 @@ async fn main() -> Result<()> {
   ));
   let resyncer = Resyncer::new(applier, head_scanner, Some(recovery.clone()));
 
-  let mut failed = false;
-  match resyncer.resync().await {
-    Ok(result) => tracing::info!(
-      heads = result.heads,
-      advanced = result.advanced,
-      skipped = result.skipped,
-      failed = result.failed,
+  let result = run_recovery_pass(&resyncer, &recovery).await;
+
+  if let Some(summary) = &result.resync {
+    tracing::info!(
+      heads = summary.heads,
+      advanced = summary.advanced,
+      skipped = summary.skipped,
+      failed = summary.failed,
       "resync finished"
-    ),
-    Err(error) => {
-      tracing::error!(error = %error, "resync did not complete");
-      failed = true;
+    );
+  }
+  if let Some(error) = &result.resync_error {
+    tracing::error!(error = %error, "resync did not complete");
+  }
+  if let Some(summary) = &result.recovery {
+    tracing::info!(
+      completed = summary.completed,
+      pending = summary.pending,
+      failures = summary.failures.len(),
+      "recovery run finished"
+    );
+    for failure in &summary.failures {
+      tracing::error!(failure = %failure, "recovery task remains unresolved");
     }
   }
-
-  match recovery.recover_pending().await {
-    Ok(result) => {
-      tracing::info!(
-        completed = result.completed,
-        failures = result.failures.len(),
-        "recovery run finished"
-      );
-      if !result.failures.is_empty() {
-        for failure in &result.failures {
-          tracing::error!(failure = %failure, "recovery task remains unresolved");
-        }
-        failed = true;
-      }
-    }
-    Err(error) => {
-      tracing::error!(error = %error, "recovery run did not complete");
-      failed = true;
-    }
+  if let Some(error) = &result.recovery_error {
+    tracing::error!(error = %error, "recovery run did not complete");
   }
 
-  if failed {
+  if result.resync_error.is_some() || result.recovery_error.is_some() || result.has_permanent_failures() {
     anyhow::bail!("some heads or recovery tasks remain unresolved");
   }
   Ok(())

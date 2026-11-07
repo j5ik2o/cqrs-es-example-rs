@@ -1,0 +1,26 @@
+{
+  "recoveryWorker": {
+    "timeoutSeconds": 300,
+    "reservedConcurrentExecutions": 1
+  },
+  "recoveryQueue": {
+    "visibilityTimeoutSeconds": 1800,
+    "messageRetentionSeconds": 1209600,
+    "maxReceiveCount": 3,
+    "batchSize": 1,
+    "maximumRetryAttempts": 3
+  },
+  "schedule": {
+    "recoveryPass": "rate(15 minutes)"
+  },
+  "alarms": {
+    "periodSeconds": 300,
+    "evaluationPeriods": 2,
+    "customEvaluationPeriods": 1,
+    "queueDepthThreshold": 1,
+    "queueAgeSeconds": 3600,
+    "pendingTasksThreshold": 0,
+    "failedTasksThreshold": 0,
+    "resyncFailuresThreshold": 0
+  }
+}

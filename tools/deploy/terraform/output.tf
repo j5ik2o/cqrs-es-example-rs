@@ -132,3 +132,22 @@ output "mysql_url" {
   sensitive = true
   value     = "mysql://${module.aurora.cluster_master_username}:${module.aurora.cluster_master_password}@${module.aurora.cluster_endpoint}/${module.aurora.cluster_database_name}"
 }
+output "read_model_updater_recovery_function_name" {
+  description = "Name of the RMU recovery worker Lambda"
+  value       = module.lambda_function_recovery.lambda_function_name
+}
+
+output "read_model_updater_on_failure_queue_url" {
+  description = "URL of the OnFailure and recovery queue"
+  value       = aws_sqs_queue.read_model_updater_dlq.url
+}
+
+output "read_model_updater_recovery_dlq_url" {
+  description = "URL of the recovery DLQ"
+  value       = aws_sqs_queue.read_model_updater_recovery_dlq.url
+}
+
+output "rmu_ops_alerts_topic_arn" {
+  description = "SNS topic for RMU recovery alarms"
+  value       = aws_sns_topic.rmu_ops_alerts.arn
+}

@@ -17,6 +17,7 @@ pub mod failure;
 pub mod head_scanner;
 pub mod journal;
 pub mod recovery;
+pub mod recovery_pass;
 pub mod resync;
 pub mod retry;
 pub mod stream;
@@ -25,7 +26,8 @@ pub use applier::Applier;
 pub use failure::{classify_update_error, is_retryable_update_error, FailureKind};
 pub use head_scanner::{DynamoDbHeadScanner, Head, HeadScanError, HeadScanner, StoreIdProvider};
 pub use journal::{DynamoDbJournalReader, JournalReadError, JournalReader};
-pub use recovery::{RecoveryService, PROJECTION_NAME, PROJECTION_VERSION};
+pub use recovery::{RecoveryPendingResult, RecoveryService, PROJECTION_NAME, PROJECTION_VERSION};
+pub use recovery_pass::{run_recovery_pass, RecoveryPassResult};
 pub use resync::{ResyncError, ResyncResult, Resyncer};
 pub use retry::{full_jitter, Backoff, RetryError, RetryPolicy, Sleeper};
 pub use stream::{

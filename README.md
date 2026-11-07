@@ -58,6 +58,10 @@ This OSS repository mainly utilizes the following technology stack.
 - [AWS Setup](docs/TOOLS_INSTALLATION_AWS.md)
 - [Deploying to EKS](docs/DEPLOY_TO_EKS.md)
 
+### Operations
+
+- [RMU recovery operations](docs/RMU_RECOVERY.md)
+
 ## Links
 
 - [Common Documents](https://github.com/j5ik2o/cqrs-es-example)
