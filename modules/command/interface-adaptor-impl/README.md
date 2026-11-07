@@ -40,6 +40,12 @@ ESA v5 の DynamoDB ストレージは、`journal`、`snapshot`、`head` の 3 �
 ヘッド項目はこれに加えて `type_name`（型名）と `events`（直前の書き込みで追記した
 イベントのリスト）を持ちます。
 
+イベントの `manifest` は `<イベント型名>@<スキーマ版>`（例: `GroupChatCreated@1`）、
+スナップショットの `manifest` は `GroupChat@1` です。payload はイベント型の判別子
+`type` とドメインのデータだけを含み、集約 ID、`seq_nr`、`occurred_at`、`manifest`
+は含みません。スナップショットの payload は集約状態で、旧来の `version` 属性は
+持ちません。
+
 ### イベント及びスナップショットの書き込み
 
 1. 集約にてコマンドが受理されると、最新の `seq_nr` が付与されたイベントが生成されます。

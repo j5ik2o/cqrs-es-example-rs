@@ -22,28 +22,22 @@ fn test_time() -> DateTime<Utc> {
   Utc.timestamp_millis_opt(TEST_TIMESTAMP_MILLIS).unwrap()
 }
 
-fn created_event(aggregate_id: &GroupChatId, admin_id: &UserAccountId) -> GroupChatEvent {
+fn created_event(admin_id: &UserAccountId) -> GroupChatEvent {
   GroupChatEvent::GroupChatCreated(GroupChatEventCreatedBody::new(
-    aggregate_id.clone(),
-    1,
     GroupChatName::new("group-chat").unwrap(),
     Members::new(admin_id.clone()),
   ))
 }
 
-fn renamed_event(aggregate_id: &GroupChatId, admin_id: &UserAccountId) -> GroupChatEvent {
+fn renamed_event(admin_id: &UserAccountId) -> GroupChatEvent {
   GroupChatEvent::GroupChatRenamed(GroupChatEventRenamedBody::new(
-    aggregate_id.clone(),
-    3,
     GroupChatName::new("renamed").unwrap(),
     admin_id.clone(),
   ))
 }
 
-fn member_added_event(aggregate_id: &GroupChatId, admin_id: &UserAccountId, user_id: &UserAccountId) -> GroupChatEvent {
+fn member_added_event(admin_id: &UserAccountId, user_id: &UserAccountId) -> GroupChatEvent {
   GroupChatEvent::GroupChatMemberAdded(GroupChatEventMemberAddedBody::new(
-    aggregate_id.clone(),
-    2,
     Member::new(MemberId::new(), user_id.clone(), MemberRole::Member),
     admin_id.clone(),
   ))
@@ -288,9 +282,9 @@ fn fixture() -> (
   let aggregate_id = GroupChatId::new();
   let admin_id = UserAccountId::new();
   let user_id = UserAccountId::new();
-  let created = created_event(&aggregate_id, &admin_id);
-  let member_added = member_added_event(&aggregate_id, &admin_id, &user_id);
-  let renamed = renamed_event(&aggregate_id, &admin_id);
+  let created = created_event(&admin_id);
+  let member_added = member_added_event(&admin_id, &user_id);
+  let renamed = renamed_event(&admin_id);
   (aggregate_id, admin_id, user_id, created, member_added, renamed)
 }
 
