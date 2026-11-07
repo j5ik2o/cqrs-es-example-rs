@@ -14,7 +14,7 @@ MUTATION_RESULT=""
 post_graphql() {
   local base_url="$1"
   local body="$2"
-  curl -s -X POST -H "Content-Type: application/json" "${base_url}/query" -d "${body}"
+  curl -s -X POST -H "Content-Type: application/json" "${base_url}/query" -d "${body}" || true
 }
 
 # run_mutation <label> <body>. Stores the raw response in MUTATION_RESULT.
