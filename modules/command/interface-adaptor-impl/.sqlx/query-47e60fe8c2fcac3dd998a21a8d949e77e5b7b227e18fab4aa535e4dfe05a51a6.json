@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE read_model_recovery_tasks\n         SET status = 'completed', updated_at = ?\n         WHERE store_id = ? AND projection_name = ? AND aggregate_id = ? AND seq_nr = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "47e60fe8c2fcac3dd998a21a8d949e77e5b7b227e18fab4aa535e4dfe05a51a6"
+}

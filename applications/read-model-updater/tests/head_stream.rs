@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::str::FromStr;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -22,8 +22,12 @@ use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::{GroupChatReadModelUpdateDao, ReadModelEvent};
 use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
 
+use command_interface_adaptor_impl::gateways::recovery_task_store_impl::MySqlRecoveryTaskStore;
 use rmu::journal::{DynamoDbJournalReader, JournalReadError, JournalReader};
-use rmu::process_records;
+use rmu::{
+  process_records, Applier, DynamoDbHeadScanner, Head, HeadScanError, HeadScanner, ReadModelUpdater, RecoveryService,
+  Resyncer, RetryPolicy, StoreIdProvider,
+};
 
 const GROUP_CHAT_AID_PREFIX: &str = "GroupChat";
 
@@ -35,6 +39,7 @@ fn mysql_image() -> ContainerRequest<GenericImage> {
     .with_env_var("MYSQL_DATABASE", "ceer")
     .with_env_var("MYSQL_USER", "ceer")
     .with_env_var("MYSQL_PASSWORD", "ceer")
+    .with_startup_timeout(Duration::from_secs(180))
 }
 
 mod embedded {
@@ -54,8 +59,26 @@ fn refinery_migrate(port: u16) {
     thread::sleep(Duration::from_secs(1));
   }
   let pool = pool_result.unwrap();
-  let mut conn = pool.get_conn().unwrap();
-  embedded::migrations::runner().run(&mut conn).unwrap();
+  let mut attempts = 0;
+  loop {
+    let result = pool
+      .get_conn()
+      .map_err(|error| format!("{:?}", error))
+      .and_then(|mut conn| {
+        embedded::migrations::runner()
+          .run(&mut conn)
+          .map_err(|error| format!("{:?}", error))
+      });
+    match result {
+      Ok(_) => break,
+      Err(error) if attempts < 5 => {
+        eprintln!("retry migration after error: {}", error);
+        attempts += 1;
+        thread::sleep(Duration::from_secs(2));
+      }
+      Err(error) => panic!("failed to migrate the read model: {}", error),
+    }
+  }
 }
 
 async fn new_database() -> (ContainerAsync<GenericImage>, MySqlPool) {
@@ -678,4 +701,330 @@ async fn should_remove_a_member_from_the_read_model() {
     .await
     .unwrap();
   assert_eq!(admin_id.to_string(), remaining);
+}
+
+struct FakeHeadScanner(Vec<Head>);
+
+#[async_trait::async_trait]
+impl HeadScanner for FakeHeadScanner {
+  async fn scan_heads(&self) -> Result<Vec<Head>, HeadScanError> {
+    Ok(self.0.clone())
+  }
+}
+
+struct FakeStoreIdProvider(String);
+
+#[async_trait::async_trait]
+impl StoreIdProvider for FakeStoreIdProvider {
+  async fn store_id(&self) -> Result<String, HeadScanError> {
+    Ok(self.0.clone())
+  }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[serial]
+async fn should_apply_the_same_head_record_concurrently_without_duplicating_rows() {
+  let (_node, pool) = new_database().await;
+  let (aggregate_id, _, _, created, _, _) = fixture();
+  let journal = Arc::new(FakeJournal::with_events(
+    &aggregate_id,
+    vec![read_model_event(1, created.clone())],
+  ));
+  let dao = Arc::new(GroupChatReadModelUpdateDaoImpl::new(pool.clone()));
+  let applier = Arc::new(Applier::new(dao, journal, 1));
+  let updater = Arc::new(ReadModelUpdater::new(applier, None, RetryPolicy::no_retry()));
+  let record = head_record("INSERT", &aggregate_id.to_string(), vec![head_event_value(1, &created)]);
+
+  let mut handles = Vec::new();
+  for _ in 0..2 {
+    let updater = updater.clone();
+    let record = record.clone();
+    handles.push(tokio::spawn(async move { updater.process_record(record).await }));
+  }
+  for handle in handles {
+    handle.await.unwrap().unwrap();
+  }
+
+  assert_eq!(1, position(&pool, &aggregate_id).await);
+  assert_eq!(1, count(&pool, "group_chats").await);
+  assert_eq!(1, count(&pool, "members").await);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[serial]
+async fn should_create_position_rows_concurrently_for_different_aggregates() {
+  let (_node, pool) = new_database().await;
+  let dao = Arc::new(GroupChatReadModelUpdateDaoImpl::new(pool.clone()));
+  let mut handles = Vec::new();
+  for _ in 0..2 {
+    let dao = dao.clone();
+    handles.push(tokio::spawn(async move {
+      let aggregate_id = GroupChatId::new();
+      let admin_id = UserAccountId::new();
+      let event = read_model_event(1, created_event(&admin_id));
+      dao.apply_events(&aggregate_id, &[event]).await.unwrap();
+      aggregate_id
+    }));
+  }
+
+  for handle in handles {
+    let aggregate_id = handle.await.unwrap();
+    assert_eq!(1, position(&pool, &aggregate_id).await);
+  }
+}
+
+#[tokio::test]
+#[serial]
+async fn should_resync_a_head_that_fell_behind_after_a_long_stop() {
+  let (_node, pool) = new_database().await;
+  let (aggregate_id, _, _, created, member_added, renamed) = fixture();
+  let journal = Arc::new(FakeJournal::with_events(
+    &aggregate_id,
+    vec![
+      read_model_event(1, created),
+      read_model_event(2, member_added),
+      read_model_event(3, renamed),
+    ],
+  ));
+  let dao = Arc::new(GroupChatReadModelUpdateDaoImpl::new(pool.clone()));
+  let applier = Arc::new(Applier::new(dao, journal, 1));
+  let scanner = Arc::new(FakeHeadScanner(vec![
+    Head {
+      aggregate_id: aggregate_id.to_string(),
+      type_name: "GroupChat".to_string(),
+      seq_nr: 3,
+    },
+    Head {
+      aggregate_id: "UserAccount-01H42K4ABWQ5V2XQEP3A48VE0Z".to_string(),
+      type_name: "UserAccount".to_string(),
+      seq_nr: 1,
+    },
+    Head {
+      aggregate_id: "__config__".to_string(),
+      type_name: "Config".to_string(),
+      seq_nr: 0,
+    },
+  ]));
+  let resyncer = Resyncer::new(applier, scanner, None);
+
+  let result = resyncer.resync().await.unwrap();
+
+  assert_eq!(1, result.heads);
+  assert_eq!(2, result.skipped);
+  assert_eq!(1, result.advanced);
+  assert_eq!(3, position(&pool, &aggregate_id).await);
+  assert_eq!(1, count(&pool, "group_chats").await);
+  assert_eq!(2, count(&pool, "members").await);
+}
+
+#[tokio::test]
+#[serial]
+async fn should_record_and_complete_a_recovery_task() {
+  let (_node, pool) = new_database().await;
+  let (aggregate_id, _, _, created, member_added, _) = fixture();
+  let journal = Arc::new(FakeJournal::with_events(
+    &aggregate_id,
+    vec![read_model_event(1, created), read_model_event(2, member_added)],
+  ));
+  let dao = Arc::new(GroupChatReadModelUpdateDaoImpl::new(pool.clone()));
+  let applier = Arc::new(Applier::new(dao, journal, 1));
+  let store = Arc::new(MySqlRecoveryTaskStore::new(pool.clone()));
+  let recovery = Arc::new(RecoveryService::new(
+    store,
+    Arc::new(FakeStoreIdProvider("store-1".to_string())),
+    applier,
+  ));
+
+  recovery
+    .record(
+      &aggregate_id.to_string(),
+      2,
+      &rmu::UpdateReadModelError::Payload("bad payload".to_string()),
+    )
+    .await
+    .unwrap();
+
+  let result = recovery.recover_pending().await.unwrap();
+  assert_eq!(1, result.completed);
+  assert!(result.failures.is_empty());
+  assert_eq!(2, position(&pool, &aggregate_id).await);
+  let status = sqlx::query_scalar::<_, String>(
+    "SELECT status FROM read_model_recovery_tasks WHERE aggregate_id = ? AND seq_nr = 2",
+  )
+  .bind(aggregate_id.to_string())
+  .fetch_one(&pool)
+  .await
+  .unwrap();
+  assert_eq!("completed", status);
+
+  let second = recovery.recover_pending().await.unwrap();
+  assert_eq!(0, second.completed);
+  assert_eq!(2, position(&pool, &aggregate_id).await);
+}
+
+#[tokio::test]
+#[serial]
+async fn should_record_a_permanent_resync_failure_and_continue_with_other_aggregates() {
+  let (_node, pool) = new_database().await;
+  let broken_aggregate = GroupChatId::new();
+  let healthy_aggregate = GroupChatId::new();
+  let admin_id = UserAccountId::new();
+  let created = created_event(&admin_id);
+  let journal = Arc::new(FakeJournal::default());
+  journal
+    .events
+    .lock()
+    .unwrap()
+    .insert(broken_aggregate.to_string(), vec![read_model_event(1, created.clone())]);
+  journal
+    .events
+    .lock()
+    .unwrap()
+    .insert(healthy_aggregate.to_string(), vec![read_model_event(1, created)]);
+  let dao = Arc::new(GroupChatReadModelUpdateDaoImpl::new(pool.clone()));
+  let applier = Arc::new(Applier::new(dao, journal, 1));
+  let store = Arc::new(MySqlRecoveryTaskStore::new(pool.clone()));
+  let recovery = Arc::new(RecoveryService::new(
+    store,
+    Arc::new(FakeStoreIdProvider("store-1".to_string())),
+    applier.clone(),
+  ));
+  let scanner = Arc::new(FakeHeadScanner(vec![
+    Head {
+      aggregate_id: broken_aggregate.to_string(),
+      type_name: "GroupChat".to_string(),
+      seq_nr: 3,
+    },
+    Head {
+      aggregate_id: healthy_aggregate.to_string(),
+      type_name: "GroupChat".to_string(),
+      seq_nr: 1,
+    },
+  ]));
+  let resyncer = Resyncer::new(applier, scanner, Some(recovery));
+
+  let error = resyncer.resync().await.unwrap_err();
+
+  assert!(!error.is_retryable());
+  assert_eq!(1, error.permanent.len());
+  assert_eq!(0, position(&pool, &broken_aggregate).await);
+  assert_eq!(1, position(&pool, &healthy_aggregate).await);
+  let pending = sqlx::query_scalar::<_, i64>(
+    "SELECT COUNT(*) FROM read_model_recovery_tasks WHERE aggregate_id = ? AND status = 'pending'",
+  )
+  .bind(broken_aggregate.to_string())
+  .fetch_one(&pool)
+  .await
+  .unwrap();
+  assert_eq!(1, pending);
+}
+
+#[tokio::test]
+#[serial]
+async fn should_scan_all_pages_of_the_head_table() {
+  let localstack = GenericImage::new("localstack/localstack", "2.1.0")
+    .with_wait_for(WaitFor::message_on_stdout("Ready."))
+    .with_env_var("SERVICES", "dynamodb")
+    .with_env_var("DEFAULT_REGION", "ap-northeast-1")
+    .with_env_var("EAGER_SERVICE_LOADING", "1")
+    .with_env_var("DYNAMODB_SHARED_DB", "1")
+    .with_env_var("DYNAMODB_IN_MEMORY", "1")
+    .with_startup_timeout(Duration::from_secs(180))
+    .start()
+    .await
+    .unwrap();
+  let port = localstack.get_host_port_ipv4(4566).await.unwrap();
+  let config = aws_config::defaults(aws_config::BehaviorVersion::latest())
+    .region(aws_sdk_dynamodb::config::Region::new("ap-northeast-1"))
+    .endpoint_url(format!("http://127.0.0.1:{}", port))
+    .credentials_provider(aws_sdk_dynamodb::config::Credentials::new(
+      "x", "x", None, None, "default",
+    ))
+    .load()
+    .await;
+  let client = aws_sdk_dynamodb::Client::new(&config);
+  client
+    .create_table()
+    .table_name("head")
+    .attribute_definitions(
+      aws_sdk_dynamodb::types::AttributeDefinition::builder()
+        .attribute_name("aid")
+        .attribute_type(aws_sdk_dynamodb::types::ScalarAttributeType::S)
+        .build()
+        .unwrap(),
+    )
+    .key_schema(
+      aws_sdk_dynamodb::types::KeySchemaElement::builder()
+        .attribute_name("aid")
+        .key_type(aws_sdk_dynamodb::types::KeyType::Hash)
+        .build()
+        .unwrap(),
+    )
+    .billing_mode(aws_sdk_dynamodb::types::BillingMode::PayPerRequest)
+    .send()
+    .await
+    .unwrap();
+  for _ in 0..60 {
+    let active = client
+      .describe_table()
+      .table_name("head")
+      .send()
+      .await
+      .ok()
+      .and_then(|output| {
+        output
+          .table()
+          .and_then(|table| table.table_status().map(|status| status.as_str() == "ACTIVE"))
+      })
+      .unwrap_or(false);
+    if active {
+      break;
+    }
+    tokio::time::sleep(Duration::from_millis(500)).await;
+  }
+  for index in 0..3 {
+    client
+      .put_item()
+      .table_name("head")
+      .item(
+        "aid",
+        aws_sdk_dynamodb::types::AttributeValue::S(format!("GroupChat-01H42K4ABWQ5V2XQEP3A48VE0{}", index)),
+      )
+      .item(
+        "seq_nr",
+        aws_sdk_dynamodb::types::AttributeValue::N((index + 1).to_string()),
+      )
+      .item(
+        "type_name",
+        aws_sdk_dynamodb::types::AttributeValue::S("GroupChat".to_string()),
+      )
+      .send()
+      .await
+      .unwrap();
+  }
+  client
+    .put_item()
+    .table_name("head")
+    .item(
+      "aid",
+      aws_sdk_dynamodb::types::AttributeValue::S("__config__".to_string()),
+    )
+    .item("seq_nr", aws_sdk_dynamodb::types::AttributeValue::N("0".to_string()))
+    .item(
+      "type_name",
+      aws_sdk_dynamodb::types::AttributeValue::S("Config".to_string()),
+    )
+    .item(
+      "store_id",
+      aws_sdk_dynamodb::types::AttributeValue::S("store-1".to_string()),
+    )
+    .send()
+    .await
+    .unwrap();
+
+  let scanner = DynamoDbHeadScanner::new(client, "head").with_page_limit(1);
+  let heads = scanner.scan_heads().await.unwrap();
+
+  assert_eq!(3, heads.len());
+  assert!(heads.iter().all(|head| head.type_name == "GroupChat"));
 }

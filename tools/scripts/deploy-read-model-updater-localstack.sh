@@ -87,7 +87,7 @@ if [[ $FOUND -eq 0 ]]; then
     --runtime provided.al2 \
     --handler bootstrap \
     --memory-size 512 \
-    --timeout 30 \
+    --timeout 60 \
     --environment "file://$ENV_FILE" >/dev/null
 else
   echo "新しい関数を作成します: $FUNCTION_NAME"
@@ -98,7 +98,7 @@ else
     --handler bootstrap \
     --zip-file "fileb://$ZIP_PATH" \
     --memory-size 512 \
-    --timeout 30 \
+    --timeout 60 \
     --environment "file://$ENV_FILE" >/dev/null
 fi
 
@@ -129,7 +129,9 @@ echo "イベントソースマッピングを作成します"
 aws --endpoint-url "$LOCALSTACK_ENDPOINT_URL" --region "$AWS_REGION" lambda create-event-source-mapping \
   --function-name "$FUNCTION_NAME" \
   --event-source-arn "$STREAM_ARN" \
-  --starting-position LATEST \
+  --starting-position TRIM_HORIZON \
+  --bisect-batch-on-function-error \
+  --function-response-types ReportBatchItemFailures \
   --batch-size ${READ_MODEL_UPDATER_LAMBDA_BATCH_SIZE:-64} >/dev/null
 
 echo "デプロイが完了しました"

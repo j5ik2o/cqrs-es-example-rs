@@ -43,9 +43,45 @@ pub struct StreamSettings {
   /// Streams から読み込む最大件数
   #[serde(default = "default_max_item_count")]
   pub max_item_count: i32,
-  /// 新しいレコードを待つ間隔(ミリ秒)
+  /// 新しいレコードを待つ初期間隔(ミリ秒)。待ち時間は指数バックオフする。
   #[serde(default = "default_poll_interval_millis")]
   pub poll_interval_millis: u64,
+  /// ポーリング間隔の上限(ミリ秒)
+  #[serde(default = "default_poll_max_interval_millis")]
+  pub poll_max_interval_millis: u64,
+  /// 1 トランザクションで確定するイベント数
+  #[serde(default = "default_max_events_per_transaction")]
+  pub max_events_per_transaction: usize,
+  /// 1 レコードの最大試行回数
+  #[serde(default = "default_retry_max_attempts")]
+  pub retry_max_attempts: usize,
+  /// 1 レコードの再試行に使える最大経過時間(ミリ秒)
+  #[serde(default = "default_retry_max_elapsed_millis")]
+  pub retry_max_elapsed_millis: u64,
+  /// 再試行の初期待ち時間(ミリ秒)
+  #[serde(default = "default_retry_initial_delay_millis")]
+  pub retry_initial_delay_millis: u64,
+  /// 再試行の待ち時間の上限(ミリ秒)
+  #[serde(default = "default_retry_max_delay_millis")]
+  pub retry_max_delay_millis: u64,
+}
+
+impl StreamSettings {
+  pub fn retry_policy(&self) -> rmu::RetryPolicy {
+    rmu::RetryPolicy::new(
+      self.retry_max_attempts,
+      std::time::Duration::from_millis(self.retry_max_elapsed_millis),
+      std::time::Duration::from_millis(self.retry_initial_delay_millis),
+      std::time::Duration::from_millis(self.retry_max_delay_millis),
+    )
+  }
+
+  pub fn poll_backoff(&self) -> rmu::Backoff {
+    rmu::Backoff::new(
+      std::time::Duration::from_millis(self.poll_interval_millis),
+      std::time::Duration::from_millis(self.poll_max_interval_millis),
+    )
+  }
 }
 
 fn default_max_item_count() -> i32 {
@@ -54,6 +90,30 @@ fn default_max_item_count() -> i32 {
 
 fn default_poll_interval_millis() -> u64 {
   1000
+}
+
+fn default_poll_max_interval_millis() -> u64 {
+  30_000
+}
+
+fn default_max_events_per_transaction() -> usize {
+  1
+}
+
+fn default_retry_max_attempts() -> usize {
+  5
+}
+
+fn default_retry_max_elapsed_millis() -> u64 {
+  30_000
+}
+
+fn default_retry_initial_delay_millis() -> u64 {
+  200
+}
+
+fn default_retry_max_delay_millis() -> u64 {
+  5_000
 }
 
 pub fn load_app_config() -> Result<AppSettings, ConfigError> {
@@ -108,5 +168,11 @@ mod tests {
 
     assert_eq!(100, settings.max_item_count);
     assert_eq!(1000, settings.poll_interval_millis);
+    assert_eq!(30_000, settings.poll_max_interval_millis);
+    assert_eq!(1, settings.max_events_per_transaction);
+    assert_eq!(5, settings.retry_max_attempts);
+    assert_eq!(30_000, settings.retry_max_elapsed_millis);
+    assert_eq!(200, settings.retry_initial_delay_millis);
+    assert_eq!(5_000, settings.retry_max_delay_millis);
   }
 }

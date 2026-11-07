@@ -15,6 +15,9 @@ serde_dynamo = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true, features = ["log"] }
+rand = "0.8.5"
+tokio = { workspace = true, features = ["time", "sync"] }
+aws-sdk-dynamodbstreams = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

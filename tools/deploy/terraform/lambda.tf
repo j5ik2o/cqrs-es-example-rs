@@ -31,8 +31,22 @@ module "lambda_function" {
 
   event_source_mapping = {
     dynamodb = {
-      event_source_arn  = module.event_sourcing.aws_dynamodb_table_head_stream_arn
-      starting_position = "LATEST"
+      event_source_arn = module.event_sourcing.aws_dynamodb_table_head_stream_arn
+
+      # TRIM_HORIZON replays the retained records after a restart. The
+      # read_model_positions table drops the records that were already applied.
+      starting_position             = "TRIM_HORIZON"
+      maximum_retry_attempts        = 5
+      maximum_record_age_in_seconds = 86400
+
+      # Split a failed batch so healthy records are not replayed, and use the
+      # partial batch response from the handler.
+      bisect_batch_on_function_error = true
+      function_response_types        = ["ReportBatchItemFailures"]
+
+      # The recovery task table is the durable DLQ. This queue is the safety net
+      # for records that exhaust the event source mapping's retries.
+      destination_arn_on_failure = aws_sqs_queue.read_model_updater_dlq.arn
     }
   }
 
@@ -64,11 +78,22 @@ module "lambda_function" {
       actions   = ["dynamodb:Query"]
       resources = [module.event_sourcing.aws_dynamodb_table_journal_table_arn]
     }
+    recovery_dlq_send = {
+      effect    = "Allow"
+      actions   = ["sqs:SendMessage"]
+      resources = [aws_sqs_queue.read_model_updater_dlq.arn]
+    }
   }
 
   depends_on = [
     module.aurora,
   ]
+}
+
+resource "aws_sqs_queue" "read_model_updater_dlq" {
+  name                      = "${var.prefix}-read-model-updater-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
 }
 
 resource "aws_security_group" "lambda" {
