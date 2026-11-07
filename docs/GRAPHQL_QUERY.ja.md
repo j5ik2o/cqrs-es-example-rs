@@ -14,19 +14,19 @@ $ makers open-query-graphql-ide
 ```json
 {
   "groupChatId": "01H7CD0JFZHGYH09AVCP6AD1ZC",
-  "accountId": "01H7C6DWMK1BKS1JYH1XZE529M"
+  "userAccountId": "01H7C6DWMK1BKS1JYH1XZE529M"
 }
 ```
 
-## GetGroupChatSummaries
+## GetGroupChats
 
 参加しているグループチャットのサマリ一覧を取得する
 
-- account_id: 閲覧アカウントID
+- userAccountId: 閲覧アカウントID
 
 ```graphql
-query GetGroupChatSummaries($accountId: String!) {
-  groupChats: getGroupChats(accountId: $accountId) {
+query GetGroupChats($userAccountId: String!) {
+  groupChats: getGroupChats(userAccountId: $userAccountId) {
     id
     name
   }
@@ -37,15 +37,15 @@ query GetGroupChatSummaries($accountId: String!) {
 
 参加しているグループチャットの名前とメッセージ一覧を取得する
 
-- group_chat_id: 対象グループチャットID
-- account_id: 閲覧アカウントID
+- groupChatId: 対象グループチャットID
+- userAccountId: 閲覧アカウントID
 
 ```graphql
-query GetGroupChatNameWithMessages($groupChatId: String!, $accountId: String!) {
-  groupChat: getGroupChat(groupChatId: $groupChatId, accountId: $accountId) {
+query GetGroupChatNameWithMessages($groupChatId: String!, $userAccountId: String!) {
+  groupChat: getGroupChat(groupChatId: $groupChatId, userAccountId: $userAccountId) {
     name
   }
-  messages: getMessages(groupChatId: $groupChatId, accountId: $accountId) {
+  messages: getMessages(groupChatId: $groupChatId, userAccountId: $userAccountId) {
     id
     text
     createdAt
@@ -57,14 +57,14 @@ query GetGroupChatNameWithMessages($groupChatId: String!, $accountId: String!) {
 
 参加しているグループチャットに所属しているメンバーを一覧で取得できる
 
-- group_chat_id: 対象グループチャットID
-- account_id: 閲覧アカウントID
+- groupChatId: 対象グループチャットID
+- userAccountId: 閲覧アカウントID
 
 ```graphql
-query GetMembers($groupChatId: String!, $accountId: String!) {
-  members: getMembers(groupChatId: $groupChatId, accountId: $accountId) {
+query GetMembers($groupChatId: String!, $userAccountId: String!) {
+  members: getMembers(groupChatId: $groupChatId, userAccountId: $userAccountId) {
     id
-    accountId
+    userAccountId
     role
     createdAt
   }

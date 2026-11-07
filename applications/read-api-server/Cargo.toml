@@ -21,6 +21,15 @@ tower-http = { workspace = true, features = ["cors"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["fmt", "ansi", "env-filter"] }
 
+[dev-dependencies]
+command-domain = { path = "../../modules/command/domain" }
+command-interface-adaptor-if = { path = "../../modules/command/interface-adaptor-if" }
+command-interface-adaptor-impl = { path = "../../modules/command/interface-adaptor-impl" }
+refinery = { version = "0.10.0", features = ["mysql"] }
+refinery-core = "0.10.0"
+serde_json = { workspace = true }
+testcontainers = "0.28.0"
+
 [[bin]]
 name = "export-sdl"
 path = "bin/export-sdl.rs"

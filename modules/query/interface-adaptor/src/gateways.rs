@@ -94,7 +94,7 @@ impl GroupChatDao for GroupChatDaoImpl {
       GroupChat,
       r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at
 		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
-		 WHERE gc.disabled = 'false' AND m.group_chat_id = ? AND m.user_account_id = ?"#,
+		 WHERE gc.disabled = 0 AND m.group_chat_id = ? AND m.user_account_id = ?"#,
       group_chat_id.clone(),
       user_account_id.clone()
     )
@@ -116,7 +116,8 @@ impl GroupChatDao for GroupChatDaoImpl {
       GroupChat,
       r#"SELECT gc.id, gc.name, gc.owner_id, gc.created_at, gc.updated_at
 		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
-         WHERE gc.disabled = 'false' AND m.user_account_id = ?"#,
+         WHERE gc.disabled = 0 AND m.user_account_id = ?
+         ORDER BY gc.created_at, gc.id"#,
       user_account_id.clone()
     )
     .fetch_all(&self.my_sql_pool)
@@ -191,7 +192,7 @@ impl MemberDao for MemberDaoImpl {
       Member,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at
 		 FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
-		 WHERE gc.disabled = 'false' AND m.group_chat_id = ? AND m.user_account_id = ?"#,
+		 WHERE gc.disabled = 0 AND m.group_chat_id = ? AND m.user_account_id = ?"#,
       group_chat_id.clone(),
       user_account_id.clone()
     )
@@ -213,8 +214,9 @@ impl MemberDao for MemberDaoImpl {
       Member,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.role, m.created_at, m.updated_at
          FROM group_chats AS gc JOIN members AS m ON gc.id = m.group_chat_id
-         WHERE gc.disabled = 'false' AND m.group_chat_id = ?
-			AND EXISTS (SELECT 1 FROM members AS m2 WHERE m2.group_chat_id = m.group_chat_id AND m2.user_account_id = ?)"#,
+         WHERE gc.disabled = 0 AND m.group_chat_id = ?
+			AND EXISTS (SELECT 1 FROM members AS requester WHERE requester.group_chat_id = m.group_chat_id AND requester.user_account_id = ?)
+         ORDER BY m.created_at, m.id"#,
       group_chat_id.clone(),
       user_account_id.clone()
     )
@@ -291,8 +293,8 @@ impl MessageDao for MessageDaoImpl {
       Message,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at, m.updated_at
 		 FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id
-         WHERE gc.disabled = 'false' AND m.disabled = 'false' AND m.id = ?
-           AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
+         WHERE gc.disabled = 0 AND m.disabled = 0 AND m.id = ?
+           AND EXISTS (SELECT 1 FROM members AS requester WHERE requester.group_chat_id = m.group_chat_id AND requester.user_account_id = ?)"#,
       message_id.clone(),
       user_account_id.clone()
     )
@@ -317,8 +319,9 @@ impl MessageDao for MessageDaoImpl {
       Message,
       r#"SELECT m.id, m.group_chat_id, m.user_account_id, m.text, m.created_at, m.updated_at
 		 FROM group_chats AS gc JOIN messages AS m ON gc.id = m.group_chat_id
-         WHERE gc.disabled = 'false' AND m.disabled = 'false' AND m.group_chat_id = ?
-          AND EXISTS (SELECT 1 FROM members AS mem WHERE mem.group_chat_id = m.group_chat_id AND mem.user_account_id = ?)"#,
+         WHERE gc.disabled = 0 AND m.disabled = 0 AND m.group_chat_id = ?
+          AND EXISTS (SELECT 1 FROM members AS requester WHERE requester.group_chat_id = m.group_chat_id AND requester.user_account_id = ?)
+         ORDER BY m.created_at, m.id"#,
       group_chat_id.clone(),
       user_account_id.clone()
     )
@@ -331,14 +334,13 @@ impl MessageDao for MessageDaoImpl {
 #[cfg(test)]
 mod tests {
   use crate::gateways::{GroupChatDao, GroupChatDaoImpl, MemberDao, MemberDaoImpl, MessageDao, MessageDaoImpl};
-  use chrono::{DateTime, Utc};
+  use chrono::{DateTime, Duration, Utc};
   use command_domain::group_chat::{GroupChatId, GroupChatName, MemberId, MemberRole, Message, MessageId};
   use command_domain::user_account::UserAccountId;
   use command_interface_adaptor_if::GroupChatReadModelUpdateDao;
   use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
   use serial_test::serial;
   use sqlx::MySqlPool;
-  use std::sync::OnceLock;
   use testcontainers::core::{ContainerPort, WaitFor};
   use testcontainers::runners::AsyncRunner;
   use testcontainers::{ContainerRequest, GenericImage, ImageExt};
@@ -348,6 +350,7 @@ mod tests {
     GenericImage::new("mysql", "8.0")
       .with_exposed_port(port)
       .with_wait_for(WaitFor::message_on_stdout("Ready for start up"))
+      .with_startup_timeout(std::time::Duration::from_secs(180))
       .with_env_var("MYSQL_ROOT_PASSWORD", "password")
       .with_env_var("MYSQL_DATABASE", "ceer")
       .with_env_var("MYSQL_USER", "ceer")
@@ -381,8 +384,26 @@ mod tests {
       std::thread::sleep(std::time::Duration::from_secs(1));
     }
     let pool = pool_result.unwrap();
-    let mut conn = pool.get_conn().unwrap();
-    let _report = embedded::migrations::runner().run(&mut conn).unwrap();
+    let mut attempts = 0;
+    loop {
+      let result = pool
+        .get_conn()
+        .map_err(|error| format!("{:?}", error))
+        .and_then(|mut conn| {
+          embedded::migrations::runner()
+            .run(&mut conn)
+            .map_err(|error| format!("{:?}", error))
+        });
+      match result {
+        Ok(_) => break,
+        Err(error) if attempts < 5 => {
+          log::warn!("retry migration after error: {}", error);
+          attempts += 1;
+          std::thread::sleep(std::time::Duration::from_secs(2));
+        }
+        Err(error) => panic!("failed to migrate the read model: {}", error),
+      }
+    }
   }
 
   fn init_logger() {
@@ -476,12 +497,13 @@ mod tests {
     let admin_id = UserAccountId::new();
     let group_chat_name1 = GroupChatName::new("test1").unwrap();
     let group_chat_name2 = GroupChatName::new("test2").unwrap();
-    let created_at = Utc::now();
+    let created_at1 = Utc::now();
+    let created_at2 = created_at1 + Duration::seconds(1);
 
     let group_chat_id1 =
-      insert_group_chat_and_member(&update_dao, group_chat_name1.clone(), admin_id.clone(), created_at).await;
+      insert_group_chat_and_member(&update_dao, group_chat_name1.clone(), admin_id.clone(), created_at1).await;
     let group_chat_id2 =
-      insert_group_chat_and_member(&update_dao, group_chat_name2.clone(), admin_id.clone(), created_at).await;
+      insert_group_chat_and_member(&update_dao, group_chat_name2.clone(), admin_id.clone(), created_at2).await;
 
     let dao = GroupChatDaoImpl::new(pool);
     let group_chat_read_models = dao.get_group_chats(admin_id.to_string()).await.unwrap();
@@ -606,7 +628,11 @@ mod tests {
       .await
       .unwrap();
     dao
-      .insert_message(group_chat_id.clone(), message2.clone(), created_at)
+      .insert_message(
+        group_chat_id.clone(),
+        message2.clone(),
+        created_at + Duration::seconds(1),
+      )
       .await
       .unwrap();
 
