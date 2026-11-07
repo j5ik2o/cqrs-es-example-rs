@@ -59,7 +59,7 @@ event-store-adapter-rs = { version = "5.2.0", features = ["dynamodb"] }
 
 mime = "0.3.17"
 refinery = { version = "0.10.0", features = ["mysql"] }
-refinery-core = "0.8.14"
+refinery-core = "0.10.0"
 testcontainers = "0.23.0"
 serial_test = "3.1.1"
 
