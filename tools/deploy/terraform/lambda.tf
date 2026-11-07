@@ -116,7 +116,7 @@ resource "aws_sqs_queue" "read_model_updater_recovery_dlq" {
 
 resource "aws_security_group" "lambda" {
   name_prefix = "${var.prefix}-lambda-read-model-updater"
-  description = "Allow MySQL outbound traffic"
+  description = "Allow MySQL, DynamoDB, and CloudWatch outbound traffic"
   vpc_id      = module.vpc.vpc_id
 
   egress {
@@ -131,6 +131,16 @@ resource "aws_security_group" "lambda" {
     to_port         = 443
     protocol        = "tcp"
     prefix_list_ids = [aws_vpc_endpoint.dynamodb.prefix_list_id]
+  }
+
+  # The recovery worker publishes custom metrics with PutMetricData. The VPC
+  # has a single NAT gateway, so CloudWatch is reached over the internet path.
+  egress {
+    description = "CloudWatch PutMetricData through the NAT gateway"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = local.tags
@@ -172,10 +182,9 @@ module "lambda_function_recovery" {
       event_source_arn        = aws_sqs_queue.read_model_updater_dlq.arn
       batch_size              = local.rmu_ops.recoveryQueue.batchSize
       function_response_types = ["ReportBatchItemFailures"]
-      maximum_retry_attempts  = local.rmu_ops.recoveryQueue.maximumRetryAttempts
-      scaling_config = {
-        maximum_concurrency = local.rmu_ops.recoveryWorker.reservedConcurrentExecutions
-      }
+      # SQS retries are governed by the queue's redrive_policy.maxReceiveCount,
+      # not by an event source mapping parameter. Concurrency is capped by
+      # reserved_concurrent_executions above.
     }
   }
 

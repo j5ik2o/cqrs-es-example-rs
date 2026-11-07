@@ -103,6 +103,17 @@ pub async fn handle_recovery_event(
   let message_ids = sqs_message_ids(&event);
   let result = run_recovery_pass(resyncer, recovery).await;
   metrics.publish(&result).await;
+  if let Some(error) = &result.resync_error {
+    tracing::error!(error = %error, "resync did not complete");
+  }
+  if let Some(error) = &result.recovery_error {
+    tracing::error!(error = %error, "recovery run did not complete");
+  }
+  if let Some(summary) = &result.recovery {
+    for failure in &summary.failures {
+      tracing::error!(failure = %failure, "recovery task remains unresolved");
+    }
+  }
   tracing::info!(
     resync_heads = result.resync.as_ref().map_or(0, |summary| summary.heads),
     resync_advanced = result.resync.as_ref().map_or(0, |summary| summary.advanced),

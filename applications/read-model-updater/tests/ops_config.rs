@@ -33,7 +33,6 @@ fn should_keep_the_recovery_worker_timeout_and_visibility_consistent() {
     "the queue visibility timeout should cover six function timeouts"
   );
   assert!(u64_at(&config, "/recoveryQueue/maxReceiveCount") >= 1);
-  assert!(u64_at(&config, "/recoveryQueue/maximumRetryAttempts") >= 1);
 }
 
 #[test]

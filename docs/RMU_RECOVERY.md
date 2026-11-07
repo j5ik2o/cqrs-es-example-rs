@@ -25,12 +25,12 @@ The durable source of truth for recovery is the `read_model_recovery_tasks` tabl
 | Recovery queue visibility timeout | 1800 seconds | Six times the worker timeout, so a message in flight is not handed to another worker. |
 | Recovery worker concurrency | 1 | Two workers do not process the same task. Row locks also prevent conflicts, but one worker avoids wasted work. |
 | SQS batch size | 1 | One message runs one recovery pass. |
-| SQS max receive count and Lambda max retries | 3 | Retry transient failures a few times, then park the message in the recovery DLQ. |
+| SQS max receive count | 5 | Retry transient failures a few times, then park the message in the recovery DLQ. |
 | Scheduled recovery pass | every 15 minutes | Drains pending tasks without an SQS notification. |
 | RMU Lambda timeout | 60 seconds | Enough to return a partial batch response for one stream batch. |
 | RMU retry | 5 attempts / 30 seconds | The code's default bound for transient failures. |
 
-With concurrency 1, an SQS invocation and a scheduled invocation that overlap throttle one of them. SQS and EventBridge retries deliver it later, so no work is lost.
+With concurrency 1, an SQS invocation and a scheduled invocation that overlap throttle one of them. If the throttling persists, the message moves to the recovery DLQ, but the task remains in MySQL and the scheduled pass keeps processing it. The recovery worker publishes CloudWatch metrics, so the Lambda security group allows TCP 443 through the NAT gateway.
 
 ## Procedure
 
