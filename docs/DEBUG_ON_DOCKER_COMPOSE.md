@@ -28,7 +28,7 @@ The Lambda Read Model Updater is not deployed by default. Deploy it manually wit
 $ makers deploy-read-model-updater-localstack
 ```
 
-To deploy the Lambda when `docker-compose-up` starts, set `DOCKER_COMPOSE_UP_DEPLOY_LAMBDA=1`. Keep `lambda` in LocalStack's `SERVICES` in this case.
+To deploy the Lambda when `docker-compose-up` starts, set `DOCKER_COMPOSE_UP_DEPLOY_LAMBDA=1`. The host-side variable for LocalStack services is `LOCALSTACK_SERVICES`; its default value includes `lambda`. The e2e script excludes `lambda` and starts only DynamoDB and Streams.
 
 ```shell
 $ DOCKER_COMPOSE_UP_DEPLOY_LAMBDA=1 makers docker-compose-up

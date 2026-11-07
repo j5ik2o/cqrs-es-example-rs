@@ -28,7 +28,7 @@ Lambda 版の Read Model Updater は既定ではデプロイしません。手�
 $ makers deploy-read-model-updater-localstack
 ```
 
-`docker-compose-up` の起動時に Lambda もデプロイする場合は、`DOCKER_COMPOSE_UP_DEPLOY_LAMBDA=1` を指定します。このとき LocalStack の `SERVICES` に `lambda` を含めてください。
+`docker-compose-up` の起動時に Lambda もデプロイする場合は、`DOCKER_COMPOSE_UP_DEPLOY_LAMBDA=1` を指定します。ホスト側で LocalStack のサービスを指定する変数は `LOCALSTACK_SERVICES` です。既定値には `lambda` が含まれます。e2e のスクリプトは `lambda` を含めず、DynamoDB と Streams だけを起動します。
 
 ```shell
 $ DOCKER_COMPOSE_UP_DEPLOY_LAMBDA=1 makers docker-compose-up

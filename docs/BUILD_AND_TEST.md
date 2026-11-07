@@ -37,7 +37,7 @@ $ makers build-read-model-updater-lambda
 $ makers deploy-read-model-updater-localstack
 ```
 
-`build-read-model-updater-lambda` は Docker 上で Lambda 互換バイナリをビルドし、`dist/lambda/read-model-updater/bootstrap.zip` を生成します。`deploy-read-model-updater-localstack` は AWS CLI を用いて LocalStack に関数を作成（または更新）し、`head` テーブルのストリームとイベントソースマッピングを設定します。`docker-compose-up` の起動時に Lambda もデプロイする場合は、`DOCKER_COMPOSE_UP_DEPLOY_LAMBDA=1` を指定します。このとき LocalStack の `SERVICES` に `lambda` を含めてください。設定値は `common.env` から読み込まれるため、LocalStack のエンドポイントやダミー資格情報を事前に記入してください。
+`build-read-model-updater-lambda` は Docker 上で Lambda 互換バイナリをビルドし、`dist/lambda/read-model-updater/bootstrap.zip` を生成します。`deploy-read-model-updater-localstack` は AWS CLI を用いて LocalStack に関数を作成（または更新）し、`head` テーブルのストリームとイベントソースマッピングを設定します。`docker-compose-up` の起動時に Lambda もデプロイする場合は、`DOCKER_COMPOSE_UP_DEPLOY_LAMBDA=1` を指定します。ホスト側で LocalStack のサービスを指定する変数は `LOCALSTACK_SERVICES` で、既定値には `lambda` が含まれます。e2e では `lambda` を含めず、DynamoDB と Streams だけを起動します。設定値は `common.env` から読み込まれるため、LocalStack のエンドポイントやダミー資格情報を事前に記入してください。
 
 ## テスト方法
 
