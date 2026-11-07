@@ -61,7 +61,7 @@ mime = "0.3.17"
 refinery = { version = "0.10.0", features = ["mysql"] }
 refinery-core = "0.10.0"
 testcontainers = "0.28.0"
-serial_test = "3.1.1"
+serial_test = "4.0.0"
 
 opentelemetry = "0.33"
 opentelemetry_sdk = "0.33.0"
