@@ -59,16 +59,20 @@ output "event_sourcing_journal_table_name" {
   value = module.event_sourcing.aws_dynamodb_table_journal_table_name
 }
 
-output "event_sourcing_journal_gsi_name" {
-  value = module.event_sourcing.aws_dynamodb_table_journal_gsi_name
-}
-
 output "event_sourcing_snapshot_table_name" {
   value = module.event_sourcing.aws_dynamodb_table_snapshot_table_name
 }
 
-output "event_sourcing_snapshot_gsi_name" {
-  value = module.event_sourcing.aws_dynamodb_table_snapshot_gsi_name
+output "event_sourcing_snapshot_history_index_name" {
+  value = module.event_sourcing.aws_dynamodb_table_snapshot_history_index_name
+}
+
+output "event_sourcing_head_table_name" {
+  value = module.event_sourcing.aws_dynamodb_table_head_table_name
+}
+
+output "event_sourcing_head_stream_arn" {
+  value = module.event_sourcing.aws_dynamodb_table_head_stream_arn
 }
 
 output "ecr_write_api_server_repository_url" {
@@ -126,5 +130,5 @@ output "aurora_cluster_master_username" {
 
 output "mysql_url" {
   sensitive = true
-  value  = "mysql://${module.aurora.cluster_master_username}:${module.aurora.cluster_master_password}@${module.aurora.cluster_endpoint}/${module.aurora.cluster_database_name}"
+  value     = "mysql://${module.aurora.cluster_master_username}:${module.aurora.cluster_master_password}@${module.aurora.cluster_endpoint}/${module.aurora.cluster_database_name}"
 }

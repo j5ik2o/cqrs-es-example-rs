@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT IGNORE INTO read_model_positions (aggregate_id, seq_nr, updated_at) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "0b64821628a76bb59fcc4f1793f0c3c64f0e7bff1fb5f97011e624d25ff9c1c5"
+}

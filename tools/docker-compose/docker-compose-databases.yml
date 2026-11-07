@@ -69,9 +69,9 @@ services:
       AWS_DEFAULT_REGION: ap-northeast-1
       DYNAMODB_ENDPOINT: localstack:4566
       JOURNAL_TABLE_NAME: journal
-      JOURNAL_GSI_NAME: journal-aid-index
       SNAPSHOT_TABLE_NAME: snapshot
-      SNAPSHOT_GSI_NAME: snapshot-aid-index
+      SNAPSHOT_HISTORY_INDEX_NAME: snapshot-active-history-index
+      HEAD_TABLE_NAME: head
     volumes:
       - ../dynamodb-setup:/setup
     entrypoint: [ "" ]

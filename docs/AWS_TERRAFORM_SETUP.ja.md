@@ -36,11 +36,11 @@ variables.tfで定義した変更は、この`tfvars`ファイルで上書きす
 必要なリソースだけを作成することができます。例えば、ecrだけが必要なら`ecr_enabled = true`と設定すればよい。
 
 ```
-event_sourcing_enabled = true
-event_sourcing_journal_name      = "journal"
-event_sourcing_journal_gsi_name  = "jounral-aid-index"
-event_sourcing_snapshot_name     = "snapshot"
-event_sourcing_snapshot_gsi_name = "snapshot-aid-index"
+event_sourcing_enabled                     = true
+event_sourcing_journal_name                = "journal"
+event_sourcing_snapshot_name               = "snapshot"
+event_sourcing_snapshot_history_index_name = "snapshot-active-history-index"
+event_sourcing_head_name                   = "head"
 
 eks_enabled = true
 eks_version = "1.71"
@@ -54,6 +54,78 @@ datadog-api-key = "xxxx"
 
 read_model_updater_tag     = "9ed584699fe19cab82121fae2d4ac7f1eee2e49089ba463cdd7378085ccc7b39-amd64"
 ```
+
+## 3 テーブル構成への変更と既存データ
+
+ESA v5 では DynamoDB のテーブルが journal / snapshot / head の 3 つになり、キーは `aid` に統一されます。
+journal と snapshot のハッシュキーとソートキーが変わるため、既存のテーブルにこの設定を適用すると
+Terraform はテーブルを置換します。既存のイベントは残りません。
+
+`event-sourcing/main.tf` の journal には `prevent_destroy = true` を設定しています。置換や削除の前に
+Terraform がデータを消さないようにするためです。移行またはリセットを行うときは、次の手順で明示的に外してください。
+
+### 適用前のバックアップ
+
+移行するかリセットするかに関係なく、既存の journal と snapshot のバックアップを取ります。
+
+```shell
+aws dynamodb create-backup --table-name <journal> --backup-name <prefix>-journal-before-v5
+aws dynamodb create-backup --table-name <snapshot> --backup-name <prefix>-snapshot-before-v5
+```
+
+ポイントインタイムリカバリを有効にしている場合は、復元できる時点を確認しておきます。
+
+### データを残す場合の v5 レイアウトへの移行
+
+既存のイベントを残す場合は、新しいテーブルを別名で作り、項目を書き直してから参照先を切り替えます。
+
+1. 新しい物理名を決めます。例は `journal-v5`、`snapshot-v5`、`head` です。
+2. 旧テーブルを削除せずに Terraform の管理から外します。
+   ```shell
+   terraform state rm 'module.event_sourcing.aws_dynamodb_table.journal-table[0]'
+   terraform state rm 'module.event_sourcing.aws_dynamodb_table.snapshot-table[0]'
+   ```
+   旧環境に head はないため、外す必要はありません。
+3. `tfvars` の `event_sourcing_*` を新しい名前に変えます。
+   ```
+   event_sourcing_journal_name                = "journal-v5"
+   event_sourcing_snapshot_name               = "snapshot-v5"
+   event_sourcing_snapshot_history_index_name = "snapshot-active-history-index"
+   event_sourcing_head_name                   = "head"
+   ```
+4. `makers terraform-apply` で新しい 3 テーブルを作ります。
+5. 旧 journal と snapshot の項目を新しいテーブルへ書き直します。`aid` は `${型名}-${値}` の形にし、
+   イベントは v5 の封筒（`seq_nr`、`occurred_at`、`manifest`、`payload`）で書きます。ヘッド項目も
+   集約ごとに作ります。移行スクリプトはこのサンプルに含みません。ESA の
+   `docs/spec/storage/dynamodb.ja.md` の移行手順を参照してください。
+6. アプリの参照先を新しい名前に切り替えます。
+   - Write API: `APP__PERSISTENCE__JOURNAL_TABLE_NAME`、`APP__PERSISTENCE__SNAPSHOT_TABLE_NAME`、
+     `APP__PERSISTENCE__HEAD_TABLE_NAME`、`APP__PERSISTENCE__SNAPSHOT_HISTORY_INDEX_NAME`
+   - RMU: `APP__STREAM__HEAD_TABLE_NAME`、`APP__STREAM__JOURNAL_TABLE_NAME`
+   - Terraform で管理する Lambda は `event_sourcing_*` の値から環境変数を自動で設定します。
+7. 新しいテーブルで Write API と RMU を起動し、リードモデルが更新されることを確認します。
+8. 確認が終わってから旧テーブルを削除します。
+
+リードモデル（MySQL）は作り直す必要がありません。処理位置は `read_model_positions` に残るため、
+移行したイベントの `seq_nr` と整合するようにしてください。整合しない場合は、リードモデルと
+`read_model_positions` を初期化してから RMU を再起動します。
+
+### データをリセットする場合
+
+サンプルのように既存データを残さない場合は、テーブルを作り直します。
+
+1. `event-sourcing/main.tf` の journal の `lifecycle` ブロックから `prevent_destroy = true` を外します。
+2. `makers terraform-apply` を実行します。journal と snapshot が置換され、head が作られます。
+3. MySQL のリードモデルを初期化します。`group_chats`、`members`、`messages`、`read_model_positions`
+   を空にするか、データベースを作り直して refinery のマイグレーションを実行します。古い処理位置が
+   残ると、新しいイベントが位置以下と判定されて反映されません。
+4. Write API と RMU を再起動します。head の Streams は作り直されるため、Lambda のイベントソース
+   マッピングも作り直してください。
+5. LocalStack の compose は `docker compose down -v` でテーブルとデータを作り直せるため、この手順は
+   不要です。
+
+`prevent_destroy` を外した状態で `makers terraform-destroy` を実行すると、テーブルは削除されます。
+削除するときは、対象の環境であることを確認してください。
 
 ## terraform init
 

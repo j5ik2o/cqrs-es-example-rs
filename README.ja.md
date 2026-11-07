@@ -19,7 +19,7 @@ Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5i
 - Write API (WIP)
     - GraphQLサーバ(Mutation)
 - Read Model Updater
-    - ジャーナルを基にリードモデル構築するLambda
+    - 集約 head テーブルの DynamoDB Streams を基にリードモデルを構築する Lambda
     - ローカルではLambdaの動作をエミュレーションするコードを実行する(local-rmu)
 - Read API
     - GraphQLサーバ(Query)

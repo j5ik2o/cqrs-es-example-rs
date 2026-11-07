@@ -34,7 +34,13 @@ serde_dynamo = { workspace = true }
 serde_json = { workspace = true }
 simple_logger = { workspace = true }
 sqlx = { workspace = true, default-features = false, features = ["macros", "mysql", "chrono", "runtime-tokio-rustls"] }
-tokio = { workspace = true, features = ["macros", "io-util", "sync", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["macros", "io-util", "sync", "rt-multi-thread", "time"] }
 tracing = { workspace = true, features = ["log"] }
 tracing-subscriber = { workspace = true, default-features = false, features = ["ansi", "fmt", "json"] }
 ulid-generator-rs = { workspace = true, features = ["uuid", "serde"] }
+
+[dev-dependencies]
+refinery = { workspace = true, features = ["mysql"] }
+refinery-core = { workspace = true }
+serial_test = { workspace = true }
+testcontainers = { workspace = true }

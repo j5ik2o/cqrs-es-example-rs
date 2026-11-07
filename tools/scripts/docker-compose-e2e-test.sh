@@ -63,3 +63,18 @@ done
 
 # Deploy read-model-updater Lambda into LocalStack so e2e tests can consume the stream
 "$ROOT_DIR/tools/scripts/deploy-read-model-updater-localstack.sh"
+
+# Wait for the verification container. A failed scenario must fail this script.
+E2E_CONTAINER_ID=$(docker compose -p cqrs-es-example-rs -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} ps -q e2e-test)
+if [ -z "${E2E_CONTAINER_ID}" ]; then
+  echo "e2e-test container was not started" >&2
+  exit 1
+fi
+E2E_EXIT_CODE=$(docker wait "${E2E_CONTAINER_ID}")
+docker compose -p cqrs-es-example-rs -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} logs --no-color e2e-test
+if [ "${E2E_EXIT_CODE}" -ne 0 ]; then
+  echo "e2e-test failed with exit code ${E2E_EXIT_CODE}" >&2
+  docker compose -p cqrs-es-example-rs -f ../docker-compose/docker-compose-databases.yml ${F_OPTION} logs --no-color write-api-server-1 read-api-server-1 read-model-updater-1
+  exit "${E2E_EXIT_CODE}"
+fi
+echo "e2e-test succeeded"

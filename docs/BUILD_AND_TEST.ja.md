@@ -43,7 +43,7 @@ $ makers deploy-read-model-updater-localstack
 ```
 
 `build-read-model-updater-lambda` は Docker 上で Lambda 互換バイナリをビルドして `dist/lambda/read-model-updater/bootstrap.zip` を生成します。
-`deploy-read-model-updater-localstack` は AWS CLI を利用し、LocalStack に Lambda 関数を作成した後で `journal` テーブルのストリームとイベントソースマッピングを貼ります。
+`deploy-read-model-updater-localstack` は AWS CLI を利用し、LocalStack に Lambda 関数を作成した後で `head` テーブルのストリームとイベントソースマッピングを貼ります。
 環境変数は `common.env` から読み込まれるため、LocalStack のエンドポイントやダミー認証情報を適宜設定してください。
 
 ## テスト方法
