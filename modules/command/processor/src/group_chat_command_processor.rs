@@ -56,7 +56,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     repository_mg
       .store(&group_chat_event, &group_chat)
       .await
-      .map(|_| group_chat_event.aggregate_id().clone())
+      .map(|_| group_chat.id().clone())
       .map_err(|e| CommandProcessError::RepositoryError(e))
   }
 
@@ -89,7 +89,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     repository_mg
       .store(&group_chat_event, &group_chat)
       .await
-      .map(|_| group_chat_event.aggregate_id().clone())
+      .map(|_| group_chat.id().clone())
       .map_err(|e| CommandProcessError::RepositoryError(e))
   }
 
@@ -126,7 +126,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     repository_mg
       .store(&group_chat_event, &group_chat)
       .await
-      .map(|_| group_chat_event.aggregate_id().clone())
+      .map(|_| group_chat.id().clone())
       .map_err(|e| CommandProcessError::RepositoryError(e))
   }
 
@@ -160,7 +160,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     repository_mg
       .store(&group_chat_event, &group_chat)
       .await
-      .map(|_| group_chat_event.aggregate_id().clone())
+      .map(|_| group_chat.id().clone())
       .map_err(|e| CommandProcessError::RepositoryError(e))
   }
 
@@ -192,7 +192,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     repository_mg
       .store(&group_chat_event, &group_chat)
       .await
-      .map(|_| group_chat_event.aggregate_id().clone())
+      .map(|_| group_chat.id().clone())
       .map_err(|e| CommandProcessError::RepositoryError(e))
   }
 
@@ -226,12 +226,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     repository_mg
       .store(&group_chat_event, &group_chat)
       .await
-      .map(|_| {
-        (
-          group_chat_event.aggregate_id().clone(),
-          message.breach_encapsulation_of_id().clone(),
-        )
-      })
+      .map(|_| (group_chat.id().clone(), message.breach_encapsulation_of_id().clone()))
       .map_err(|e| CommandProcessError::RepositoryError(e))
   }
 
@@ -256,7 +251,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     repository_mg
       .store(&group_chat_event, &group_chat)
       .await
-      .map(|_| group_chat_event.aggregate_id().clone())
+      .map(|_| group_chat.id().clone())
       .map_err(|e| CommandProcessError::RepositoryError(e))
   }
 
@@ -290,7 +285,7 @@ impl<TR: GroupChatRepository> GroupChatCommandProcessor<TR> {
     repository_mg
       .store(&group_chat_event, &group_chat)
       .await
-      .map(|_| group_chat_event.aggregate_id().clone())
+      .map(|_| group_chat.id().clone())
       .map_err(|e| CommandProcessError::RepositoryError(e))
   }
 }

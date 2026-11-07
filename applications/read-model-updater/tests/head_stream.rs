@@ -72,50 +72,33 @@ fn test_time() -> DateTime<Utc> {
   Utc.timestamp_millis_opt(1_767_225_600_000).unwrap()
 }
 
-fn created_event(aggregate_id: &GroupChatId, admin_id: &UserAccountId) -> GroupChatEvent {
+fn created_event(admin_id: &UserAccountId) -> GroupChatEvent {
   GroupChatEvent::GroupChatCreated(GroupChatEventCreatedBody::new(
-    aggregate_id.clone(),
-    1,
     GroupChatName::new("group-chat").unwrap(),
     Members::new(admin_id.clone()),
   ))
 }
 
-fn member_added_event(aggregate_id: &GroupChatId, admin_id: &UserAccountId, user_id: &UserAccountId) -> GroupChatEvent {
+fn member_added_event(admin_id: &UserAccountId, user_id: &UserAccountId) -> GroupChatEvent {
   GroupChatEvent::GroupChatMemberAdded(GroupChatEventMemberAddedBody::new(
-    aggregate_id.clone(),
-    2,
     Member::new(MemberId::new(), user_id.clone(), MemberRole::Member),
     admin_id.clone(),
   ))
 }
 
-fn duplicate_member_event(aggregate_id: &GroupChatId, admin_id: &UserAccountId) -> GroupChatEvent {
+fn duplicate_member_event(admin_id: &UserAccountId) -> GroupChatEvent {
   GroupChatEvent::GroupChatMemberAdded(GroupChatEventMemberAddedBody::new(
-    aggregate_id.clone(),
-    2,
     Member::new(MemberId::new(), admin_id.clone(), MemberRole::Member),
     admin_id.clone(),
   ))
 }
 
-fn member_removed_event(
-  aggregate_id: &GroupChatId,
-  admin_id: &UserAccountId,
-  user_id: &UserAccountId,
-) -> GroupChatEvent {
-  GroupChatEvent::GroupChatMemberRemoved(GroupChatEventMemberRemovedBody::new(
-    aggregate_id.clone(),
-    3,
-    user_id.clone(),
-    admin_id.clone(),
-  ))
+fn member_removed_event(admin_id: &UserAccountId, user_id: &UserAccountId) -> GroupChatEvent {
+  GroupChatEvent::GroupChatMemberRemoved(GroupChatEventMemberRemovedBody::new(user_id.clone(), admin_id.clone()))
 }
 
-fn renamed_event(aggregate_id: &GroupChatId, admin_id: &UserAccountId) -> GroupChatEvent {
+fn renamed_event(admin_id: &UserAccountId) -> GroupChatEvent {
   GroupChatEvent::GroupChatRenamed(GroupChatEventRenamedBody::new(
-    aggregate_id.clone(),
-    3,
     GroupChatName::new("renamed").unwrap(),
     admin_id.clone(),
   ))
@@ -239,9 +222,9 @@ fn fixture() -> (
   let aggregate_id = GroupChatId::new();
   let admin_id = UserAccountId::new();
   let user_id = UserAccountId::new();
-  let created = created_event(&aggregate_id, &admin_id);
-  let member_added = member_added_event(&aggregate_id, &admin_id, &user_id);
-  let renamed = renamed_event(&aggregate_id, &admin_id);
+  let created = created_event(&admin_id);
+  let member_added = member_added_event(&admin_id, &user_id);
+  let renamed = renamed_event(&admin_id);
   (aggregate_id, admin_id, user_id, created, member_added, renamed)
 }
 
@@ -419,7 +402,7 @@ async fn should_roll_back_the_read_model_and_position_together() {
       &aggregate_id,
       &[
         read_model_event(1, created),
-        read_model_event(2, duplicate_member_event(&aggregate_id, &admin_id)),
+        read_model_event(2, duplicate_member_event(&admin_id)),
       ],
     )
     .await
@@ -457,7 +440,7 @@ async fn should_keep_the_last_committed_record_when_a_batch_fails() {
       head_record(
         "MODIFY",
         &aid,
-        vec![head_event_value(2, &duplicate_member_event(&aggregate_id, &admin_id))],
+        vec![head_event_value(2, &duplicate_member_event(&admin_id))],
       ),
     ],
   )
@@ -618,9 +601,9 @@ async fn should_read_a_contiguous_seq_nr_range_from_the_journal() {
   let aggregate_id = GroupChatId::from_str(&format!("{}-01H42K4ABWQ5V2XQEP3A48VE0Z", GROUP_CHAT_AID_PREFIX)).unwrap();
   let admin_id = UserAccountId::new();
   let events = [
-    created_event(&aggregate_id, &admin_id),
-    member_added_event(&aggregate_id, &admin_id, &UserAccountId::new()),
-    renamed_event(&aggregate_id, &admin_id),
+    created_event(&admin_id),
+    member_added_event(&admin_id, &UserAccountId::new()),
+    renamed_event(&admin_id),
   ];
   for (index, event) in events.iter().enumerate() {
     let seq_nr = (index + 1) as u64;
@@ -661,9 +644,9 @@ async fn should_remove_a_member_from_the_read_model() {
   let aggregate_id = GroupChatId::new();
   let admin_id = UserAccountId::new();
   let user_id = UserAccountId::new();
-  let created = created_event(&aggregate_id, &admin_id);
-  let member_added = member_added_event(&aggregate_id, &admin_id, &user_id);
-  let member_removed = member_removed_event(&aggregate_id, &admin_id, &user_id);
+  let created = created_event(&admin_id);
+  let member_added = member_added_event(&admin_id, &user_id);
+  let member_removed = member_removed_event(&admin_id, &user_id);
   let journal = FakeJournal::with_events(
     &aggregate_id,
     vec![

@@ -1,4 +1,22 @@
-use async_graphql::InputObject;
+use async_graphql::{Enum, InputObject};
+
+/// 共通スキーマが定めるメンバーの役割。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Enum)]
+pub enum MemberRole {
+  #[graphql(name = "MEMBER")]
+  Member,
+  #[graphql(name = "ADMIN")]
+  Admin,
+}
+
+impl MemberRole {
+  pub fn into_domain(self) -> command_domain::group_chat::MemberRole {
+    match self {
+      MemberRole::Member => command_domain::group_chat::MemberRole::Member,
+      MemberRole::Admin => command_domain::group_chat::MemberRole::Admin,
+    }
+  }
+}
 
 #[derive(Debug, Clone, InputObject)]
 pub struct CreateGroupChatInput {
@@ -23,7 +41,7 @@ pub struct RenameGroupChatInput {
 pub struct AddMemberInput {
   pub group_chat_id: String,
   pub user_account_id: String,
-  pub role: String,
+  pub role: MemberRole,
   pub executor_id: String,
 }
 
