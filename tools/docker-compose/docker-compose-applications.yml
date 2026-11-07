@@ -47,13 +47,14 @@ services:
       APP__STREAM__JOURNAL_TABLE_NAME: journal
       APP__STREAM__MAX_ITEM_COUNT: 32
       APP__DATABASE__URL: mysql://ceer:ceer@mysql-local:3306/ceer
+    restart: on-failure
     depends_on:
       mysql:
         condition: service_healthy
       refinery:
         condition: service_completed_successfully
       localstack:
-        condition: service_started
+        condition: service_healthy
       dynamodb-admin:
         condition: service_started
       dynamodb-setup:
