@@ -5,6 +5,12 @@ resource "aws_dynamodb_table" "journal-table" {
   hash_key  = "aid"
   range_key = "seq_nr"
 
+  lifecycle {
+    # The v5 key schema replaces the table. Require an explicit opt-out before
+    # an apply or destroy can remove the events.
+    prevent_destroy = true
+  }
+
   billing_mode = "PAY_PER_REQUEST"
 
   attribute {
