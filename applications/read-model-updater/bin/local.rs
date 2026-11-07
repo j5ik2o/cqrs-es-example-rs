@@ -10,8 +10,8 @@ use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::Gr
 use command_interface_adaptor_impl::gateways::recovery_task_store_impl::MySqlRecoveryTaskStore;
 use read_model_updater::{create_aws_config, load_app_config, StreamSettings};
 use rmu::{
-  poll_shards, Applier, Backoff, DynamoDbHeadScanner, DynamoDbHeadStreamClient, DynamoDbJournalReader,
-  HeadStreamClient, ReadModelUpdater, RecoveryService, Resyncer, StreamDriverError, StreamState,
+  catch_up_blocked, poll_shards, Applier, Backoff, DynamoDbHeadScanner, DynamoDbHeadStreamClient,
+  DynamoDbJournalReader, HeadStreamClient, ReadModelUpdater, RecoveryService, Resyncer, StreamDriverError, StreamState,
 };
 
 #[tokio::main]
@@ -71,6 +71,19 @@ async fn main() -> Result<()> {
   let mut poll_backoff = stream_settings.poll_backoff();
 
   loop {
+    // Replay the journal for aggregates that were blocked by a permanent
+    // failure. This can unblock them even when no later head record arrives.
+    match catch_up_blocked(&components.applier, &mut state).await {
+      Ok(outcome) => {
+        if outcome.unblocked > 0 {
+          tracing::info!(unblocked = outcome.unblocked, "caught up blocked aggregates");
+        }
+      }
+      Err(error) => {
+        tracing::warn!(error = %error, "failed to catch up blocked aggregates; backing off");
+        tokio::time::sleep(error_backoff.next_delay()).await;
+      }
+    }
     match poll_shards(
       &stream_client,
       &components.updater,
@@ -116,6 +129,7 @@ struct Components {
   updater: ReadModelUpdater,
   recovery: Arc<RecoveryService>,
   resyncer: Resyncer,
+  applier: Arc<Applier>,
 }
 
 fn build_components(pool: &MySqlPool, stream_settings: &StreamSettings, dynamodb_client: DynamoDBClient) -> Components {
@@ -140,11 +154,12 @@ fn build_components(pool: &MySqlPool, stream_settings: &StreamSettings, dynamodb
     applier.clone(),
   ));
   let updater = ReadModelUpdater::new(applier.clone(), Some(recovery.clone()), stream_settings.retry_policy());
-  let resyncer = Resyncer::new(applier, head_scanner, Some(recovery.clone()));
+  let resyncer = Resyncer::new(applier.clone(), head_scanner, Some(recovery.clone()));
   Components {
     updater,
     recovery,
     resyncer,
+    applier,
   }
 }
 

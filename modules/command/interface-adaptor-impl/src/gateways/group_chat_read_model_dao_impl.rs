@@ -470,13 +470,17 @@ fn is_transient_sqlx_error(error: &sqlx::Error) -> bool {
   match error {
     sqlx::Error::Database(database_error) => {
       // `code()` is the SQLSTATE (for example 23000). The MySQL error number
-      // tells a constraint violation apart from a deadlock or lock timeout.
+      // tells a retryable connection/locking failure apart from a constraint or
+      // schema problem, which the same event cannot fix.
       match database_error
         .as_error()
         .downcast_ref::<sqlx::mysql::MySqlDatabaseError>()
       {
-        Some(mysql_error) => !matches!(mysql_error.number(), 1062 | 1452 | 1406 | 1264 | 1366),
-        None => true,
+        Some(mysql_error) => matches!(
+          mysql_error.number(),
+          1040 | 1205 | 1213 | 1317 | 1927 | 2002 | 2003 | 2006 | 2013
+        ),
+        None => false,
       }
     }
     sqlx::Error::RowNotFound

@@ -20,6 +20,7 @@ use command_interface_adaptor_if::{
 use crate::head_scanner::{Head, HeadScanError, HeadScanner, StoreIdProvider};
 use crate::journal::{JournalReadError, JournalReader};
 use crate::recovery::{RecoveryService, RECOVERY_STATUS_COMPLETED};
+use crate::stream::{catch_up_blocked, StreamState};
 use crate::{
   process_records, Applier, ReadModelUpdater, Resyncer, RetryPolicy, UpdateReadModelError, CONFIG_AGGREGATE_ID,
   GROUP_CHAT_TYPE_NAME,
@@ -842,4 +843,47 @@ async fn should_report_failed_and_blocked_records_in_a_partial_batch() {
     .collect::<Vec<_>>();
   assert_eq!(vec!["e2", "e3"], failed);
   assert_eq!(1, dao.position());
+}
+
+#[tokio::test]
+async fn should_catch_up_and_unblock_a_blocked_aggregate() {
+  let (aggregate_id, _, _, created, member_added, renamed) = fixture();
+  let dao = Arc::new(FakeDao::default());
+  let journal = Arc::new(FakeJournal::with_events(
+    &aggregate_id,
+    journal_events(&created, &member_added, &renamed),
+  ));
+  let applier = Arc::new(Applier::new(dao.clone(), journal, 1));
+  let mut state = StreamState::default();
+  state.blocked_aggregates.insert(aggregate_id.to_string(), 3);
+
+  let outcome = catch_up_blocked(&applier, &mut state).await.unwrap();
+
+  assert_eq!(1, outcome.unblocked);
+  assert_eq!(0, outcome.still_blocked);
+  assert!(state.blocked_aggregates.is_empty());
+  assert_eq!(3, dao.position());
+  assert_eq!(vec![1, 2, 3], dao.applied());
+}
+
+#[tokio::test]
+async fn should_keep_a_blocked_aggregate_that_still_cannot_be_applied() {
+  let (aggregate_id, _, _, created, _, _) = fixture();
+  let dao = Arc::new(FakeDao::default());
+  // The journal stops at seq_nr 1, so replaying to the blocked target 3 fails
+  // with a permanent gap.
+  let journal = Arc::new(FakeJournal::with_events(
+    &aggregate_id,
+    vec![read_model_event(1, created)],
+  ));
+  let applier = Arc::new(Applier::new(dao.clone(), journal, 1));
+  let mut state = StreamState::default();
+  state.blocked_aggregates.insert(aggregate_id.to_string(), 3);
+
+  let outcome = catch_up_blocked(&applier, &mut state).await.unwrap();
+
+  assert_eq!(0, outcome.unblocked);
+  assert_eq!(1, outcome.still_blocked);
+  assert!(state.blocked_aggregates.contains_key(&aggregate_id.to_string()));
+  assert_eq!(0, dao.position());
 }

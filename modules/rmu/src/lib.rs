@@ -29,7 +29,8 @@ pub use recovery::{RecoveryService, PROJECTION_NAME, PROJECTION_VERSION};
 pub use resync::{ResyncError, ResyncResult, Resyncer};
 pub use retry::{full_jitter, Backoff, RetryError, RetryPolicy, Sleeper};
 pub use stream::{
-  poll_shards, DynamoDbHeadStreamClient, HeadStreamClient, StreamDriverError, StreamReadError, StreamState,
+  catch_up_blocked, poll_shards, CatchUpOutcome, DynamoDbHeadStreamClient, HeadStreamClient, StreamDriverError,
+  StreamReadError, StreamState,
 };
 
 /// 設定項目を保持する予約済みの集約 ID。ヘッドの Streams に一度だけ流れる。

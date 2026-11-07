@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::str::FromStr;
 
 use async_trait::async_trait;
 use aws_lambda_events::dynamodb;
@@ -6,13 +7,15 @@ use aws_lambda_events::dynamodb::{StreamRecord, StreamViewType};
 use aws_sdk_dynamodb::Client as DynamoDbClient;
 use aws_sdk_dynamodbstreams::error::SdkError;
 use aws_sdk_dynamodbstreams::operation::get_records::GetRecordsError;
+use aws_sdk_dynamodbstreams::operation::get_shard_iterator::GetShardIteratorError;
 use aws_sdk_dynamodbstreams::types::ShardIteratorType;
 use aws_sdk_dynamodbstreams::Client as DynamoDbStreamsClient;
 use chrono::Utc;
+use command_domain::group_chat::GroupChatId;
 use thiserror::Error;
 
 use crate::failure::classify_update_error;
-use crate::{head_record_aggregate_id, ReadModelUpdater, RecordOutcome, UpdateReadModelError};
+use crate::{head_record_aggregate_id, Applier, ReadModelUpdater, RecordOutcome, UpdateReadModelError};
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum StreamReadError {
@@ -80,9 +83,10 @@ pub struct StreamState {
   /// The last successfully processed Streams sequence number per shard. It is
   /// used to recreate an iterator after ExpiredIterator, not to skip records.
   pub last_sequence_numbers: HashMap<String, String>,
-  /// Aggregates with an unapplied event. Their later records are skipped until
-  /// the recovery task moves the position.
-  pub blocked_aggregates: HashSet<String>,
+  /// Aggregates with an unapplied event, mapped to the head seq_nr that must be
+  /// reached before they are unblocked. Their later records are skipped until
+  /// the journal replay catches up to that position.
+  pub blocked_aggregates: HashMap<String, u64>,
   /// Shards whose iterator returned no next iterator.
   pub closed_shards: HashSet<String>,
 }
@@ -118,7 +122,7 @@ pub async fn poll_shards(
         state.last_sequence_numbers.get(&shard.shard_id).map(String::as_str),
       )
       .await
-      .map_err(|error| StreamDriverError::Other(error.to_string()))?;
+      .map_err(map_shard_iterator_error)?;
     loop {
       let page = match client.get_records(&iterator, max_item_count).await {
         Ok(page) => page,
@@ -137,23 +141,34 @@ pub async fn poll_shards(
               state.last_sequence_numbers.get(&shard.shard_id).map(String::as_str),
             )
             .await
-            .map_err(|error| StreamDriverError::Other(error.to_string()))?;
+            .map_err(map_shard_iterator_error)?;
           continue;
         }
         Err(StreamReadError::TrimmedData) => return Err(StreamDriverError::Trimmed),
         Err(StreamReadError::Other(error)) => return Err(StreamDriverError::Other(error)),
       };
       if page.records.is_empty() {
+        if page.next_iterator.is_none() {
+          state.closed_shards.insert(shard.shard_id.clone());
+        }
         outcome.idle = true;
         break;
       }
       for record in &page.records {
+        let head_seq_nr = head_record_seq_nr(record);
         let aggregate_id = head_record_aggregate_id(record);
         if let Some(aggregate_id) = &aggregate_id {
-          if state.blocked_aggregates.contains(aggregate_id) {
+          if state.blocked_aggregates.contains_key(aggregate_id) {
+            let target = state
+              .blocked_aggregates
+              .entry(aggregate_id.clone())
+              .or_insert(head_seq_nr);
+            *target = (*target).max(head_seq_nr);
+            let target = *target;
             tracing::warn!(
               aggregate_id = %aggregate_id,
               event_id = %record.event_id,
+              target_seq_nr = target,
               "skip head record of an aggregate with an unapplied event"
             );
             update_last_sequence(state, &shard.shard_id, record);
@@ -168,7 +183,11 @@ pub async fn poll_shards(
           Err(error) => {
             if let Some(kind) = classify_update_error(&error) {
               if let Some(aggregate_id) = &aggregate_id {
-                state.blocked_aggregates.insert(aggregate_id.clone());
+                let target = state
+                  .blocked_aggregates
+                  .entry(aggregate_id.clone())
+                  .or_insert(head_seq_nr);
+                *target = (*target).max(head_seq_nr);
               }
               tracing::error!(
                 aggregate_id = ?aggregate_id,
@@ -201,6 +220,78 @@ fn update_last_sequence(state: &mut StreamState, shard_id: &str, record: &dynamo
       .last_sequence_numbers
       .insert(shard_id.to_string(), sequence_number.clone());
   }
+}
+
+fn map_shard_iterator_error(error: StreamReadError) -> StreamDriverError {
+  match error {
+    StreamReadError::TrimmedData => StreamDriverError::Trimmed,
+    other => StreamDriverError::Other(other.to_string()),
+  }
+}
+
+fn head_record_seq_nr(record: &dynamodb::EventRecord) -> u64 {
+  record
+    .change
+    .new_image
+    .get("seq_nr")
+    .and_then(|value| match value {
+      serde_dynamo::AttributeValue::N(value) => value.parse().ok(),
+      _ => None,
+    })
+    .unwrap_or(0)
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct CatchUpOutcome {
+  pub unblocked: usize,
+  pub still_blocked: usize,
+}
+
+/// Replays the journal for blocked aggregates. It is called between polls so a
+/// permanently failing aggregate can be unblocked even when no later head
+/// record arrives. A transient failure is returned to the caller for backoff;
+/// a permanent failure keeps the aggregate blocked for the next attempt.
+pub async fn catch_up_blocked(
+  applier: &Applier,
+  state: &mut StreamState,
+) -> Result<CatchUpOutcome, UpdateReadModelError> {
+  let blocked = state
+    .blocked_aggregates
+    .iter()
+    .map(|(aggregate_id, target_seq_nr)| (aggregate_id.clone(), *target_seq_nr))
+    .collect::<Vec<_>>();
+  let mut outcome = CatchUpOutcome::default();
+  for (aggregate_id, target_seq_nr) in blocked {
+    let parsed = match GroupChatId::from_str(&aggregate_id) {
+      Ok(parsed) => parsed,
+      Err(error) => {
+        tracing::error!(
+          aggregate_id = %aggregate_id,
+          "blocked aggregate id is invalid; dropping the block: {}",
+          error
+        );
+        state.blocked_aggregates.remove(&aggregate_id);
+        continue;
+      }
+    };
+    match applier.apply_through(&parsed, target_seq_nr).await {
+      Ok(()) => {
+        state.blocked_aggregates.remove(&aggregate_id);
+        outcome.unblocked += 1;
+      }
+      Err(error) if classify_update_error(&error).is_some() => {
+        tracing::error!(
+          aggregate_id = %aggregate_id,
+          target_seq_nr = target_seq_nr,
+          failure = ?classify_update_error(&error),
+          "blocked aggregate still cannot be applied"
+        );
+        outcome.still_blocked += 1;
+      }
+      Err(error) => return Err(error),
+    }
+  }
+  Ok(outcome)
 }
 
 /// Production adapter over the DynamoDB and DynamoDB Streams SDK clients.
@@ -284,10 +375,7 @@ impl HeadStreamClient for DynamoDbHeadStreamClient {
         .sequence_number(sequence_number),
       None => request.shard_iterator_type(ShardIteratorType::TrimHorizon),
     };
-    let output = request
-      .send()
-      .await
-      .map_err(|error| StreamReadError::Other(error.to_string()))?;
+    let output = request.send().await.map_err(map_get_shard_iterator_error)?;
     output
       .shard_iterator()
       .map(ToString::to_string)
@@ -307,6 +395,20 @@ impl HeadStreamClient for DynamoDbHeadStreamClient {
       records: event_records_from_stream_records(output.records())?,
       next_iterator: output.next_shard_iterator().map(ToString::to_string),
     })
+  }
+}
+
+fn map_get_shard_iterator_error<R>(error: SdkError<GetShardIteratorError, R>) -> StreamReadError
+where
+  R: std::fmt::Debug, {
+  match &error {
+    SdkError::ServiceError(service_error) => match service_error.err() {
+      // AfterSequenceNumber past the retention window means the reader must
+      // reconcile the whole head table, not just resume from a later position.
+      GetShardIteratorError::TrimmedDataAccessException(_) => StreamReadError::TrimmedData,
+      other => StreamReadError::Other(other.to_string()),
+    },
+    _ => StreamReadError::Other(error.to_string()),
   }
 }
 
@@ -452,6 +554,7 @@ mod tests {
   struct FakeClient {
     pages: Mutex<VecDeque<Result<StreamRecordPage, StreamReadError>>>,
     iterator_calls: Mutex<Vec<(String, Option<String>)>>,
+    shard_iterator_error: Option<StreamReadError>,
   }
 
   impl FakeClient {
@@ -459,6 +562,15 @@ mod tests {
       Self {
         pages: Mutex::new(pages.into()),
         iterator_calls: Mutex::new(Vec::new()),
+        shard_iterator_error: None,
+      }
+    }
+
+    fn with_iterator_error(error: StreamReadError) -> Self {
+      Self {
+        pages: Mutex::new(VecDeque::new()),
+        iterator_calls: Mutex::new(Vec::new()),
+        shard_iterator_error: Some(error),
       }
     }
 
@@ -490,6 +602,9 @@ mod tests {
         .lock()
         .unwrap()
         .push((shard_id.to_string(), after_sequence_number.map(ToString::to_string)));
+      if let Some(error) = &self.shard_iterator_error {
+        return Err(error.clone());
+      }
       Ok(format!("iterator-{}", self.iterator_calls().len()))
     }
 
@@ -592,8 +707,21 @@ mod tests {
 
     assert_eq!(0, outcome.processed);
     assert_eq!(1, processor.calls());
-    assert!(state.blocked_aggregates.contains("GroupChat-01H"));
+    assert_eq!(Some(&1), state.blocked_aggregates.get("GroupChat-01H"));
     assert_eq!(Some(&"seq-2".to_string()), state.last_sequence_numbers.get("shard-1"));
+  }
+
+  #[tokio::test]
+  async fn should_signal_a_full_resync_when_the_shard_iterator_is_trimmed() {
+    let client = FakeClient::with_iterator_error(StreamReadError::TrimmedData);
+    let processor = FakeProcessor::ok();
+    let mut state = StreamState::default();
+
+    let error = poll_shards(&client, &processor, "arn", &mut state, 10)
+      .await
+      .unwrap_err();
+
+    assert!(matches!(error, StreamDriverError::Trimmed));
   }
 
   #[tokio::test]
