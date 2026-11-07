@@ -18,6 +18,10 @@ output "aws_dynamodb_table_head_table_name" {
   value = concat(aws_dynamodb_table.head-table.*.name, [""])[0]
 }
 
+output "aws_dynamodb_table_head_table_arn" {
+  value = concat(aws_dynamodb_table.head-table.*.arn, [""])[0]
+}
+
 output "aws_dynamodb_table_head_stream_arn" {
   value = concat(aws_dynamodb_table.head-table.*.stream_arn, [""])[0]
 }

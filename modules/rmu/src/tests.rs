@@ -22,8 +22,8 @@ use crate::journal::{JournalReadError, JournalReader};
 use crate::recovery::{RecoveryService, RECOVERY_STATUS_COMPLETED};
 use crate::stream::{catch_up_blocked, StreamState};
 use crate::{
-  process_records, Applier, ReadModelUpdater, Resyncer, RetryPolicy, UpdateReadModelError, CONFIG_AGGREGATE_ID,
-  GROUP_CHAT_TYPE_NAME,
+  process_records, run_recovery_pass, Applier, ReadModelUpdater, ResyncResult, Resyncer, RetryPolicy,
+  UpdateReadModelError, CONFIG_AGGREGATE_ID, GROUP_CHAT_TYPE_NAME,
 };
 
 const TEST_TIMESTAMP_MILLIS: i64 = 1_767_225_600_000;
@@ -886,4 +886,118 @@ async fn should_keep_a_blocked_aggregate_that_still_cannot_be_applied() {
   assert_eq!(1, outcome.still_blocked);
   assert!(state.blocked_aggregates.contains_key(&aggregate_id.to_string()));
   assert_eq!(0, dao.position());
+}
+
+struct FailingHeadScanner;
+
+#[async_trait::async_trait]
+impl HeadScanner for FailingHeadScanner {
+  async fn scan_heads(&self) -> Result<Vec<Head>, HeadScanError> {
+    Err(HeadScanError::DynamoDb("scan unavailable".to_string()))
+  }
+}
+
+#[tokio::test]
+async fn should_run_a_recovery_pass_and_report_counts() {
+  let (aggregate_id, _, _, created, member_added, renamed) = fixture();
+  let dao = Arc::new(FakeDao::default());
+  let journal = Arc::new(FakeJournal::with_events(
+    &aggregate_id,
+    journal_events(&created, &member_added, &renamed),
+  ));
+  let applier = Arc::new(Applier::new(dao.clone(), journal, 1));
+  let store = Arc::new(FakeRecoveryTaskStore::default());
+  let recovery = Arc::new(RecoveryService::new(
+    store.clone(),
+    Arc::new(FakeStoreIdProvider("store-1".to_string())),
+    applier.clone(),
+  ));
+  recovery
+    .record(
+      &aggregate_id.to_string(),
+      3,
+      &UpdateReadModelError::Payload("bad".to_string()),
+    )
+    .await
+    .unwrap();
+  let scanner = Arc::new(FakeHeadScanner(vec![Head {
+    aggregate_id: aggregate_id.to_string(),
+    type_name: GROUP_CHAT_TYPE_NAME.to_string(),
+    seq_nr: 3,
+  }]));
+  let resyncer = Resyncer::new(applier, scanner, Some(recovery.clone()));
+
+  let result = run_recovery_pass(&resyncer, &recovery).await;
+
+  assert_eq!(
+    Some(ResyncResult {
+      heads: 1,
+      skipped: 0,
+      advanced: 1,
+      failed: 0,
+    }),
+    result.resync
+  );
+  assert_eq!(1, result.completed_tasks());
+  assert_eq!(0, result.pending_tasks());
+  assert!(!result.retryable());
+  assert_eq!(3, dao.position());
+  assert_eq!(RECOVERY_STATUS_COMPLETED, store.tasks.lock().unwrap()[0].status);
+}
+
+#[tokio::test]
+async fn should_mark_a_transient_resync_failure_as_retryable() {
+  let (aggregate_id, _, _, _, _, _) = fixture();
+  let dao = Arc::new(FakeDao::default());
+  let journal = Arc::new(FakeJournal::default());
+  let applier = Arc::new(Applier::new(dao, journal, 1));
+  let store = Arc::new(FakeRecoveryTaskStore::default());
+  let recovery = Arc::new(RecoveryService::new(
+    store,
+    Arc::new(FakeStoreIdProvider("store-1".to_string())),
+    applier.clone(),
+  ));
+  let resyncer = Resyncer::new(applier, Arc::new(FailingHeadScanner), Some(recovery.clone()));
+
+  let result = run_recovery_pass(&resyncer, &recovery).await;
+
+  assert!(result.retryable());
+  assert!(result.resync_error.is_some());
+  assert_eq!(0, result.completed_tasks());
+  let _ = aggregate_id;
+}
+
+#[tokio::test]
+async fn should_report_permanent_task_failures_as_pending_without_retry() {
+  let (aggregate_id, _, _, created, _, _) = fixture();
+  let dao = Arc::new(FakeDao::default());
+  // The journal stops at seq_nr 1, so replaying the task to seq_nr 3 fails
+  // with a permanent gap.
+  let journal = Arc::new(FakeJournal::with_events(
+    &aggregate_id,
+    vec![read_model_event(1, created)],
+  ));
+  let applier = Arc::new(Applier::new(dao, journal, 1));
+  let store = Arc::new(FakeRecoveryTaskStore::default());
+  let recovery = Arc::new(RecoveryService::new(
+    store,
+    Arc::new(FakeStoreIdProvider("store-1".to_string())),
+    applier.clone(),
+  ));
+  recovery
+    .record(
+      &aggregate_id.to_string(),
+      3,
+      &UpdateReadModelError::Payload("bad".to_string()),
+    )
+    .await
+    .unwrap();
+  let resyncer = Resyncer::new(applier, Arc::new(FakeHeadScanner(Vec::new())), Some(recovery.clone()));
+
+  let result = run_recovery_pass(&resyncer, &recovery).await;
+
+  assert!(!result.retryable());
+  assert!(result.has_permanent_failures());
+  assert_eq!(1, result.pending_tasks());
+  assert_eq!(1, result.failed_tasks());
 }

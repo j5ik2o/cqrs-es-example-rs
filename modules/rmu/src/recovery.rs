@@ -18,6 +18,9 @@ pub const RECOVERY_STATUS_COMPLETED: &str = "completed";
 pub struct RecoveryPendingResult {
   pub completed: usize,
   pub failures: Vec<String>,
+  /// Matching tasks that remain pending after this run. The recovery worker
+  /// publishes this count so a backlog raises an alarm.
+  pub pending: usize,
 }
 
 /// Records failed events and replays them from the journal. It is the DLQ half
@@ -145,6 +148,11 @@ impl RecoveryService {
         Err(error) => failures.push(format!("{} seq_nr {}: {}", task.aggregate_id, task.seq_nr, error)),
       }
     }
-    Ok(RecoveryPendingResult { completed, failures })
+    let pending = failures.len();
+    Ok(RecoveryPendingResult {
+      completed,
+      failures,
+      pending,
+    })
   }
 }

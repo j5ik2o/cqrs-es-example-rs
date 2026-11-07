@@ -61,6 +61,7 @@ impl std::error::Error for ResyncError {}
 /// Implements DY-15's reconciliation: scan every head with strong consistency,
 /// compare its seq_nr with the projection position, and fill the lag from the
 /// journal with the same position guard as the stream path.
+#[derive(Clone)]
 pub struct Resyncer {
   applier: Arc<Applier>,
   scanner: Arc<dyn HeadScanner>,

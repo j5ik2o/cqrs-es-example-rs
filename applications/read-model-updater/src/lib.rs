@@ -4,11 +4,17 @@ use aws_sdk_dynamodb::config::{Credentials, Region};
 use config::{ConfigError, Environment};
 use serde::Deserialize;
 
+pub mod recovery_worker;
+
 #[derive(Deserialize, Debug)]
 pub struct AppSettings {
   pub aws: AwsSettings,
   pub stream: Option<StreamSettings>,
   pub database: DatabaseSettings,
+  /// Runs the recovery pass (resync and pending tasks) instead of the head
+  /// stream updater. The recovery Lambda sets this to true.
+  #[serde(default)]
+  pub recovery_worker: bool,
 }
 
 #[derive(Deserialize, Debug)]
