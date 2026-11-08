@@ -88,26 +88,23 @@ fn head_record(event_name: &str, aid: &str, events: Vec<AttributeValue>) -> dyna
     ("events".into(), AttributeValue::L(events)),
   ])
   .into();
-  dynamodb::EventRecord {
-    aws_region: "ap-northeast-1".to_string(),
-    change: StreamRecord {
-      approximate_creation_date_time: test_time(),
-      keys: HashMap::from([("aid".into(), AttributeValue::S(aid.to_string()))]).into(),
-      new_image: image,
-      old_image: Item::default(),
-      sequence_number: Some("1".to_string()),
-      size_bytes: 1,
-      stream_view_type: Some(StreamViewType::NewImage),
-    },
-    event_id: format!("{}:{}", aid, event_name),
-    event_name: event_name.to_string(),
-    event_source: Some("aws:dynamodb".to_string()),
-    event_version: Some("1.1".to_string()),
-    event_source_arn: None,
-    user_identity: None,
-    record_format: None,
-    table_name: None,
-  }
+  let mut change = StreamRecord::default();
+  change.approximate_creation_date_time = test_time();
+  change.keys = HashMap::from([("aid".into(), AttributeValue::S(aid.to_string()))]).into();
+  change.new_image = image;
+  change.old_image = Item::default();
+  change.sequence_number = Some("1".to_string());
+  change.size_bytes = 1;
+  change.stream_view_type = Some(StreamViewType::NewImage);
+
+  let mut event = dynamodb::EventRecord::default();
+  event.aws_region = "ap-northeast-1".to_string();
+  event.change = change;
+  event.event_id = format!("{}:{}", aid, event_name);
+  event.event_name = event_name.to_string();
+  event.event_source = Some("aws:dynamodb".to_string());
+  event.event_version = Some("1.1".to_string());
+  event
 }
 
 #[derive(Default)]
@@ -515,13 +512,12 @@ async fn should_round_trip_through_the_lambda_event_json() {
   let (aggregate_id, _, _, created, _, _) = fixture();
   let dao = FakeDao::default();
   let journal = FakeJournal::default();
-  let event = dynamodb::Event {
-    records: vec![head_record(
-      "INSERT",
-      &aggregate_id.to_string(),
-      vec![head_event_value(1, &created)],
-    )],
-  };
+  let mut event = dynamodb::Event::default();
+  event.records = vec![head_record(
+    "INSERT",
+    &aggregate_id.to_string(),
+    vec![head_event_value(1, &created)],
+  )];
 
   let json = serde_json::to_string(&event).unwrap();
   let parsed: dynamodb::Event = serde_json::from_str(&json).unwrap();
@@ -829,12 +825,9 @@ async fn should_report_failed_and_blocked_records_in_a_partial_batch() {
   let mut third = head_record("MODIFY", &aid, vec![head_event_value(3, &renamed)]);
   third.event_id = "e3".to_string();
 
-  let response = updater
-    .handle_event(dynamodb::Event {
-      records: vec![first, second, third],
-    })
-    .await
-    .unwrap();
+  let mut event = dynamodb::Event::default();
+  event.records = vec![first, second, third];
+  let response = updater.handle_event(event).await.unwrap();
 
   let failed = response
     .batch_item_failures

@@ -627,26 +627,19 @@ mod tests {
       ("events".to_string(), serde_dynamo::AttributeValue::L(Vec::new())),
     ])
     .into();
-    dynamodb::EventRecord {
-      aws_region: "ap-northeast-1".to_string(),
-      change: StreamRecord {
-        approximate_creation_date_time: Utc::now(),
-        keys: Default::default(),
-        new_image: image,
-        old_image: Default::default(),
-        sequence_number: Some(sequence_number.to_string()),
-        size_bytes: 1,
-        stream_view_type: Some(StreamViewType::NewImage),
-      },
-      event_id: format!("event-{}", sequence_number),
-      event_name: "MODIFY".to_string(),
-      event_source: None,
-      event_version: None,
-      event_source_arn: None,
-      user_identity: None,
-      record_format: None,
-      table_name: None,
-    }
+    let mut change = StreamRecord::default();
+    change.approximate_creation_date_time = Utc::now();
+    change.new_image = image;
+    change.sequence_number = Some(sequence_number.to_string());
+    change.size_bytes = 1;
+    change.stream_view_type = Some(StreamViewType::NewImage);
+
+    let mut event = dynamodb::EventRecord::default();
+    event.aws_region = "ap-northeast-1".to_string();
+    event.change = change;
+    event.event_id = format!("event-{}", sequence_number);
+    event.event_name = "MODIFY".to_string();
+    event
   }
 
   #[tokio::test]
