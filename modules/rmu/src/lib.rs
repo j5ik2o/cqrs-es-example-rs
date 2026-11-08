@@ -253,9 +253,9 @@ impl ReadModelUpdater {
         }
       }
     }
-    Ok(DynamoDbEventResponse {
-      batch_item_failures: failures,
-    })
+    let mut response = DynamoDbEventResponse::default();
+    response.batch_item_failures = failures;
+    Ok(response)
   }
 }
 
@@ -287,9 +287,9 @@ pub async fn process_records(
 }
 
 fn batch_failure(event_id: String) -> DynamoDbBatchItemFailure {
-  DynamoDbBatchItemFailure {
-    item_identifier: Some(event_id),
-  }
+  let mut failure = DynamoDbBatchItemFailure::default();
+  failure.item_identifier = Some(event_id);
+  failure
 }
 
 struct HeadRecord {

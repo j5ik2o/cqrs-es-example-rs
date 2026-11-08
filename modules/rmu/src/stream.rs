@@ -441,29 +441,26 @@ fn event_records_from_stream_records(
         .event_name()
         .map(|name| name.as_str().to_string())
         .unwrap_or_else(|| "INSERT".to_string());
-      Ok(dynamodb::EventRecord {
-        aws_region: record.aws_region().unwrap_or("ap-northeast-1").to_string(),
-        change: StreamRecord {
-          approximate_creation_date_time: Utc::now(),
-          keys,
-          new_image,
-          old_image,
-          sequence_number: stream_record.sequence_number().map(ToString::to_string),
-          size_bytes: stream_record.size_bytes().unwrap_or_default(),
-          stream_view_type: Some(StreamViewType::NewImage),
-        },
-        event_id: record
-          .event_id()
-          .map(ToString::to_string)
-          .unwrap_or_else(|| command_domain::id_generate().to_string()),
-        event_name,
-        event_source: record.event_source().map(ToString::to_string),
-        event_version: record.event_version().map(ToString::to_string),
-        event_source_arn: None,
-        user_identity: None,
-        record_format: None,
-        table_name: None,
-      })
+      let mut change = StreamRecord::default();
+      change.approximate_creation_date_time = Utc::now();
+      change.keys = keys;
+      change.new_image = new_image;
+      change.old_image = old_image;
+      change.sequence_number = stream_record.sequence_number().map(ToString::to_string);
+      change.size_bytes = stream_record.size_bytes().unwrap_or_default();
+      change.stream_view_type = Some(StreamViewType::NewImage);
+
+      let mut event = dynamodb::EventRecord::default();
+      event.aws_region = record.aws_region().unwrap_or("ap-northeast-1").to_string();
+      event.change = change;
+      event.event_id = record
+        .event_id()
+        .map(ToString::to_string)
+        .unwrap_or_else(|| command_domain::id_generate().to_string());
+      event.event_name = event_name;
+      event.event_source = record.event_source().map(ToString::to_string);
+      event.event_version = record.event_version().map(ToString::to_string);
+      Ok(event)
     })
     .collect()
 }

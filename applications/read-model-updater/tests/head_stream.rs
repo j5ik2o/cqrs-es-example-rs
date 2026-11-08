@@ -162,26 +162,23 @@ fn head_record(event_name: &str, aid: &str, events: Vec<AttributeValue>) -> dyna
     ("events".into(), AttributeValue::L(events)),
   ])
   .into();
-  dynamodb::EventRecord {
-    aws_region: "ap-northeast-1".to_string(),
-    change: StreamRecord {
-      approximate_creation_date_time: test_time(),
-      keys: HashMap::from([("aid".into(), AttributeValue::S(aid.to_string()))]).into(),
-      new_image: image,
-      old_image: Item::default(),
-      sequence_number: Some("1".to_string()),
-      size_bytes: 1,
-      stream_view_type: Some(StreamViewType::NewImage),
-    },
-    event_id: format!("{}:{}", aid, event_name),
-    event_name: event_name.to_string(),
-    event_source: Some("aws:dynamodb".to_string()),
-    event_version: Some("1.1".to_string()),
-    event_source_arn: None,
-    user_identity: None,
-    record_format: None,
-    table_name: None,
-  }
+  let mut change = StreamRecord::default();
+  change.approximate_creation_date_time = test_time();
+  change.keys = HashMap::from([("aid".into(), AttributeValue::S(aid.to_string()))]).into();
+  change.new_image = image;
+  change.old_image = Item::default();
+  change.sequence_number = Some("1".to_string());
+  change.size_bytes = 1;
+  change.stream_view_type = Some(StreamViewType::NewImage);
+
+  let mut event = dynamodb::EventRecord::default();
+  event.aws_region = "ap-northeast-1".to_string();
+  event.change = change;
+  event.event_id = format!("{}:{}", aid, event_name);
+  event.event_name = event_name.to_string();
+  event.event_source = Some("aws:dynamodb".to_string());
+  event.event_version = Some("1.1".to_string());
+  event
 }
 
 #[derive(Debug, Default)]
