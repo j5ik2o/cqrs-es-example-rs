@@ -134,8 +134,9 @@ jobs:
         with:
           version: 2
       - uses: docker/setup-buildx-action@v4
+        with:
+          name: amd-arm
       - run: |
-          docker buildx create --name amd-arm --driver docker-container --platform linux/amd64
           cd ./tools/e2e-test && make build && cd ../../
           ./tools/scripts/docker-build-write-api-server.sh
           ./tools/scripts/docker-build-read-model-updater-local.sh
