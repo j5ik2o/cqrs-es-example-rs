@@ -25,7 +25,7 @@ Please refer to [here](https://github.com/j5ik2o/cqrs-es-example) for implementa
     - Event Sourced Aggregate is implemented
       by [j5ik2o/event-store-adapter-rs](https://github.com/j5ik2o/event-store-adapter-rs)
 - Read Model Updater
-    - Lambda to build read models based on journals
+    - Lambda to build read models from the aggregate head table's DynamoDB Streams
     - Locally, run code that emulates Lambda behavior (local-rmu)
 - Read API Server
     - API is implemented by GraphQL (Query)
@@ -57,6 +57,10 @@ This OSS repository mainly utilizes the following technology stack.
 
 - [AWS Setup](docs/TOOLS_INSTALLATION_AWS.md)
 - [Deploying to EKS](docs/DEPLOY_TO_EKS.md)
+
+### Operations
+
+- [RMU recovery operations](docs/RMU_RECOVERY.md)
 
 ## Links
 

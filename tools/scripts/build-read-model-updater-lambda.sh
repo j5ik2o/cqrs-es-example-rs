@@ -14,7 +14,7 @@ docker run --rm \
   --env SQLX_OFFLINE=${SQLX_OFFLINE:-1} \
   -v "$ROOT_DIR":/workspace \
   -w /workspace \
-  rust:1.80 \
+  rust:1.99 \
   bash -lc '
 set -euo pipefail
 # ensure cargo is on PATH

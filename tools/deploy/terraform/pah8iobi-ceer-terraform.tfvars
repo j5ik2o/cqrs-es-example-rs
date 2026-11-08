@@ -1,8 +1,8 @@
-event_sourcing_enabled           = true
-event_sourcing_journal_name      = "journal"
-event_sourcing_journal_gsi_name  = "journal-aid-index"
-event_sourcing_snapshot_name     = "snapshot"
-event_sourcing_snapshot_gsi_name = "snapshot-aid-index"
+event_sourcing_enabled                     = true
+event_sourcing_journal_name                = "journal"
+event_sourcing_snapshot_name               = "snapshot"
+event_sourcing_snapshot_history_index_name = "snapshot-active-history-index"
+event_sourcing_head_name                   = "head"
 
 eks_enabled       = true
 eks_version       = "1.27"

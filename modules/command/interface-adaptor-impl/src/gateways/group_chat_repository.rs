@@ -1,13 +1,17 @@
+use chrono::Utc;
 use event_store_adapter_rs::{EventEnvelope, EventStore, SeqNr, SnapshotEnvelope, SEQ_NR_MAX};
 use std::collections::{HashMap, VecDeque};
 
 use command_domain::group_chat::GroupChatEvent;
-use command_domain::group_chat::{GroupChat, GroupChatId};
+use command_domain::group_chat::{EventRecord, GroupChat, GroupChatId};
 use command_interface_adaptor_if::{GroupChatRepository, GroupChatRepositoryError};
+
+/// スナップショット envelope に載せる manifest。
+pub const SNAPSHOT_MANIFEST: &str = "GroupChat@1";
 
 #[derive(Debug, Clone)]
 pub struct MockGroupChatRepository {
-  events: HashMap<GroupChatId, VecDeque<GroupChatEvent>>,
+  events: HashMap<GroupChatId, VecDeque<EventRecord>>,
   snapshot: HashMap<GroupChatId, Option<GroupChat>>,
 }
 
@@ -25,12 +29,16 @@ impl GroupChatRepository for MockGroupChatRepository {
   async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<(), GroupChatRepositoryError> {
     self
       .events
-      .entry(event.aggregate_id().clone())
+      .entry(snapshot.id().clone())
       .or_insert_with(VecDeque::new)
-      .push_back(event.clone());
+      .push_back(EventRecord::new(
+        event.clone(),
+        snapshot.seq_nr(),
+        *snapshot.last_updated_at(),
+      ));
     *self
       .snapshot
-      .entry(event.aggregate_id().clone())
+      .entry(snapshot.id().clone())
       .or_insert(Some(snapshot.clone())) = Some(snapshot.clone());
     Ok(())
   }
@@ -92,15 +100,19 @@ impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> Group
   for GroupChatRepositoryImpl<ES>
 {
   async fn store(&mut self, event: &GroupChatEvent, snapshot: &GroupChat) -> Result<(), GroupChatRepositoryError> {
+    // v5 の envelope はメタデータを payload から分離する。集約 ID と seq_nr は
+    // イベントを適用した後の集約状態から取り、occurred_at は書き込み時に決める。
     let event_envelope = EventEnvelope::new(
-      event.aggregate_id().clone(),
-      event.seq_nr() as SeqNr,
-      event.occurred_at().clone(),
+      snapshot.id().clone(),
+      snapshot.seq_nr() as SeqNr,
+      Utc::now(),
       event.clone(),
-    );
+    )
+    .with_manifest(event.manifest());
     let result = match Self::resolve_snapshot(self.snapshot_interval, event.is_created(), snapshot) {
       Some(snapshot) => {
-        let snapshot_envelope = SnapshotEnvelope::new(snapshot.clone(), snapshot.seq_nr() as SeqNr);
+        let snapshot_envelope =
+          SnapshotEnvelope::new(snapshot.clone(), snapshot.seq_nr() as SeqNr).with_manifest(SNAPSHOT_MANIFEST);
         self
           .event_store
           .persist_event_and_snapshot(event_envelope, snapshot_envelope)
@@ -126,8 +138,8 @@ impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> Group
             let events = self.event_store.get_events_by_id_since_seq_nr(id, 1).await;
             match events {
               Ok(events) => {
-                let events = events.into_iter().map(|event| event.into_payload()).collect();
-                Ok(GroupChat::replay_from_events(events))
+                let records = into_event_records(events);
+                Ok(GroupChat::replay_from_events(id.clone(), records))
               }
               Err(error) => Err(GroupChatRepositoryError::FindByIdError(id.clone(), error)),
             }
@@ -141,8 +153,8 @@ impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> Group
             };
             match events {
               Ok(events) => {
-                let events = events.into_iter().map(|event| event.into_payload()).collect();
-                let result = GroupChat::replay(events, snapshot_envelope.into_aggregate());
+                let records = into_event_records(events);
+                let result = GroupChat::replay(records, snapshot_envelope.into_aggregate());
                 Ok(Some(result))
               }
               Err(error) => Err(GroupChatRepositoryError::FindByIdError(id.clone(), error)),
@@ -153,4 +165,15 @@ impl<ES: EventStore<AID = GroupChatId, A = GroupChat, P = GroupChatEvent>> Group
       Err(error) => Err(GroupChatRepositoryError::FindByIdError(id.clone(), error)),
     }
   }
+}
+
+fn into_event_records(events: Vec<EventEnvelope<GroupChatId, GroupChatEvent>>) -> Vec<EventRecord> {
+  events
+    .into_iter()
+    .map(|envelope| {
+      let seq_nr = envelope.seq_nr() as usize;
+      let occurred_at = *envelope.occurred_at();
+      EventRecord::new(envelope.into_payload(), seq_nr, occurred_at)
+    })
+    .collect()
 }

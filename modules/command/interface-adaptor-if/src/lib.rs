@@ -57,13 +57,69 @@ pub enum GroupChatReadModelUpdateDaoError {
   UpdateMessageError,
   #[error("Failed to delete message")]
   DeleteMessageError,
+  #[error("Failed to acquire a database connection")]
+  AcquireConnectionError,
+  #[error("Failed to begin a database transaction")]
+  BeginTransactionError,
+  #[error("Failed to commit a database transaction")]
+  CommitTransactionError,
+  #[error("Failed to read the read model position")]
+  ReadPositionError,
+  #[error("Failed to update the read model position")]
+  UpdatePositionError,
+  #[error("Expected seq_nr {expected} but received {actual}")]
+  UnexpectedSeqNr { expected: u64, actual: u64 },
+  /// The storage reported a failure that may succeed when retried, such as a
+  /// connection loss, a deadlock, or a lock wait timeout.
+  #[error("Transient read model update failure: {0}")]
+  Transient(String),
+  /// The storage reported a failure that the same event cannot fix, such as a
+  /// constraint violation or an oversized value.
+  #[error("Permanent read model update failure: {0}")]
+  Permanent(String),
+}
+
+/// リードモデルに適用するイベント。
+///
+/// `seq_nr` と `occurred_at` はヘッドまたは journal の封筒が持つ値を使う。payload に
+/// 埋め込まれた値は使わない。
+#[derive(Debug, Clone)]
+pub struct ReadModelEvent {
+  seq_nr: u64,
+  occurred_at: DateTime<Utc>,
+  event: GroupChatEvent,
+}
+
+impl ReadModelEvent {
+  pub fn new(seq_nr: u64, occurred_at: DateTime<Utc>, event: GroupChatEvent) -> Self {
+    Self {
+      seq_nr,
+      occurred_at,
+      event,
+    }
+  }
+
+  /// イベントの `seq_nr` を返す。
+  pub fn seq_nr(&self) -> u64 {
+    self.seq_nr
+  }
+
+  /// イベントの発生時刻を返す。
+  pub fn occurred_at(&self) -> &DateTime<Utc> {
+    &self.occurred_at
+  }
+
+  /// イベント本体を返す。
+  pub fn event(&self) -> &GroupChatEvent {
+    &self.event
+  }
 }
 
 /// グループチャットリードモデル更新用のデータアクセスオブジェクト。
 ///
 /// NOTE: このデータアクセスオブジェクトはあくまで書き込み用です。読み込み用のデータアクセスオブジェクトはクエリ側に別途定義します。
 #[async_trait::async_trait]
-pub trait GroupChatReadModelUpdateDao {
+pub trait GroupChatReadModelUpdateDao: Send + Sync {
   /// グループチャットリードモデルを作成します。
   async fn insert_group_chat(
     &self,
@@ -121,4 +177,57 @@ pub trait GroupChatReadModelUpdateDao {
     message_id: MessageId,
     updated_at: DateTime<Utc>,
   ) -> Result<(), GroupChatReadModelUpdateDaoError>;
+
+  /// 集約の処理済み `seq_nr` を返します。まだ 1 件も適用していない場合は 0 を返します。
+  async fn get_position(&self, aggregate_id: &GroupChatId) -> Result<u64, GroupChatReadModelUpdateDaoError>;
+
+  /// イベントを適用し、処理位置を進めます。
+  ///
+  /// リードモデルの更新と `read_model_positions` の更新は 1 つのトランザクションで行います。
+  /// トランザクション内で位置を読み直すため、位置以下の `seq_nr` のイベントは重複・古い
+  /// イベントとして捨てます。`events` は `seq_nr` の昇順で、現在の位置から連続している
+  /// 必要があります。
+  async fn apply_events(
+    &self,
+    aggregate_id: &GroupChatId,
+    events: &[ReadModelEvent],
+  ) -> Result<(), GroupChatReadModelUpdateDaoError>;
+}
+
+/// A durable record of one event that the read model updater could not apply.
+///
+/// Only identifiers and the failure classification are stored. The event body
+/// is always re-read from the journal, so repairing the payload does not leave
+/// a stale copy in the task.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecoveryTask {
+  pub store_id: String,
+  pub projection_name: String,
+  pub projection_version: String,
+  pub aggregate_id: String,
+  pub seq_nr: u64,
+  pub failure_type: String,
+  pub error_message: String,
+  pub status: String,
+}
+
+#[derive(Debug, Clone, Error)]
+pub enum RecoveryTaskStoreError {
+  #[error("Recovery task store failed: {0}")]
+  Other(String),
+}
+
+/// Persists recovery tasks. Recording is idempotent for the same
+/// (store, projection, aggregate, seq_nr) key.
+#[async_trait::async_trait]
+pub trait RecoveryTaskStore: Send + Sync {
+  async fn record(&self, task: &RecoveryTask) -> Result<(), RecoveryTaskStoreError>;
+  async fn list_pending(&self) -> Result<Vec<RecoveryTask>, RecoveryTaskStoreError>;
+  async fn mark_completed(
+    &self,
+    store_id: &str,
+    projection_name: &str,
+    aggregate_id: &str,
+    seq_nr: u64,
+  ) -> Result<(), RecoveryTaskStoreError>;
 }

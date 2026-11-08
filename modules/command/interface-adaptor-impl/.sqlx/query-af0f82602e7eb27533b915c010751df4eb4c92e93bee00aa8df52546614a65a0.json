@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO read_model_recovery_tasks\n           (store_id, projection_name, projection_version, aggregate_id, seq_nr,\n            failure_type, error_message, status, created_at, updated_at)\n         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n         ON DUPLICATE KEY UPDATE\n           projection_version = VALUES(projection_version),\n           failure_type = VALUES(failure_type),\n           error_message = VALUES(error_message),\n           status = VALUES(status),\n           updated_at = VALUES(updated_at)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "af0f82602e7eb27533b915c010751df4eb4c92e93bee00aa8df52546614a65a0"
+}

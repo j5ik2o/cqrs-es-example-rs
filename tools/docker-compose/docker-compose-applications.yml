@@ -13,19 +13,21 @@ services:
       APP__API__PORT: 8080
       APP__API__ALLOW_ORIGINS: "http://localhost:18080,http://localhost:18082,http://localhost:8888"
       APP__PERSISTENCE__JOURNAL_TABLE_NAME: journal
-      APP__PERSISTENCE__JOURNAL_AID_INDEX_NAME: journal-aid-index
       APP__PERSISTENCE__SNAPSHOT_TABLE_NAME: snapshot
-      APP__PERSISTENCE__SNAPSHOT_AID_INDEX_NAME: snapshot-aid-index
-      APP__PERSISTENCE__SHARD_COUNT: 64
+      APP__PERSISTENCE__HEAD_TABLE_NAME: head
+      APP__PERSISTENCE__SNAPSHOT_HISTORY_INDEX_NAME: snapshot-active-history-index
       APP__PERSISTENCE__SNAPSHOT_INTERVAL: 10
       APP__AWS__REGION_NAME: ${AWS_REGION}
       APP__AWS__ENDPOINT_URL: http://localstack:4566
       APP__AWS__ACCESS_KEY_ID: x
       APP__AWS__SECRET_ACCESS_KEY: x
     depends_on:
-      - localstack
-      - dynamodb-admin
-      - dynamodb-setup
+      localstack:
+        condition: service_started
+      dynamodb-admin:
+        condition: service_started
+      dynamodb-setup:
+        condition: service_completed_successfully
   read-model-updater-1:
     image: read-model-updater-local:latest-${ARCH}
     container_name: read-model-updater-rs-1
@@ -41,13 +43,22 @@ services:
       APP__AWS__ENDPOINT_URL: http://localstack:4566
       APP__AWS__ACCESS_KEY_ID: x
       APP__AWS__SECRET_ACCESS_KEY: x
+      APP__STREAM__HEAD_TABLE_NAME: head
       APP__STREAM__JOURNAL_TABLE_NAME: journal
       APP__STREAM__MAX_ITEM_COUNT: 32
       APP__DATABASE__URL: mysql://ceer:ceer@mysql-local:3306/ceer
+    restart: on-failure
     depends_on:
-      - localstack
-      - dynamodb-admin
-      - dynamodb-setup
+      mysql:
+        condition: service_healthy
+      refinery:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      dynamodb-admin:
+        condition: service_started
+      dynamodb-setup:
+        condition: service_completed_successfully
   read-api-server-1:
     image: read-api-server:latest-${ARCH}
     container_name: read-api-server-rs-1

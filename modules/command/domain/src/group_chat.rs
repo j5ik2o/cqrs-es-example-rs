@@ -56,8 +56,43 @@ pub struct GroupChat {
   members: Members,
   messages: Messages,
   seq_nr_counter: usize,
-  version: usize,
   last_updated_at: DateTime<Utc>,
+}
+
+/// イベント payload と、envelope が持つメタデータの組。
+///
+/// 集約の復元では payload だけでは足りないため、`seq_nr` と `occurred_at` を
+/// envelope から取り出して一緒に渡す。
+#[derive(Debug, Clone)]
+pub struct EventRecord {
+  event: GroupChatEvent,
+  seq_nr: usize,
+  occurred_at: DateTime<Utc>,
+}
+
+impl EventRecord {
+  pub fn new(event: GroupChatEvent, seq_nr: usize, occurred_at: DateTime<Utc>) -> Self {
+    Self {
+      event,
+      seq_nr,
+      occurred_at,
+    }
+  }
+
+  /// イベント本体を返す。
+  pub fn event(&self) -> &GroupChatEvent {
+    &self.event
+  }
+
+  /// envelope が持つ `seq_nr` を返す。
+  pub fn seq_nr(&self) -> usize {
+    self.seq_nr
+  }
+
+  /// envelope が持つ発生時刻を返す。
+  pub fn occurred_at(&self) -> &DateTime<Utc> {
+    &self.occurred_at
+  }
 }
 
 impl PartialEq for GroupChat {
@@ -75,16 +110,6 @@ impl GroupChat {
   /// 最後に反映したイベントの `seq_nr` を返す。
   pub fn seq_nr(&self) -> usize {
     self.seq_nr_counter
-  }
-
-  /// スナップショットのバージョンを返す。
-  pub fn version(&self) -> usize {
-    self.version
-  }
-
-  /// スナップショットのバージョンを設定する。
-  pub fn set_version(&mut self, version: usize) {
-    self.version = version;
   }
 
   /// 最後に更新された時刻を返す。
@@ -109,7 +134,7 @@ impl GroupChat {
   /// - [GroupChatEvent]
   pub fn new(name: GroupChatName, members: Members) -> (Self, GroupChatEvent) {
     let id = GroupChatId::new();
-    Self::from(id, false, name, members, 0, 1)
+    Self::from(id, false, name, members, 0)
   }
 
   /// コンストラクタ(ID指定)
@@ -120,7 +145,6 @@ impl GroupChat {
   /// - `name`: [GroupChatName]
   /// - `members`: [Members]
   /// - `seq_nr_counter`: シーケンス番号
-  /// - `version`: バージョン
   ///
   /// # 戻り値
   /// - [GroupChat]
@@ -131,25 +155,18 @@ impl GroupChat {
     name: GroupChatName,
     members: Members,
     seq_nr_counter: usize,
-    version: usize,
   ) -> (Self, GroupChatEvent) {
     let mut my_self = Self {
-      id: id.clone(),
+      id,
       deleted,
       name: name.clone(),
       members: members.clone(),
       messages: Messages::new([]),
       seq_nr_counter,
-      version,
       last_updated_at: Utc::now(),
     };
     my_self.seq_nr_counter += 1;
-    let event = GroupChatEvent::GroupChatCreated(GroupChatEventCreatedBody::new(
-      id,
-      my_self.seq_nr_counter,
-      name,
-      members,
-    ));
+    let event = GroupChatEvent::GroupChatCreated(GroupChatEventCreatedBody::new(name, members));
     (my_self, event)
   }
 
@@ -157,7 +174,8 @@ impl GroupChat {
   ///
   /// # 引数
   /// - `event`: 適用するイベント
-  fn apply_event(&mut self, event: &GroupChatEvent) {
+  /// - `seq_nr`: envelope が持つイベントの `seq_nr`
+  fn apply_event(&mut self, event: &GroupChatEvent, seq_nr: usize) {
     match event {
       GroupChatEvent::GroupChatDeleted(body) => {
         self.delete(body.executor_id.clone()).unwrap();
@@ -197,23 +215,23 @@ impl GroupChat {
       }
       _ => {}
     }
+    self.seq_nr_counter = seq_nr;
   }
 
   /// イベント及びスナップショットを利用して、グループチャットを再生する
   ///
   /// # 引数
-  /// - `events`: イベントの集合
-  /// - `snapshot`: スナップショット(任意)
-  /// - `version`: スナップショットのバージョン
+  /// - `records`: envelope のメタデータを含むイベントの集合
+  /// - `snapshot`: スナップショット
   ///
   /// # 戻り値
   /// - [GroupChat]
-  pub fn replay(events: Vec<GroupChatEvent>, snapshot: GroupChat) -> Self {
-    log::debug!("event.size = {}", events.len());
-    events.iter().fold(snapshot, |mut result, event| {
+  pub fn replay(records: Vec<EventRecord>, snapshot: GroupChat) -> Self {
+    log::debug!("event.size = {}", records.len());
+    records.into_iter().fold(snapshot, |mut result, record| {
       log::debug!("Replaying snapshot: {:?}", result);
-      log::debug!("Replaying event: {:?}", event);
-      result.apply_event(event);
+      log::debug!("Replaying event: {:?}", record.event());
+      result.apply_event(record.event(), record.seq_nr());
       result
     })
   }
@@ -221,29 +239,30 @@ impl GroupChat {
   /// スナップショットがない場合に、作成イベントから集約を復元して後続イベントを再生する。
   ///
   /// # 引数
-  /// - `events`: 作成イベントを先頭にした、`seq_nr` の昇順のイベントの集合
+  /// - `id`: 復元する集約の ID。envelope から取得したもの
+  /// - `records`: 作成イベントを先頭にした、`seq_nr` の昇順のイベントの集合
   ///
   /// # 戻り値
   /// 先頭が作成イベントなら復元した集約、そうでなければ `None`
-  pub fn replay_from_events(events: Vec<GroupChatEvent>) -> Option<Self> {
-    let mut events = events.into_iter();
-    let created = match events.next() {
-      Some(GroupChatEvent::GroupChatCreated(created)) => created,
+  pub fn replay_from_events(id: GroupChatId, records: Vec<EventRecord>) -> Option<Self> {
+    let mut records = records.into_iter();
+    let first = records.next()?;
+    let created = match first.event() {
+      GroupChatEvent::GroupChatCreated(created) => created,
       _ => return None,
     };
     let mut result = Self {
-      id: created.aggregate_id.clone(),
+      id,
       deleted: false,
       name: created.name.clone(),
       members: created.members.clone(),
       messages: Messages::new([]),
-      seq_nr_counter: created.seq_nr,
-      version: created.seq_nr,
-      last_updated_at: created.occurred_at,
+      seq_nr_counter: first.seq_nr(),
+      last_updated_at: *first.occurred_at(),
     };
-    for event in events {
-      log::debug!("Replaying event: {:?}", event);
-      result.apply_event(&event);
+    for record in records {
+      log::debug!("Replaying event: {:?}", record.event());
+      result.apply_event(record.event(), record.seq_nr());
     }
     Some(result)
   }
@@ -293,8 +312,6 @@ impl GroupChat {
     self.name = name;
     self.seq_nr_counter += 1;
     Ok(GroupChatEvent::GroupChatRenamed(GroupChatEventRenamedBody::new(
-      self.id.clone(),
-      self.seq_nr_counter,
       self.name.clone(),
       executor_id,
     )))
@@ -339,7 +356,7 @@ impl GroupChat {
     self.members.add_member(member.clone());
     self.seq_nr_counter += 1;
     Ok(GroupChatEvent::GroupChatMemberAdded(
-      GroupChatEventMemberAddedBody::new(self.id.clone(), self.seq_nr_counter, member, executor_id),
+      GroupChatEventMemberAddedBody::new(member, executor_id),
     ))
   }
 
@@ -377,7 +394,7 @@ impl GroupChat {
     self.members.remove_member_by_user_account_id(&user_account_id);
     self.seq_nr_counter += 1;
     Ok(GroupChatEvent::GroupChatMemberRemoved(
-      GroupChatEventMemberRemovedBody::new(self.id.clone(), self.seq_nr_counter, user_account_id, executor_id),
+      GroupChatEventMemberRemovedBody::new(user_account_id, executor_id),
     ))
   }
 
@@ -413,7 +430,7 @@ impl GroupChat {
     self.messages.add(message.clone())?;
     self.seq_nr_counter += 1;
     Ok(GroupChatEvent::GroupChatMessagePosted(
-      GroupChatEventMessagePostedBody::new(self.id.clone(), self.seq_nr_counter, message, executor_id),
+      GroupChatEventMessagePostedBody::new(message, executor_id),
     ))
   }
 
@@ -449,7 +466,7 @@ impl GroupChat {
     self.messages.edit(message.clone())?;
     self.seq_nr_counter += 1;
     Ok(GroupChatEvent::GroupChatMessageEdited(
-      GroupChatEventMessageEditedBody::new(self.id.clone(), self.seq_nr_counter, message, executor_id),
+      GroupChatEventMessageEditedBody::new(message, executor_id),
     ))
   }
 
@@ -490,7 +507,7 @@ impl GroupChat {
         self.messages.remove(&message_id, &executor_id).unwrap();
         self.seq_nr_counter += 1;
         Ok(GroupChatEvent::GroupChatMessageDeleted(
-          GroupChatEventMessageDeletedBody::new(self.id.clone(), self.seq_nr_counter, message_id, executor_id),
+          GroupChatEventMessageDeletedBody::new(message_id, executor_id),
         ))
       }
     }
@@ -518,8 +535,6 @@ impl GroupChat {
     self.deleted = true;
     self.seq_nr_counter += 1;
     Ok(GroupChatEvent::GroupChatDeleted(GroupChatEventDeletedBody::new(
-      self.id.clone(),
-      self.seq_nr_counter,
       executor_id,
     )))
   }

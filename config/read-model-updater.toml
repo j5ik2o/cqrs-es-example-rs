@@ -9,8 +9,10 @@ access_key_id = "x"
 secret_access_key = "x"
 
 [stream]
+head_table_name = "head"
 journal_table_name = "journal"
 max_item_count = 100
+poll_interval_millis = 1000
 
 [database]
 url = "mysql://ceer:ceer@localhost:3306/ceer"

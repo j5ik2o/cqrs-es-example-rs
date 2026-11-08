@@ -2,7 +2,7 @@ use async_graphql::{Context, Error, ErrorExtensions, FieldResult, Object};
 use event_store_adapter_rs::EventStoreError;
 use std::str::FromStr;
 
-use command_domain::group_chat::{GroupChatId, GroupChatName, MemberRole, Message, MessageId};
+use command_domain::group_chat::{GroupChatId, GroupChatName, Message, MessageId};
 use command_domain::user_account::UserAccountId;
 use command_interface_adaptor_if::GroupChatRepositoryError;
 use command_processor::group_chat_command_processor::CommandProcessError;
@@ -77,7 +77,7 @@ impl MutationRoot {
 
     let group_chat_id = validate_group_chat_id(&input.group_chat_id)?;
     let user_account_id = validate_user_account_id(&input.user_account_id)?;
-    let role = validate_member_role(&input.role)?;
+    let role = input.role.into_domain();
     let executor_id = validate_user_account_id(&input.executor_id)?;
 
     let mut processor = service_ctx.group_chat_command_processor.lock().await;
@@ -181,10 +181,6 @@ fn validate_group_chat_id(value: &str) -> Result<GroupChatId, Error> {
 
 fn validate_group_chat_name(value: &str) -> Result<GroupChatName, Error> {
   GroupChatName::from_str(value).map_err(|error| Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
-}
-
-fn validate_member_role(value: &str) -> Result<MemberRole, Error> {
-  MemberRole::from_str(value).map_err(|error| Error::new(error.to_string()).extend_with(|_, e| e.set("code", "400")))
 }
 
 fn validate_message_id(value: &str) -> Result<MessageId, Error> {

@@ -1,15 +1,21 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use ulid_generator_rs::{ULIDGenerator, ULID};
 
 use crate::group_chat::member::Member;
-use crate::group_chat::{GroupChatId, GroupChatName, Members, Message, MessageId};
+use crate::group_chat::{GroupChatName, Members, Message, MessageId};
 use crate::id_generate;
 use crate::user_account::UserAccountId;
 
 pub type GroupChatEventId = ULID;
 
+/// payload のスキーマ版。envelope の manifest に載せる。
+pub const SCHEMA_VERSION: u32 = 1;
+
 /// グループチャットに関するイベント。
+///
+/// ESA v5 では集約 ID、`seq_nr`、`occurred_at` は envelope が持つため payload には含めない。
+/// イベント型の判別子（`type`）だけは payload に残す。ESA のシリアライザは `manifest` を
+/// デシリアライザに渡さないため、payload 単体で型を復元できる必要がある。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum GroupChatEvent {
@@ -46,151 +52,86 @@ impl GroupChatEvent {
     }
   }
 
-  /// イベントの `seq_nr` を返す。
-  pub fn seq_nr(&self) -> usize {
+  /// イベント型名を返す。payload の `type` と同じ値になる。
+  pub fn event_type_name(&self) -> &'static str {
     match self {
-      GroupChatEvent::GroupChatCreated(event) => event.seq_nr,
-      GroupChatEvent::GroupChatDeleted(event) => event.seq_nr,
-      GroupChatEvent::GroupChatRenamed(event) => event.seq_nr,
-      GroupChatEvent::GroupChatMemberAdded(event) => event.seq_nr,
-      GroupChatEvent::GroupChatMemberRemoved(event) => event.seq_nr,
-      GroupChatEvent::GroupChatMessagePosted(event) => event.seq_nr,
-      GroupChatEvent::GroupChatMessageEdited(event) => event.seq_nr,
-      GroupChatEvent::GroupChatMessageDeleted(event) => event.seq_nr,
+      GroupChatEvent::GroupChatCreated(_) => "GroupChatCreated",
+      GroupChatEvent::GroupChatDeleted(_) => "GroupChatDeleted",
+      GroupChatEvent::GroupChatRenamed(_) => "GroupChatRenamed",
+      GroupChatEvent::GroupChatMemberAdded(_) => "GroupChatMemberAdded",
+      GroupChatEvent::GroupChatMemberRemoved(_) => "GroupChatMemberRemoved",
+      GroupChatEvent::GroupChatMessagePosted(_) => "GroupChatMessagePosted",
+      GroupChatEvent::GroupChatMessageEdited(_) => "GroupChatMessageEdited",
+      GroupChatEvent::GroupChatMessageDeleted(_) => "GroupChatMessageDeleted",
     }
   }
 
-  /// 集約IDを返す。
-  pub fn aggregate_id(&self) -> &GroupChatId {
-    match self {
-      GroupChatEvent::GroupChatCreated(event) => &event.aggregate_id,
-      GroupChatEvent::GroupChatDeleted(event) => &event.aggregate_id,
-      GroupChatEvent::GroupChatRenamed(event) => &event.aggregate_id,
-      GroupChatEvent::GroupChatMemberAdded(event) => &event.aggregate_id,
-      GroupChatEvent::GroupChatMemberRemoved(event) => &event.aggregate_id,
-      GroupChatEvent::GroupChatMessagePosted(event) => &event.aggregate_id,
-      GroupChatEvent::GroupChatMessageEdited(event) => &event.aggregate_id,
-      GroupChatEvent::GroupChatMessageDeleted(event) => &event.aggregate_id,
-    }
-  }
-
-  /// 発生時刻を返す。
-  pub fn occurred_at(&self) -> &DateTime<Utc> {
-    match self {
-      GroupChatEvent::GroupChatCreated(event) => &event.occurred_at,
-      GroupChatEvent::GroupChatDeleted(event) => &event.occurred_at,
-      GroupChatEvent::GroupChatRenamed(event) => &event.occurred_at,
-      GroupChatEvent::GroupChatMemberAdded(event) => &event.occurred_at,
-      GroupChatEvent::GroupChatMemberRemoved(event) => &event.occurred_at,
-      GroupChatEvent::GroupChatMessagePosted(event) => &event.occurred_at,
-      GroupChatEvent::GroupChatMessageEdited(event) => &event.occurred_at,
-      GroupChatEvent::GroupChatMessageDeleted(event) => &event.occurred_at,
-    }
+  /// envelope に載せる manifest を `<イベント型名>@<スキーマ版>` の形で返す。
+  pub fn manifest(&self) -> String {
+    format!("{}@{}", self.event_type_name(), SCHEMA_VERSION)
   }
 
   /// 集約の作成イベントかどうかを返す。
   pub fn is_created(&self) -> bool {
-    match self {
-      GroupChatEvent::GroupChatCreated(_) => true,
-      _ => false,
-    }
+    matches!(self, GroupChatEvent::GroupChatCreated(_))
   }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupChatEventCreatedBody {
   pub id: GroupChatEventId,
-  pub aggregate_id: GroupChatId,
-  pub seq_nr: usize,
   pub name: GroupChatName,
   pub members: Members,
-  pub occurred_at: DateTime<Utc>,
 }
 
 impl GroupChatEventCreatedBody {
-  pub fn new(aggregate_id: GroupChatId, seq_nr: usize, name: GroupChatName, members: Members) -> Self {
+  pub fn new(name: GroupChatName, members: Members) -> Self {
     let id = id_generate();
-    let occurred_at = Utc::now();
-    Self {
-      id,
-      aggregate_id,
-      seq_nr,
-      name,
-      members,
-      occurred_at,
-    }
+    Self { id, name, members }
   }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupChatEventDeletedBody {
   pub id: GroupChatEventId,
-  pub aggregate_id: GroupChatId,
-  pub seq_nr: usize,
   pub executor_id: UserAccountId,
-  pub occurred_at: DateTime<Utc>,
 }
 
 impl GroupChatEventDeletedBody {
-  pub fn new(aggregate_id: GroupChatId, seq_nr: usize, executor_id: UserAccountId) -> Self {
+  pub fn new(executor_id: UserAccountId) -> Self {
     let id = id_generate();
-    let occurred_at = Utc::now();
-    Self {
-      id,
-      aggregate_id,
-      seq_nr,
-      executor_id,
-      occurred_at,
-    }
+    Self { id, executor_id }
   }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupChatEventRenamedBody {
   pub id: GroupChatEventId,
-  pub aggregate_id: GroupChatId,
-  pub seq_nr: usize,
   pub name: GroupChatName,
   pub executor_id: UserAccountId,
-  pub occurred_at: DateTime<Utc>,
 }
 
 impl GroupChatEventRenamedBody {
-  pub fn new(aggregate_id: GroupChatId, seq_nr: usize, name: GroupChatName, executor_id: UserAccountId) -> Self {
+  pub fn new(name: GroupChatName, executor_id: UserAccountId) -> Self {
     let id = id_generate();
-    let occurred_at = Utc::now();
-    Self {
-      id,
-      aggregate_id,
-      seq_nr,
-      name,
-      executor_id,
-      occurred_at,
-    }
+    Self { id, name, executor_id }
   }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupChatEventMessagePostedBody {
   pub(crate) id: GroupChatEventId,
-  pub aggregate_id: GroupChatId,
-  pub(crate) seq_nr: usize,
   pub message: Message,
   pub(crate) executor_id: UserAccountId,
-  pub occurred_at: DateTime<Utc>,
 }
 
 impl GroupChatEventMessagePostedBody {
-  pub fn new(aggregate_id: GroupChatId, seq_nr: usize, message: Message, executor_id: UserAccountId) -> Self {
+  pub fn new(message: Message, executor_id: UserAccountId) -> Self {
     let id = id_generate();
-    let occurred_at = Utc::now();
     Self {
       id,
-      aggregate_id,
-      seq_nr,
       message,
       executor_id,
-      occurred_at,
     }
   }
 }
@@ -198,24 +139,17 @@ impl GroupChatEventMessagePostedBody {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupChatEventMessageEditedBody {
   pub(crate) id: GroupChatEventId,
-  pub aggregate_id: GroupChatId,
-  pub(crate) seq_nr: usize,
   pub message: Message,
   pub(crate) executor_id: UserAccountId,
-  pub occurred_at: DateTime<Utc>,
 }
 
 impl GroupChatEventMessageEditedBody {
-  pub fn new(aggregate_id: GroupChatId, seq_nr: usize, message: Message, executor_id: UserAccountId) -> Self {
+  pub fn new(message: Message, executor_id: UserAccountId) -> Self {
     let id = id_generate();
-    let occurred_at = Utc::now();
     Self {
       id,
-      aggregate_id,
-      seq_nr,
       message,
       executor_id,
-      occurred_at,
     }
   }
 }
@@ -223,25 +157,18 @@ impl GroupChatEventMessageEditedBody {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupChatEventMessageDeletedBody {
   pub(crate) id: GroupChatEventId,
-  pub aggregate_id: GroupChatId,
-  pub(crate) seq_nr: usize,
   pub message_id: MessageId,
   pub(crate) executor_id: UserAccountId,
-  pub occurred_at: DateTime<Utc>,
 }
 
 impl GroupChatEventMessageDeletedBody {
-  pub fn new(aggregate_id: GroupChatId, seq_nr: usize, message_id: MessageId, executor_id: UserAccountId) -> Self {
+  pub fn new(message_id: MessageId, executor_id: UserAccountId) -> Self {
     let mut idgen = ULIDGenerator::new();
     let id = idgen.generate().unwrap();
-    let occurred_at = Utc::now();
     Self {
       id,
-      aggregate_id,
-      seq_nr,
       message_id,
       executor_id,
-      occurred_at,
     }
   }
 }
@@ -249,24 +176,17 @@ impl GroupChatEventMessageDeletedBody {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupChatEventMemberAddedBody {
   pub id: GroupChatEventId,
-  pub aggregate_id: GroupChatId,
-  pub seq_nr: usize,
   pub member: Member,
   pub executor_id: UserAccountId,
-  pub occurred_at: DateTime<Utc>,
 }
 
 impl GroupChatEventMemberAddedBody {
-  pub fn new(aggregate_id: GroupChatId, seq_nr: usize, member: Member, executor_id: UserAccountId) -> Self {
+  pub fn new(member: Member, executor_id: UserAccountId) -> Self {
     let id = id_generate();
-    let occurred_at = Utc::now();
     Self {
       id,
-      aggregate_id,
-      seq_nr,
       member,
       executor_id,
-      occurred_at,
     }
   }
 }
@@ -274,29 +194,17 @@ impl GroupChatEventMemberAddedBody {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupChatEventMemberRemovedBody {
   pub(crate) id: GroupChatEventId,
-  pub aggregate_id: GroupChatId,
-  pub(crate) seq_nr: usize,
   pub user_account_id: UserAccountId,
   pub(crate) executor_id: UserAccountId,
-  pub(crate) occurred_at: DateTime<Utc>,
 }
 
 impl GroupChatEventMemberRemovedBody {
-  pub fn new(
-    aggregate_id: GroupChatId,
-    seq_nr: usize,
-    user_account_id: UserAccountId,
-    executor_id: UserAccountId,
-  ) -> Self {
+  pub fn new(user_account_id: UserAccountId, executor_id: UserAccountId) -> Self {
     let id = id_generate();
-    let occurred_at = Utc::now();
     Self {
       id,
-      aggregate_id,
-      seq_nr,
       user_account_id,
       executor_id,
-      occurred_at,
     }
   }
 }
@@ -304,22 +212,31 @@ impl GroupChatEventMemberRemovedBody {
 #[cfg(test)]
 mod tests {
   use crate::group_chat::events::{GroupChatEvent, GroupChatEventCreatedBody};
-  use crate::group_chat::{GroupChatId, GroupChatName, Members};
+  use crate::group_chat::{GroupChatName, Members};
   use crate::user_account::UserAccountId;
 
   #[test]
-  fn test_to_json() {
-    let group_chat_id = GroupChatId::new();
-    let group_chat = GroupChatName::new("test").unwrap();
+  fn should_serialize_payload_without_envelope_metadata() {
+    let group_chat_name = GroupChatName::new("test").unwrap();
     let admin_user_account_id = UserAccountId::new();
     let event = GroupChatEvent::GroupChatCreated(GroupChatEventCreatedBody::new(
-      group_chat_id,
-      1usize,
-      group_chat,
+      group_chat_name,
       Members::new(admin_user_account_id),
     ));
-    let json = serde_json::to_string(&event);
-    let _occurred_at = event.occurred_at().timestamp_millis();
-    println!("{}", json.unwrap());
+
+    let json = serde_json::to_value(&event).unwrap();
+
+    assert_eq!(json["type"], "GroupChatCreated");
+    assert!(json.get("aggregate_id").is_none());
+    assert!(json.get("seq_nr").is_none());
+    assert!(json.get("occurred_at").is_none());
+    assert!(json.get("manifest").is_none());
+    assert!(json.get("name").is_some());
+    assert!(json.get("members").is_some());
+
+    let restored = serde_json::from_value::<GroupChatEvent>(json).unwrap();
+    assert!(matches!(restored, GroupChatEvent::GroupChatCreated(_)));
+    assert_eq!(restored.event_type_name(), "GroupChatCreated");
+    assert_eq!(restored.manifest(), "GroupChatCreated@1");
   }
 }

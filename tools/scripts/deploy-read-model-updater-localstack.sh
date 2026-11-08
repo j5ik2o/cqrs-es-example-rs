@@ -27,6 +27,7 @@ APP_AWS_REGION_NAME=${APP__AWS__REGION_NAME:-$AWS_REGION}
 APP_AWS_ENDPOINT_URL=${APP__AWS__ENDPOINT_URL:-$LOCALSTACK_ENDPOINT_URL}
 APP_AWS_ACCESS_KEY_ID=${APP__AWS__ACCESS_KEY_ID:-${AWS_ACCESS_KEY_ID:-test}}
 APP_AWS_SECRET_ACCESS_KEY=${APP__AWS__SECRET_ACCESS_KEY:-${AWS_SECRET_ACCESS_KEY:-test}}
+APP_STREAM_HEAD_TABLE_NAME=${APP__STREAM__HEAD_TABLE_NAME:-head}
 APP_STREAM_JOURNAL_TABLE_NAME=${APP__STREAM__JOURNAL_TABLE_NAME:-journal}
 APP_STREAM_MAX_ITEM_COUNT=${APP__STREAM__MAX_ITEM_COUNT:-32}
 APP_DATABASE_URL=${APP__DATABASE__URL:-mysql://ceer:ceer@mysql-local:3306/ceer}
@@ -45,6 +46,7 @@ APP_AWS_REGION_NAME="$APP_AWS_REGION_NAME" \
 APP_AWS_ENDPOINT_URL="$APP_AWS_ENDPOINT_URL" \
 APP_AWS_ACCESS_KEY_ID="$APP_AWS_ACCESS_KEY_ID" \
 APP_AWS_SECRET_ACCESS_KEY="$APP_AWS_SECRET_ACCESS_KEY" \
+APP_STREAM_HEAD_TABLE_NAME="$APP_STREAM_HEAD_TABLE_NAME" \
 APP_STREAM_JOURNAL_TABLE_NAME="$APP_STREAM_JOURNAL_TABLE_NAME" \
 APP_STREAM_MAX_ITEM_COUNT="$APP_STREAM_MAX_ITEM_COUNT" \
 APP_DATABASE_URL="$APP_DATABASE_URL" \
@@ -59,6 +61,7 @@ env = {
     "APP__AWS__ENDPOINT_URL": os.environ["APP_AWS_ENDPOINT_URL"],
     "APP__AWS__ACCESS_KEY_ID": os.environ["APP_AWS_ACCESS_KEY_ID"],
     "APP__AWS__SECRET_ACCESS_KEY": os.environ["APP_AWS_SECRET_ACCESS_KEY"],
+    "APP__STREAM__HEAD_TABLE_NAME": os.environ["APP_STREAM_HEAD_TABLE_NAME"],
     "APP__STREAM__JOURNAL_TABLE_NAME": os.environ["APP_STREAM_JOURNAL_TABLE_NAME"],
     "APP__STREAM__MAX_ITEM_COUNT": os.environ["APP_STREAM_MAX_ITEM_COUNT"],
     "APP__DATABASE__URL": os.environ["APP_DATABASE_URL"],
@@ -84,7 +87,7 @@ if [[ $FOUND -eq 0 ]]; then
     --runtime provided.al2 \
     --handler bootstrap \
     --memory-size 512 \
-    --timeout 30 \
+    --timeout 60 \
     --environment "file://$ENV_FILE" >/dev/null
 else
   echo "新しい関数を作成します: $FUNCTION_NAME"
@@ -95,17 +98,17 @@ else
     --handler bootstrap \
     --zip-file "fileb://$ZIP_PATH" \
     --memory-size 512 \
-    --timeout 30 \
+    --timeout 60 \
     --environment "file://$ENV_FILE" >/dev/null
 fi
 
 STREAM_ARN=$(aws --endpoint-url "$LOCALSTACK_ENDPOINT_URL" --region "$AWS_REGION" dynamodb describe-table \
-  --table-name "$APP_STREAM_JOURNAL_TABLE_NAME" \
+  --table-name "$APP_STREAM_HEAD_TABLE_NAME" \
   --query 'Table.LatestStreamArn' \
   --output text)
 
 if [[ -z "$STREAM_ARN" || "$STREAM_ARN" == "None" ]]; then
-  echo "エラー: DynamoDBテーブル $APP_STREAM_JOURNAL_TABLE_NAME のストリームARNを取得できませんでした。ストリームが有効化されているか確認してください。" >&2
+  echo "エラー: DynamoDBテーブル $APP_STREAM_HEAD_TABLE_NAME のストリームARNを取得できませんでした。ストリームが有効化されているか確認してください。" >&2
   exit 1
 fi
 
@@ -126,7 +129,9 @@ echo "イベントソースマッピングを作成します"
 aws --endpoint-url "$LOCALSTACK_ENDPOINT_URL" --region "$AWS_REGION" lambda create-event-source-mapping \
   --function-name "$FUNCTION_NAME" \
   --event-source-arn "$STREAM_ARN" \
-  --starting-position LATEST \
+  --starting-position TRIM_HORIZON \
+  --bisect-batch-on-function-error \
+  --function-response-types ReportBatchItemFailures \
   --batch-size ${READ_MODEL_UPDATER_LAMBDA_BATCH_SIZE:-64} >/dev/null
 
 echo "デプロイが完了しました"

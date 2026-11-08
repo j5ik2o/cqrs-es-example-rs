@@ -4,6 +4,7 @@ use std::hash::{Hash, Hasher};
 
 pub mod group_chat_read_model_dao_impl;
 pub mod group_chat_repository;
+pub mod recovery_task_store_impl;
 
 pub trait KeyResolver: Debug + Send + 'static {
   fn resolve_pkey(&self, id_type_name: &str, value: &str, shard_count: u64) -> String;

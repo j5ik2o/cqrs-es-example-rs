@@ -20,6 +20,7 @@ node "Read Model Updater\n(Lambda)" as updater {
 database "DynamoDB" {
     [Journal(Events)] as journal
     [Snapshot] as snapshot
+    [Head(Latest Event)] as head
 }
 
 database "RDS(Aurora)" {
@@ -28,6 +29,7 @@ database "RDS(Aurora)" {
 }
 
 journal -[hidden]- snapshot
+snapshot -[hidden]- head
 groupChat -[hidden]- member
 query -[hidden]- subscripton
 
@@ -36,8 +38,9 @@ mutation -d-> groupChatAggregate
 
 groupChatAggregate -d-> journal: Put Item
 groupChatAggregate -d-> snapshot: Put/Update Item
+groupChatAggregate -d-> head: Put/Update Item
 
-journal -r-> updater: DynamoDB\nStreams
+head -r-> updater: DynamoDB\nStreams
 
 updater -r-> groupChat: SQL Insert/Update/Delete
 updater -r-> member: SQL Insert/Update/Delete

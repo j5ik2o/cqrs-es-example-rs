@@ -1,26 +1,19 @@
-use std::collections::HashMap;
-use std::mem::size_of;
+use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Result;
-use aws_config::meta::region::RegionProviderChain;
-use aws_lambda_events::dynamodb;
-use aws_lambda_events::dynamodb::{StreamRecord, StreamViewType};
 use aws_sdk_dynamodb::Client as DynamoDBClient;
-use aws_sdk_dynamodbstreams::config::{Credentials, Region};
-use aws_sdk_dynamodbstreams::types::ShardIteratorType;
 use aws_sdk_dynamodbstreams::Client as DynamoDBStreamsClient;
-use chrono::Utc;
-use command_domain::id_generate;
+use sqlx::MySqlPool;
+
 use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::GroupChatReadModelUpdateDaoImpl;
-use http::{HeaderMap, HeaderValue};
-use lambda_runtime::{Context, LambdaEvent};
+use command_interface_adaptor_impl::gateways::recovery_task_store_impl::MySqlRecoveryTaskStore;
+use read_model_updater::{create_aws_config, load_app_config, StreamSettings};
+use rmu::{
+  catch_up_blocked, poll_shards, Applier, Backoff, DynamoDbHeadScanner, DynamoDbHeadStreamClient,
+  DynamoDbJournalReader, HeadStreamClient, ReadModelUpdater, RecoveryService, Resyncer, StreamDriverError, StreamState,
+};
 
-use serde_dynamo::Item;
-use sqlx::{MySql, MySqlPool, Pool};
-
-use read_model_updater::{load_app_config, AwsSettings};
-
-// ローカル版のRead Model Updater
 #[tokio::main]
 async fn main() -> Result<()> {
   tracing_subscriber::fmt()
@@ -30,252 +23,170 @@ async fn main() -> Result<()> {
     .without_time()
     .init();
 
-  let app_settings = load_app_config().unwrap();
-
+  let app_settings = load_app_config()?;
+  let stream_settings = app_settings
+    .stream
+    .clone()
+    .ok_or_else(|| anyhow::anyhow!("stream_settings is not found"))?;
   let pool = MySqlPool::connect(&app_settings.database.url).await?;
-  let dynamodb_client = create_aws_client(&app_settings.aws).await;
-  let dynamodb_streams_client = create_aws_dynamodb_streams_client(&app_settings.aws).await;
-  if let Some(stream_settings) = &app_settings.stream {
-    loop {
-      match stream_events_driver(
-        &dynamodb_client,
-        &dynamodb_streams_client,
-        pool.clone(),
-        &stream_settings.journal_table_name,
-        stream_settings.max_item_count,
-      )
-      .await
-      {
-        Ok(_) => {}
-        Err(err) => {
-          tracing::error!(
-            "An error has occurred, but stream processing is restarted.\
-          If this error persists, the read model condition may be incorrect.: {}",
-            err
-          );
-          continue;
-        }
+  let aws_config = create_aws_config(&app_settings.aws).await;
+  let dynamodb_client = DynamoDBClient::new(&aws_config);
+  let streams_client = DynamoDBStreamsClient::new(&aws_config);
+
+  let components = build_components(&pool, &stream_settings, dynamodb_client.clone());
+  let mut resync_backoff = Backoff::new(Duration::from_millis(500), Duration::from_secs(30));
+
+  // The first start has no positions at all, and a restart may follow a stop
+  // longer than the 24-hour stream retention. Reconcile every head before
+  // consuming the stream; the stream then covers the gap between the scan and
+  // the first read.
+  resync_until_resolved(&components.resyncer, &mut resync_backoff, "initial reconciliation").await;
+  match components.recovery.recover_pending().await {
+    Ok(result) => {
+      if !result.failures.is_empty() {
+        tracing::warn!(
+          completed = result.completed,
+          failures = result.failures.len(),
+          "some pending recovery tasks did not complete"
+        );
+      } else if result.completed > 0 {
+        tracing::info!(completed = result.completed, "completed pending recovery tasks");
       }
     }
-  } else {
-    Err(anyhow::anyhow!("stream_settings is not found"))
+    Err(error) => tracing::warn!(error = %error, "failed to read pending recovery tasks"),
   }
-}
 
-fn convert_to(src: aws_sdk_dynamodbstreams::types::AttributeValue) -> serde_dynamo::AttributeValue {
-  match src {
-    aws_sdk_dynamodbstreams::types::AttributeValue::B(b) => serde_dynamo::AttributeValue::B(b.into_inner()),
-    aws_sdk_dynamodbstreams::types::AttributeValue::Bool(b) => serde_dynamo::AttributeValue::Bool(b),
-    aws_sdk_dynamodbstreams::types::AttributeValue::Bs(bs) => {
-      serde_dynamo::AttributeValue::Bs(bs.iter().map(|e| e.clone().into_inner()).collect())
+  let stream_client = DynamoDbHeadStreamClient::new(dynamodb_client, streams_client);
+  let mut error_backoff = Backoff::new(Duration::from_millis(500), Duration::from_secs(30));
+  let mut stream_arn = loop {
+    match stream_client.stream_arn(&stream_settings.head_table_name).await {
+      Ok(stream_arn) => break stream_arn,
+      Err(error) => {
+        tracing::warn!(error = %error, "failed to describe the head table stream; backing off");
+        tokio::time::sleep(error_backoff.next_delay()).await;
+      }
     }
-    aws_sdk_dynamodbstreams::types::AttributeValue::L(l) => {
-      serde_dynamo::AttributeValue::L(l.iter().map(|v| convert_to(v.clone())).collect())
-    }
-    aws_sdk_dynamodbstreams::types::AttributeValue::M(m) => {
-      serde_dynamo::AttributeValue::M(m.iter().map(|(k, v)| (k.clone(), convert_to(v.clone()))).collect())
-    }
-    aws_sdk_dynamodbstreams::types::AttributeValue::N(n) => serde_dynamo::AttributeValue::N(n.clone()),
-    aws_sdk_dynamodbstreams::types::AttributeValue::Ns(ns) => serde_dynamo::AttributeValue::Ns(ns.clone()),
-    aws_sdk_dynamodbstreams::types::AttributeValue::Null(b) => serde_dynamo::AttributeValue::Null(b),
-    aws_sdk_dynamodbstreams::types::AttributeValue::S(s) => serde_dynamo::AttributeValue::S(s.clone()),
-    aws_sdk_dynamodbstreams::types::AttributeValue::Ss(ss) => serde_dynamo::AttributeValue::Ss(ss.clone()),
-    _ => panic!("not supported"),
-  }
-}
+  };
+  let mut state = StreamState::default();
+  let mut poll_backoff = stream_settings.poll_backoff();
 
-async fn stream_events_driver(
-  dynamodb_client: &DynamoDBClient,
-  dynamodb_streams_client: &DynamoDBStreamsClient,
-  pool: Pool<MySql>,
-  journal_table_name: &str,
-  max_item_count: usize,
-) -> Result<()> {
-  let describe_table_out = dynamodb_client
-    .describe_table()
-    .table_name(journal_table_name)
-    .send()
-    .await?;
-  let stream_arn = describe_table_out.table().unwrap().latest_stream_arn().unwrap();
-
-  let dao = GroupChatReadModelUpdateDaoImpl::new(pool);
-  let mut last_evaluated_shard_id: Option<String> = None;
   loop {
-    tracing::info!("stream_arn = {:?}", stream_arn);
-    tracing::info!("last_evaluated_shard_id = {:?}", last_evaluated_shard_id);
-    tracing::info!("max_item_count = {:?}", max_item_count);
-
-    let mut builder = dynamodb_streams_client.describe_stream().stream_arn(stream_arn);
-    if let Some(shard_id) = last_evaluated_shard_id.clone() {
-      builder = builder.exclusive_start_shard_id(shard_id);
-    }
-    let describe_stream_output = builder.send().await?;
-    let shards = describe_stream_output.stream_description().unwrap().shards().to_vec();
-
-    for shard in shards {
-      tracing::info!("shard = {:?}", shard);
-      let get_shard_iterator_output = dynamodb_streams_client
-        .get_shard_iterator()
-        .stream_arn(stream_arn)
-        .shard_id(shard.shard_id().unwrap())
-        .shard_iterator_type(ShardIteratorType::Latest)
-        .send()
-        .await?;
-      let mut shard_iterator_opt = get_shard_iterator_output.shard_iterator().map(|s| s.to_owned());
-      let mut processed_record_count = 0usize;
-      while shard_iterator_opt.is_some() && processed_record_count < max_item_count {
-        tracing::info!("shard_iterator = {:?}", shard_iterator_opt.clone().unwrap());
-        let get_records_output = dynamodb_streams_client
-          .get_records()
-          .shard_iterator(shard_iterator_opt.unwrap())
-          .send()
-          .await?;
-        let records = get_records_output.records();
-        for record in records {
-          let stream_record = record.dynamodb.clone().unwrap();
-          tracing::info!("dynamodb stream event = {:?}", stream_record);
-
-          let new_image = stream_record
-            .new_image()
-            .unwrap()
-            .iter()
-            .map(|(k, v)| (k.clone(), convert_to(v.clone())))
-            .collect::<HashMap<String, serde_dynamo::AttributeValue>>();
-
-          let item: serde_dynamo::Item = new_image.clone().into();
-          let keys = stream_record.keys().cloned().unwrap();
-          let key_item: serde_dynamo::Item = keys
-            .iter()
-            .map(|(k, v)| (k.clone(), convert_to(v.clone())))
-            .collect::<HashMap<String, serde_dynamo::AttributeValue>>()
-            .into();
-
-          let sequence_number = id_generate();
-          let event_id = id_generate();
-
-          let event = dynamodb::Event {
-            records: vec![dynamodb::EventRecord {
-              aws_region: "ap-northeast-1".to_string(),
-              change: StreamRecord {
-                approximate_creation_date_time: Utc::now(),
-                keys: key_item,
-                new_image: item.clone(),
-                old_image: item.clone(),
-                sequence_number: Some(sequence_number.to_string()),
-                size_bytes: size_of::<Item>() as i64,
-                stream_view_type: Some(StreamViewType::NewImage),
-              },
-              event_id: event_id.to_string(),
-              event_name: "INSERT".to_string(),
-              event_source: None,
-              event_version: None,
-              event_source_arn: Some(
-                "arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000"
-                  .to_string(),
-              ),
-              user_identity: None,
-              record_format: None,
-              table_name: None,
-            }],
-          };
-
-          let request_id = id_generate().to_string();
-          let deadline_ms = (Utc::now().timestamp_millis() + 3000).to_string();
-
-          let mut headers = HeaderMap::new();
-          headers.insert(
-            "lambda-runtime-aws-request-id",
-            HeaderValue::from_str(&request_id).unwrap(),
-          );
-          headers.insert(
-            "lambda-runtime-deadline-ms",
-            HeaderValue::from_str(&deadline_ms).unwrap(),
-          );
-
-          let context = Context::try_from(headers).unwrap();
-          let lambda_event = LambdaEvent::new(event, context);
-
-          rmu::update_read_model(&dao, lambda_event).await?;
+    // Replay the journal for aggregates that were blocked by a permanent
+    // failure. This can unblock them even when no later head record arrives.
+    match catch_up_blocked(&components.applier, &mut state).await {
+      Ok(outcome) => {
+        if outcome.unblocked > 0 {
+          tracing::info!(unblocked = outcome.unblocked, "caught up blocked aggregates");
         }
-        processed_record_count += records.len();
-        shard_iterator_opt = get_records_output.next_shard_iterator().map(|s| s.to_owned())
+      }
+      Err(error) => {
+        tracing::warn!(error = %error, "failed to catch up blocked aggregates; backing off");
+        tokio::time::sleep(error_backoff.next_delay()).await;
       }
     }
-
-    let next_last_evaluated_shard_id = describe_stream_output
-      .stream_description()
-      .unwrap()
-      .last_evaluated_shard_id()
-      .map(|s| s.to_owned());
-
-    if next_last_evaluated_shard_id.is_none() {
-      break;
+    match poll_shards(
+      &stream_client,
+      &components.updater,
+      &stream_arn,
+      &mut state,
+      stream_settings.max_item_count,
+    )
+    .await
+    {
+      Ok(outcome) => {
+        if outcome.processed > 0 {
+          poll_backoff.reset();
+          error_backoff.reset();
+        }
+        if outcome.idle {
+          tokio::time::sleep(poll_backoff.next_delay()).await;
+        }
+      }
+      Err(StreamDriverError::Trimmed) => {
+        tracing::warn!("the reader fell behind the stream retention window; running a full resync");
+        resync_until_resolved(&components.resyncer, &mut resync_backoff, "resync after trimmed stream").await;
+        state = StreamState::default();
+        poll_backoff.reset();
+        // A new stream may have been created after a table replacement.
+        stream_arn = match stream_client.stream_arn(&stream_settings.head_table_name).await {
+          Ok(stream_arn) => stream_arn,
+          Err(error) => {
+            tracing::warn!(error = %error, "failed to describe the head table stream; backing off");
+            tokio::time::sleep(error_backoff.next_delay()).await;
+            continue;
+          }
+        };
+      }
+      Err(StreamDriverError::Other(error)) => {
+        tracing::warn!(error = %error, "stream processing failed; backing off");
+        tokio::time::sleep(error_backoff.next_delay()).await;
+      }
     }
-
-    last_evaluated_shard_id = next_last_evaluated_shard_id;
   }
-
-  Ok(())
 }
 
-async fn create_aws_client(aws_settings: &AwsSettings) -> DynamoDBClient {
-  let region_name = aws_settings.region_name.clone();
-  let region = Region::new(region_name);
-  let region_provider_chain = RegionProviderChain::default_provider().or_else(region);
-
-  let mut config_loader = aws_config::from_env().region(region_provider_chain);
-  if let Some(endpoint_url) = aws_settings.endpoint_url.clone() {
-    tracing::info!("endpoint_url = {}", endpoint_url);
-    config_loader = config_loader.endpoint_url(endpoint_url);
-  }
-
-  match (
-    aws_settings.access_key_id.clone(),
-    aws_settings.secret_access_key.clone(),
-  ) {
-    (Some(access_key_id), Some(secret_access_key)) => {
-      tracing::info!("access_key_id = {}", access_key_id);
-      tracing::info!("secret_access_key = {}", secret_access_key);
-      config_loader = config_loader.credentials_provider(Credentials::new(
-        access_key_id,
-        secret_access_key,
-        None,
-        None,
-        "default",
-      ));
-    }
-    _ => {}
-  }
-
-  let config = config_loader.load().await;
-
-  DynamoDBClient::new(&config)
+struct Components {
+  updater: ReadModelUpdater,
+  recovery: Arc<RecoveryService>,
+  resyncer: Resyncer,
+  applier: Arc<Applier>,
 }
 
-async fn create_aws_dynamodb_streams_client(aws_settings: &AwsSettings) -> DynamoDBStreamsClient {
-  let region_name = aws_settings.region_name.clone();
-  let region = Region::new(region_name);
-  let region_provider_chain = RegionProviderChain::default_provider().or_else(region);
-  let mut config_loader = aws_config::from_env().region(region_provider_chain);
-  if let Some(endpoint_url) = aws_settings.endpoint_url.clone() {
-    config_loader = config_loader.endpoint_url(endpoint_url);
+fn build_components(pool: &MySqlPool, stream_settings: &StreamSettings, dynamodb_client: DynamoDBClient) -> Components {
+  let dao = Arc::new(GroupChatReadModelUpdateDaoImpl::new(pool.clone()));
+  let recovery_store = Arc::new(MySqlRecoveryTaskStore::new(pool.clone()));
+  let journal_reader = Arc::new(DynamoDbJournalReader::new(
+    dynamodb_client.clone(),
+    stream_settings.journal_table_name.clone(),
+  ));
+  let head_scanner = Arc::new(DynamoDbHeadScanner::new(
+    dynamodb_client,
+    stream_settings.head_table_name.clone(),
+  ));
+  let applier = Arc::new(Applier::new(
+    dao,
+    journal_reader,
+    stream_settings.max_events_per_transaction,
+  ));
+  let recovery = Arc::new(RecoveryService::new(
+    recovery_store,
+    head_scanner.clone(),
+    applier.clone(),
+  ));
+  let updater = ReadModelUpdater::new(applier.clone(), Some(recovery.clone()), stream_settings.retry_policy());
+  let resyncer = Resyncer::new(applier.clone(), head_scanner, Some(recovery.clone()));
+  Components {
+    updater,
+    recovery,
+    resyncer,
+    applier,
   }
-  match (
-    aws_settings.access_key_id.clone(),
-    aws_settings.secret_access_key.clone(),
-  ) {
-    (Some(access_key_id), Some(secret_access_key)) => {
-      config_loader = config_loader.credentials_provider(Credentials::new(
-        access_key_id,
-        secret_access_key,
-        None,
-        None,
-        "default",
-      ));
-    }
-    _ => {}
-  }
-  let config = config_loader.load().await;
+}
 
-  DynamoDBStreamsClient::new(&config)
+async fn resync_until_resolved(resyncer: &Resyncer, backoff: &mut Backoff, label: &str) {
+  backoff.reset();
+  loop {
+    match resyncer.resync().await {
+      Ok(result) => {
+        tracing::info!(
+          label = label,
+          heads = result.heads,
+          advanced = result.advanced,
+          skipped = result.skipped,
+          failed = result.failed,
+          "resync finished"
+        );
+        return;
+      }
+      Err(error) => {
+        tracing::error!(label = label, error = %error, "resync did not complete");
+        if !error.is_retryable() {
+          // Permanent per-aggregate failures were recorded as recovery tasks.
+          // Continuing keeps the stream moving while they are repaired.
+          return;
+        }
+        tokio::time::sleep(backoff.next_delay()).await;
+      }
+    }
+  }
 }

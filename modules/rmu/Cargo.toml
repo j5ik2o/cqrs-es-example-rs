@@ -4,31 +4,20 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-anyhow = { workspace = true, features = ["backtrace"] }
-thiserror = {workspace = true}
 async-trait = { workspace = true }
-aws-config = { workspace = true, features = ["behavior-version-latest"] }
-aws_lambda_events = { workspace = true, default-features = false, features = ["dynamodb"] }
 aws-sdk-dynamodb = { workspace = true }
-aws-sdk-dynamodbstreams = { workspace = true }
-backtrace = { workspace = true }
+aws_lambda_events = { workspace = true, default-features = false, features = ["dynamodb"] }
 chrono = { workspace = true, features = ["serde"] }
-config = { workspace = true }
-command-interface-adaptor-if = { path = "../../modules/command/interface-adaptor-if" }
-command-interface-adaptor-impl = { path = "../../modules/command/interface-adaptor-impl" }
-command-domain = { path = "../../modules/command/domain" }
-downcast-rs = { workspace = true }
-env_logger = { workspace = true }
-http = { workspace = true }
+command-domain = { path = "../command/domain" }
+command-interface-adaptor-if = { path = "../command/interface-adaptor-if" }
 lambda_runtime = { workspace = true }
-log = { workspace = true }
-once_cell = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
 serde_dynamo = { workspace = true }
 serde_json = { workspace = true }
-simple_logger = { workspace = true }
-sqlx = { workspace = true, default-features = false, features = ["macros", "mysql", "chrono", "runtime-tokio-rustls"] }
-tokio = { workspace = true, features = ["macros", "io-util", "sync", "rt-multi-thread"] }
+thiserror = { workspace = true }
 tracing = { workspace = true, features = ["log"] }
-tracing-subscriber = { workspace = true, default-features = false, features = ["ansi", "fmt", "json"] }
-ulid-generator-rs = { workspace = true, features = ["uuid", "serde"] }
+rand = "0.8.5"
+tokio = { workspace = true, features = ["time", "sync"] }
+aws-sdk-dynamodbstreams = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
