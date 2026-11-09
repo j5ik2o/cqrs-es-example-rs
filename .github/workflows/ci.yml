@@ -2,18 +2,8 @@ name: ci
 on:
   push:
     branches: [ main ]
-    paths-ignore:
-      - 'README.md'
-      - 'docs/**'
-      - 'assets/**'
-      - 'tools/**'
   pull_request:
     branches: [ main ]
-    paths-ignore:
-      - 'README.md'
-      - 'docs/**'
-      - 'assets/**'
-      - 'tools/**'
   schedule:
     - cron: 0 0 * * *
 env:
