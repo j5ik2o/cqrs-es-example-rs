@@ -61,7 +61,7 @@ Compose の起動スクリプトと e2e スクリプトは、ホストの `AWS_R
 
 ### RMU のストリーム設定
 
-ローカル RMU だけが使用します。共有の設定型では `stream` 節は任意ですが、ローカルバイナリでは必須です。節内の head と journal のテーブル名も必須です。他のフィールドには Rust の既定値があります。
+ローカル RMU は `stream` 節を必須とします。Lambda updater のエントリーポイントでも、この節が必須です。Write と Read は使用しません。節内の head と journal のテーブル名も必須です。他のフィールドには Rust の既定値があります。
 
 | 環境変数 | 意味 | TOML の値または Rust の既定値 | Compose の値 |
 | --- | --- | --- | --- |
@@ -72,7 +72,7 @@ Compose の起動スクリプトと e2e スクリプトは、ホストの `AWS_R
 | `APP__STREAM__POLL_MAX_INTERVAL_MILLIS` | アイドル時のポーリング最大待機時間。ミリ秒 | Rust で `30000` | 未指定。Rust の既定値 |
 | `APP__STREAM__MAX_EVENTS_PER_TRANSACTION` | 一つのトランザクションで確定するイベント数 | Rust で `1` | 未指定。Rust の既定値 |
 | `APP__STREAM__RETRY_MAX_ATTEMPTS` | レコードごとの最大試行回数 | Rust で `5` | 未指定。Rust の既定値 |
-| `APP__STREAM__RETRY_MAX_ELAPSED_MILLIS` | 再試行の最大経過時間。ミリ秒 | Rust で `30000` | 未指定。Rust の既定値 |
+| `APP__STREAM__RETRY_MAX_ELAPSED_MILLIS` | 次の再試行を予定する前に確認する経過時間の上限。ミリ秒。実行中の処理は中断されず、設定時間を超えることがあります。`0` は時間制限を無効にします | Rust で `30000` | 未指定。Rust の既定値 |
 | `APP__STREAM__RETRY_INITIAL_DELAY_MILLIS` | 再試行の初期待機時間。ミリ秒 | Rust で `200` | 未指定。Rust の既定値 |
 | `APP__STREAM__RETRY_MAX_DELAY_MILLIS` | 再試行の最大待機時間。ミリ秒 | Rust で `5000` | 未指定。Rust の既定値 |
 

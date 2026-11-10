@@ -61,7 +61,7 @@ The Compose start and e2e scripts default the host `AWS_REGION` to `ap-northeast
 
 ### RMU stream settings
 
-Only the local RMU uses these settings. The local binary requires a `stream` section, although the shared settings type makes it optional for other entry points. Head and journal names are required within that section. Other fields have Rust defaults.
+The local RMU requires a `stream` section. The Lambda updater entry point also requires this section. Write and Read do not use it. Head and journal names are required within that section. Other fields have Rust defaults.
 
 | Variable | Meaning | TOML value or Rust default | Compose value |
 | --- | --- | --- | --- |
@@ -72,7 +72,7 @@ Only the local RMU uses these settings. The local binary requires a `stream` sec
 | `APP__STREAM__POLL_MAX_INTERVAL_MILLIS` | Maximum idle polling delay in milliseconds | `30000` in Rust | Absent, Rust default |
 | `APP__STREAM__MAX_EVENTS_PER_TRANSACTION` | Events committed per transaction | `1` in Rust | Absent, Rust default |
 | `APP__STREAM__RETRY_MAX_ATTEMPTS` | Maximum attempts per record | `5` in Rust | Absent, Rust default |
-| `APP__STREAM__RETRY_MAX_ELAPSED_MILLIS` | Maximum elapsed retry time in milliseconds | `30000` in Rust | Absent, Rust default |
+| `APP__STREAM__RETRY_MAX_ELAPSED_MILLIS` | Elapsed-time budget in milliseconds, checked before scheduling another retry. Running operations are not cancelled and can exceed this budget. `0` disables the time limit | `30000` in Rust | Absent, Rust default |
 | `APP__STREAM__RETRY_INITIAL_DELAY_MILLIS` | Initial retry delay in milliseconds | `200` in Rust | Absent, Rust default |
 | `APP__STREAM__RETRY_MAX_DELAY_MILLIS` | Maximum retry delay in milliseconds | `5000` in Rust | Absent, Rust default |
 
