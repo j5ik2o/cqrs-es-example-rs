@@ -35,6 +35,7 @@ Event Sourcingのために[j5ik2o/event-store-adapter-rs](https://github.com/j5i
 
 ### ローカル環境
 
+- [ローカルのポートと環境変数](docs/LOCAL_CONFIGURATION.ja.md)
 - [ローカルマシンでのデバッグ](docs/DEBUG_ON_LOCAL_MACHINE.ja.md)
 - [Docker Composeでのデバッグ](docs/DEBUG_ON_DOCKER_COMPOSE.ja.md)
 

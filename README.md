@@ -50,6 +50,7 @@ This OSS repository mainly utilizes the following technology stack.
 
 ### Local Environment
 
+- [Local ports and environment variables](docs/LOCAL_CONFIGURATION.md)
 - [Debugging on Local Machine](docs/DEBUG_ON_LOCAL_MACHINE.md)
 - [Debugging on Docker Compose](docs/DEBUG_ON_DOCKER_COMPOSE.md)
 
