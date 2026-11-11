@@ -16,7 +16,7 @@ use tower::ServiceExt;
 
 fn mysql_image() -> ContainerRequest<GenericImage> {
   let port = ContainerPort::from(3306);
-  GenericImage::new("mysql", "8.0")
+  GenericImage::new("mysql", "26.10")
     .with_exposed_port(port)
     .with_wait_for(WaitFor::message_on_stdout("Ready for start up"))
     .with_startup_timeout(std::time::Duration::from_secs(180))
