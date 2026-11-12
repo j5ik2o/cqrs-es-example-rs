@@ -50,7 +50,9 @@ jobs:
       statuses: write
     with:
       pr_number: ${{ inputs.pr_number }}
-      wait_for_other_checks: ${{ inputs.wait_for_other_checks || 'true' }}
+      # A new head is evaluated at once: waiting for long CI would time out, and the bot reviews
+      # that follow re-run this through their review events.
+      wait_for_other_checks: ${{ inputs.wait_for_other_checks || (github.event_name == 'pull_request' && 'false' || 'true') }}
       base_branch: main
       required_context: Check unresolved comments
       ci_ref: v1
