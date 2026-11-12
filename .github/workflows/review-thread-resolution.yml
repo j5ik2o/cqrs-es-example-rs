@@ -33,6 +33,11 @@ permissions:
   pull-requests: read
   statuses: write
 
+# One evaluation at a time per PR, so an older run cannot publish a stale result over a newer one.
+concurrency:
+  group: review-thread-resolution-pr-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
   refresh:
     name: Refresh review-thread state
