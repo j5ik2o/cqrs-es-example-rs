@@ -20,7 +20,7 @@ on:
       wait_for_other_checks:
         description: Wait for other PR checks before evaluating review threads.
         required: false
-        default: "true"
+        default: "false"
         type: choice
         options:
           - "true"
@@ -50,9 +50,9 @@ jobs:
       statuses: write
     with:
       pr_number: ${{ inputs.pr_number }}
-      # A new head is evaluated at once: waiting for long CI would time out, and the bot reviews
-      # that follow re-run this through their review events.
-      wait_for_other_checks: ${{ inputs.wait_for_other_checks || (github.event_name == 'pull_request' && 'false' || 'true') }}
+      # Every event is evaluated at once. A run that waits for other checks leaves the previous
+      # result standing meanwhile, and the bot reviews raise their own events when they post.
+      wait_for_other_checks: ${{ inputs.wait_for_other_checks || 'false' }}
       base_branch: main
       required_context: Check unresolved comments
       ci_ref: v1
