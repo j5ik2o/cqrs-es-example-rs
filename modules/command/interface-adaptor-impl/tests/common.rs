@@ -204,7 +204,7 @@ pub async fn get_repository_and_store() -> (
 ) {
   init_logger();
   let wait_for = WaitFor::message_on_stdout("Ready.");
-  let image = GenericImage::new("localstack/localstack", "2.1.0")
+  let image = GenericImage::new("localstack/localstack", "4.14.0")
     .with_wait_for(wait_for)
     .with_env_var("SERVICES", "dynamodb")
     .with_env_var("DEFAULT_REGION", "us-west-1")

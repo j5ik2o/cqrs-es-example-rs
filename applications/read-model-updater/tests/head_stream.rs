@@ -32,7 +32,7 @@ use rmu::{
 const GROUP_CHAT_AID_PREFIX: &str = "GroupChat";
 
 fn mysql_image() -> ContainerRequest<GenericImage> {
-  GenericImage::new("mysql", "8.0")
+  GenericImage::new("mysql", "26.10")
     .with_wait_for(WaitFor::message_on_stdout("Ready for start up"))
     .with_exposed_port(ContainerPort::from(3306))
     .with_env_var("MYSQL_ROOT_PASSWORD", "password")
@@ -543,7 +543,7 @@ async fn should_resume_from_the_committed_position_after_a_restart() {
 #[tokio::test]
 #[serial]
 async fn should_read_a_contiguous_seq_nr_range_from_the_journal() {
-  let localstack = GenericImage::new("localstack/localstack", "2.1.0")
+  let localstack = GenericImage::new("localstack/localstack", "4.14.0")
     .with_wait_for(WaitFor::message_on_stdout("Ready."))
     .with_env_var("SERVICES", "dynamodb")
     .with_env_var("DEFAULT_REGION", "ap-northeast-1")
@@ -919,7 +919,7 @@ async fn should_record_a_permanent_resync_failure_and_continue_with_other_aggreg
 #[tokio::test]
 #[serial]
 async fn should_scan_all_pages_of_the_head_table() {
-  let localstack = GenericImage::new("localstack/localstack", "2.1.0")
+  let localstack = GenericImage::new("localstack/localstack", "4.14.0")
     .with_wait_for(WaitFor::message_on_stdout("Ready."))
     .with_env_var("SERVICES", "dynamodb")
     .with_env_var("DEFAULT_REGION", "ap-northeast-1")

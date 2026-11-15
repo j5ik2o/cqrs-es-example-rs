@@ -37,7 +37,7 @@ services:
     depends_on:
       - mysql
   localstack:
-    image: localstack/localstack:2.3.2
+    image: localstack/localstack:4.14.0
     hostname: localstack-local
     ports:
       - "4566:4566"
@@ -63,7 +63,7 @@ services:
       LAMBDA_DOCKER_FLAGS: --platform linux/amd64
     # privileged: true
     volumes:
-      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      # LocalStack v4 wipes /tmp/localstack on startup, so it cannot be a bind mount.
       - "/var/run/docker.sock:/var/run/docker.sock"
     healthcheck:
       test: ["CMD-SHELL", "awslocal dynamodb list-tables >/dev/null 2>&1 || exit 1"]

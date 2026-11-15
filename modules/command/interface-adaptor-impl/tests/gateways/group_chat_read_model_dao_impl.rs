@@ -16,7 +16,7 @@ use command_interface_adaptor_impl::gateways::group_chat_read_model_dao_impl::Gr
 
 fn mysql_image() -> ContainerRequest<GenericImage> {
   let port = ContainerPort::from(3306);
-  GenericImage::new("mysql", "8.0")
+  GenericImage::new("mysql", "26.10")
     .with_wait_for(WaitFor::message_on_stdout("Ready for start up"))
     .with_exposed_port(port)
     .with_env_var("MYSQL_ROOT_PASSWORD", "password")
