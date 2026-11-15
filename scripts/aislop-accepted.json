@@ -1,0 +1,543 @@
+{
+  "engines": [
+    "format",
+    "lint",
+    "code-quality",
+    "ai-slop",
+    "security"
+  ],
+  "missingToolsAllowed": {},
+  "accepted": [
+    {
+      "reason": "既存の Rust 実装（アプリケーション・ドメイン・リゾルバ・ゲートウェイ）がテスト外で .unwrap() を使っており、例外処理の欠落として検出された既存の指摘です。issue #614 の範囲は aislop チェックの組み込みであり、既存コードの修正は行わないため、現状のまま受け入れます。",
+      "findings": [
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "applications/read-api-server/src/main.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "applications/read-api-server/src/main.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "applications/read-api-server/src/main.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "applications/read-model-updater/src/main.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "applications/write-api-server/src/main.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "applications/write-api-server/src/main.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "applications/write-api-server/src/main.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat/events.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/group_chat/members.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/lib.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/domain/src/lib.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/gateways/group_chat_repository.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/gateways/group_chat_repository.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/graphql/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/graphql/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/graphql/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/graphql/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/graphql/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/graphql/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/graphql/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/command/interface-adaptor-impl/src/graphql/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/query/interface-adaptor/src/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/query/interface-adaptor/src/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/query/interface-adaptor/src/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/query/interface-adaptor/src/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        },
+        {
+          "engine": "ai-slop",
+          "rule": "ai-slop/rust-non-test-unwrap",
+          "file": "modules/query/interface-adaptor/src/resolvers.rs",
+          "message": "`.unwrap()` in non-test code panics on None/Err. Surfaces as a hard crash for the caller."
+        }
+      ]
+    },
+    {
+      "reason": "既存の Rust 実装に対する clippy の警告（redundant_closure、result_large_err、new_without_default、useless_conversion など）で、aislop 導入前から存在する既存課題です。issue #614 では既存の指摘を修正しないため、現状のまま受け入れます。",
+      "findings": [
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::new_without_default",
+          "file": "modules/command/domain/src/group_chat/group_chat_id.rs",
+          "message": "you should consider adding a `Default` implementation for `GroupChatId`"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::new_without_default",
+          "file": "modules/command/domain/src/group_chat/member_id.rs",
+          "message": "you should consider adding a `Default` implementation for `MemberId`"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::new_without_default",
+          "file": "modules/command/domain/src/group_chat/message_id.rs",
+          "message": "you should consider adding a `Default` implementation for `MessageId`"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::len_without_is_empty",
+          "file": "modules/command/domain/src/group_chat/messages.rs",
+          "message": "struct `Messages` has a public `len` method, but no `is_empty` method"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::useless_conversion",
+          "file": "modules/command/domain/src/group_chat/messages.rs",
+          "message": "useless conversion to the same type: `group_chat_error::GroupChatError`"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::useless_conversion",
+          "file": "modules/command/domain/src/group_chat/messages.rs",
+          "message": "useless conversion to the same type: `group_chat_error::GroupChatError`"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::new_without_default",
+          "file": "modules/command/domain/src/user_account.rs",
+          "message": "you should consider adding a `Default` implementation for `UserAccountId`"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::result_large_err",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "the `Err`-variant returned from this function is very large"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::result_large_err",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "the `Err`-variant returned from this function is very large"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::result_large_err",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "the `Err`-variant returned from this function is very large"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::result_large_err",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "the `Err`-variant returned from this function is very large"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::result_large_err",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "the `Err`-variant returned from this function is very large"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::result_large_err",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "the `Err`-variant returned from this function is very large"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::result_large_err",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "the `Err`-variant returned from this function is very large"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::result_large_err",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "the `Err`-variant returned from this function is very large"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::redundant_closure",
+          "file": "modules/command/processor/src/group_chat_command_processor.rs",
+          "message": "redundant closure"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::new_without_default",
+          "file": "modules/command/interface-adaptor-impl/src/gateways/group_chat_repository.rs",
+          "message": "you should consider adding a `Default` implementation for `MockGroupChatRepository`"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::unwrap_or_default",
+          "file": "modules/command/interface-adaptor-impl/src/gateways/group_chat_repository.rs",
+          "message": "use of `or_insert_with` to construct default value"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::manual_is_multiple_of",
+          "file": "modules/command/interface-adaptor-impl/src/gateways/group_chat_repository.rs",
+          "message": "manual implementation of `.is_multiple_of()`"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::needless_borrow",
+          "file": "modules/command/interface-adaptor-impl/src/graphql/resolvers.rs",
+          "message": "this expression creates a reference which is immediately dereferenced by the compiler"
+        },
+        {
+          "engine": "lint",
+          "rule": "clippy/clippy::single_match",
+          "file": "applications/write-api-server/src/main.rs",
+          "message": "you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`"
+        }
+      ]
+    },
+    {
+      "reason": "ローカル開発・テスト用の設定（config/*.toml、Makefile.toml、docker-compose、開発用ゲートウェイの既定値）に含まれるデータベース接続文字列を検出したものです。本番の秘密情報ではなく開発用の既定値ですが、誤検出と断定せず、既存の設定に対する指摘として現状のまま受け入れます。",
+      "findings": [
+        {
+          "engine": "security",
+          "rule": "security/hardcoded-secret",
+          "file": "config/read-api-server.toml",
+          "message": "Possible Database connection string with credentials detected in source code"
+        },
+        {
+          "engine": "security",
+          "rule": "security/hardcoded-secret",
+          "file": "config/read-model-updater.toml",
+          "message": "Possible Database connection string with credentials detected in source code"
+        },
+        {
+          "engine": "security",
+          "rule": "security/hardcoded-secret",
+          "file": "modules/command/interface-adaptor-impl/Makefile.toml",
+          "message": "Possible Database connection string with credentials detected in source code"
+        },
+        {
+          "engine": "security",
+          "rule": "security/hardcoded-secret",
+          "file": "modules/query/interface-adaptor/Makefile.toml",
+          "message": "Possible Database connection string with credentials detected in source code"
+        },
+        {
+          "engine": "security",
+          "rule": "security/hardcoded-secret",
+          "file": "modules/query/interface-adaptor/src/gateways.rs",
+          "message": "Possible Database connection string with credentials detected in source code"
+        },
+        {
+          "engine": "security",
+          "rule": "security/hardcoded-secret",
+          "file": "modules/query/interface-adaptor/src/gateways.rs",
+          "message": "Possible Database connection string with credentials detected in source code"
+        },
+        {
+          "engine": "security",
+          "rule": "security/hardcoded-secret",
+          "file": "tools/docker-compose/docker-compose-applications.yml",
+          "message": "Possible Database connection string with credentials detected in source code"
+        },
+        {
+          "engine": "security",
+          "rule": "security/hardcoded-secret",
+          "file": "tools/docker-compose/docker-compose-applications.yml",
+          "message": "Possible Database connection string with credentials detected in source code"
+        },
+        {
+          "engine": "security",
+          "rule": "security/hardcoded-secret",
+          "file": "tools/docker-compose/docker-compose-databases.yml",
+          "message": "Possible Database connection string with credentials detected in source code"
+        }
+      ]
+    }
+  ]
+}

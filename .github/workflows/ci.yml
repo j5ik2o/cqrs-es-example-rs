@@ -132,3 +132,22 @@ jobs:
           ./tools/scripts/docker-build-read-model-updater-local.sh
           ./tools/scripts/docker-build-read-api-server.sh
           ./tools/scripts/docker-compose-e2e-test.sh
+  aislop:
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - run: npm ci
+      - name: Warm up clippy for the aislop lint engine
+        run: cargo clippy --message-format=json --quiet > /dev/null
+      - run: npm run check:aislop
+      - run: npm run test:aislop
