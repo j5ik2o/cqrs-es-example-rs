@@ -1,5 +1,7 @@
 /target
 
+/node_modules/
+
 debug/
 target/
 
