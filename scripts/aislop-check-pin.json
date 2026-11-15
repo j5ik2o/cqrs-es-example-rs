@@ -1,0 +1,7 @@
+{
+  "ref": "aislop-check-v3",
+  "files": {
+    "check-aislop.mjs": "c53e1b91dd45ead4bfdfd3dc4bbec794e2fd81b96857a90f7c5aaea414f8e30c",
+    "check-aislop.test.mjs": "95dda876c46cea1ca3be454d82be31080ecf9ff1f387d0a06ea014e5bc1c9130"
+  }
+}
