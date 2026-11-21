@@ -4,6 +4,8 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    # Run the full CI on edits so a base change to main gets fresh checks.
+    types: [ opened, synchronize, reopened, edited ]
   schedule:
     - cron: 0 0 * * *
 env:
@@ -151,3 +153,29 @@ jobs:
         run: cargo clippy --message-format=json --quiet > /dev/null
       - run: npm run check:aislop
       - run: npm run test:aislop
+  required-ci:
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs:
+      - lint
+      - test-infrastructure
+      - test-command-domain
+      - test-command-interface-adaptor-impl
+      - test-command-processor
+      - test-query-interface-adaptor
+      - test-write-api-server
+      - test-rmu
+      - test-read-model-updater
+      - test-read-api-server
+      - e2e
+      - aislop
+    steps:
+      - name: Require every CI job to succeed
+        env:
+          DEPENDENCIES: ${{ toJSON(needs) }}
+        run: |
+          printf '%s\n' "$DEPENDENCIES" | jq -e '
+            map_values(.result) as $results
+            | $results, ($results | length == 12 and all(.[]; . == "success"))
+          '
