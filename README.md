@@ -66,3 +66,5 @@ This OSS repository mainly utilizes the following technology stack.
 ## Links
 
 - [Common Documents](https://github.com/j5ik2o/cqrs-es-example)
+
+Pull requests targeting `main` run lint, tests, and end-to-end checks for documentation changes as well.
