@@ -1,4 +1,1 @@
 // 特に実装はありません。必要であれば適宜実装を配置してください。
-
-#[allow(dead_code)]
-fn ci_gate_format_probe()->u8{0}
