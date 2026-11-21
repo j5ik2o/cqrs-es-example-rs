@@ -17,7 +17,6 @@ env:
   ARCH: x86_64
 jobs:
   lint:
-    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -172,10 +171,6 @@ jobs:
       - e2e
       - aislop
     steps:
-      - name: Record the fixture event
-        run: |
-          jq -c '{action, previous_base: .changes.base.ref.from, base: .pull_request.base.ref, head: .pull_request.head.sha}' "$GITHUB_EVENT_PATH"
-          printf 'merge=%s\n' "$GITHUB_SHA"
       - name: Require every CI job to succeed
         env:
           DEPENDENCIES: ${{ toJSON(needs) }}
