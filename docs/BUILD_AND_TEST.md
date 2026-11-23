@@ -4,7 +4,7 @@
 $ cp common.env.default common.env
 ```
 
-環境変数の PREFIX（英数字のみ。英字は小文字）と APPLICATION_NAME を適宜変更してください。PREFIX は `pwgen -A` などで生成すると便利です。
+環境変数の PREFIX（英数字のみ。英字は小文字）と APPLICATION_NAME を適宜変更してください。PREFIX は `pwgen -A` などで生成すると便利です。作成した `common.env` はローカル環境専用で、Git の管理対象外です。
 
 ```shell
 $ pwgen -A
